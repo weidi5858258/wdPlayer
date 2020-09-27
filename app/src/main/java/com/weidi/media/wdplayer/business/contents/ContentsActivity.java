@@ -349,7 +349,7 @@ public class ContentsActivity extends Activity {
                     switch (v.getId()) {
                         case R.id.playback_btn:
                             mClickCount++;
-
+                            MyToast.show(String.valueOf(mClickCount));
                             mUiHandler.removeMessages(MSG_ON_CLICK_PLAYBACK_BUTTOM);
                             mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 1000);
                             break;
