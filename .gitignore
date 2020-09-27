@@ -1,0 +1,13 @@
+*.iml
+.git_push_impl.sh
+.push_git.sh
+.gradle
+.idea
+.DS_Store
+.externalNativeBuild
+build
+captures
+app/.cxx
+app/build
+weidi_library
+local.properties
