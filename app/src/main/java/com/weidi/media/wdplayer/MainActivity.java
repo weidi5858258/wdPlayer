@@ -2,6 +2,7 @@ package com.weidi.media.wdplayer;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Build;
@@ -38,6 +39,8 @@ public class MainActivity extends AppCompatActivity {
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
+        // Volume change should always affect media volume_normal
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         setContentView(R.layout.activity_main);
 

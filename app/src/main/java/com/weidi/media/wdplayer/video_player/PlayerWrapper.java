@@ -752,14 +752,14 @@ public class PlayerWrapper {
                         }
                     });
 
+                    ThreadPool.getFixedThreadPool().execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            SystemClock.sleep(500);
+                            sendEmptyMessage(DO_SOMETHING_CODE_readData);
+                        }
+                    });
                     if (mIsSeparatedAudioVideo) {
-                        ThreadPool.getFixedThreadPool().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                SystemClock.sleep(500);
-                                sendEmptyMessage(DO_SOMETHING_CODE_readData);
-                            }
-                        });
                         ThreadPool.getFixedThreadPool().execute(new Runnable() {
                             @Override
                             public void run() {
@@ -1151,15 +1151,6 @@ public class PlayerWrapper {
 
                 mUiHandler.removeMessages(MSG_START_PLAYBACK);
                 mUiHandler.sendEmptyMessage(MSG_START_PLAYBACK);
-                if (!mIsSeparatedAudioVideo) {
-                    SystemClock.sleep(600);
-                    if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        //mSimpleVideoPlayer.readData();
-                    } else {
-                        sendEmptyMessage(DO_SOMETHING_CODE_readData);
-                    }
-                }
-
                 Log.d(TAG, "startPlayback() end");
             }
         });

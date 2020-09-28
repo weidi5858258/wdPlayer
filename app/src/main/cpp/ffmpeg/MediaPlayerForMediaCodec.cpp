@@ -1921,8 +1921,6 @@ namespace alexander_media_mediacodec {
     }
 
     void *readData(void *opaque) {
-        LOGI("%s\n", "readData() start");
-
         if (audioWrapper == nullptr
             || audioWrapper->father == nullptr
             || videoWrapper == nullptr
@@ -1970,6 +1968,7 @@ namespace alexander_media_mediacodec {
          2.list1中先存满n个,然后list2一次性存满
          3.list1中还没满n个文件就读完了
          */
+        LOGI("%s\n", "readData() start");
         for (;;) {
             // exit
             if (!audioWrapper->father->isReading
@@ -2147,6 +2146,7 @@ namespace alexander_media_mediacodec {
                 av_packet_unref(srcAVPacket);
             }
         }// for(;;) end
+        LOGF("%s\n", "readData() end");
 
         if (!audioHasSentNullPacket) {
             if (audioWrapper->father->streamIndex != -1
@@ -2190,7 +2190,6 @@ namespace alexander_media_mediacodec {
 
         isReading = false;
 
-        LOGF("%s\n", "readData() end");
         return nullptr;
     }
 

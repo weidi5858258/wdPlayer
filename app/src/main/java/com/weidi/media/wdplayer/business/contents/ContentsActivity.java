@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -43,6 +44,8 @@ public class ContentsActivity extends Activity {
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
+        // Volume change should always affect media volume_normal
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         setContentView(R.layout.contents_layout);
 
