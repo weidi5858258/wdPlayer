@@ -2311,7 +2311,7 @@ namespace alexander_media_mediacodec {
                 } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
                     /***
                      http://ivi.bupt.edu.cn/hls/sdetv.m3u8@@@@@@@@@@山东教育卫视 这个直播不能同步
-                     0.365758 0.376415 0.385712 0.397755
+                     0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
                      */
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.100000;
@@ -2325,7 +2325,7 @@ namespace alexander_media_mediacodec {
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
-                     0.204199 0.263926
+                     0.204199 0.245688 0.263926
                      */
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.080000;
