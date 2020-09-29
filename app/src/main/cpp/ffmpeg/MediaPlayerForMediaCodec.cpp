@@ -2370,10 +2370,10 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.100000;
                     }
                     needToGetResultAgain = false;
-                    if (audioWrapper->father->useMediaCodec) {
+                    /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
-                    }
+                    }*/
                 }
 
                 // 对4K视频特殊处理
@@ -2922,7 +2922,10 @@ namespace alexander_media_mediacodec {
             }
         }
 
-        if (preVideoPts > videoPts && preVideoPts > 0 && videoPts > 0 && mediaDuration < 0) {
+        if (mediaDuration < 0 &&
+            preVideoPts > videoPts &&
+            preVideoPts > 0 &&
+            videoPts > 0) {
             return 0;
         }
 
@@ -3023,19 +3026,20 @@ namespace alexander_media_mediacodec {
             // endregion
         }
 
+        if (audioWrapper->father->useMediaCodec || isWatch) {
+            //videoSleep(5);
+            return 0;
+        }
+
         if (videoWrapper->father->isHandling) {
-            if (isWatch) {
+            /*if (isWatch) {
                 if (audioWrapper->father->useMediaCodec) {
                     //videoSleep(1);
                 } else {
-                    videoSleep(6);
+                    videoSleep(5);
                 }
                 return 0;
-            }
-            if (audioWrapper->father->useMediaCodec) {
-                videoSleep(8);
-                return 0;
-            }
+            }*/
             // 单位: 毫秒
             /*int tempSleep = ((int) ((videoPts - preVideoPts) * 1000)) - 30;
             if (videoSleepTime != tempSleep) {
@@ -3544,8 +3548,10 @@ namespace alexander_media_mediacodec {
             if (wrapper->type == TYPE_AUDIO) {
                 if (wrapper->useMediaCodec) {
                     audioPts = copyAVPacket->pts * av_q2d(stream->time_base);
-                    if (preAudioPts > audioPts && preAudioPts > 0 && audioPts > 0
-                        && mediaDuration < 0) {
+                    if (mediaDuration < 0 &&
+                        preAudioPts > audioPts &&
+                        preAudioPts > 0 &&
+                        audioPts > 0) {
                         continue;
                     }
 

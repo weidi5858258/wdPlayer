@@ -1002,6 +1002,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                         break;
                     }
                     case USE_MODE_AUDIO_VIDEO: {
+                        handleRet = alexander_audio_video::handleAudioOutputBuffer(roomIndex);
                         break;
                     }
                     case USE_MODE_AAC_H264: {
