@@ -48,6 +48,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
+            // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
+            if (!hasIgnored) {
+                Intent intent =
+                        new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
+            }
+        }
+    }
+
+    @Override
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "onPause()");
@@ -85,16 +102,6 @@ public class MainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (Settings.canDrawOverlays(this)) {
                     startService(new Intent(this, PlayerService.class));
-                }
-
-                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-                boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
-                // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
-                if (!hasIgnored) {
-                    Intent intent =
-                            new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                    intent.setData(Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
                 }
             }
         }
@@ -153,14 +160,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-            boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
-            // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
-            if (!hasIgnored) {
-                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-            }
             // 申请浮窗权限
             if (!isRunService(this, "com.weidi.media.wdplayer.video_player.PlayerService")) {
                 if (!Settings.canDrawOverlays(this)) {
