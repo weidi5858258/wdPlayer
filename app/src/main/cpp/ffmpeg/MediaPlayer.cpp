@@ -220,7 +220,6 @@ extern bool isLocal;
 extern bool isH264;
 extern bool isReading;
 extern bool isVideoHandling;
-extern bool isVideoRendering;
 extern bool isInterrupted;
 extern bool runOneTime;
 extern double fileLength;

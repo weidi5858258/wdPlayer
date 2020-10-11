@@ -660,6 +660,8 @@ public class PlayerWrapper {
                     if (toastInfo.contains("[")
                             && toastInfo.contains("]")) {
                         textInfoTV.setText(toastInfo);
+                    } else if (toastInfo.contains("AVERROR_EOF")) {
+                        mPrePath = null;
                     } else {
                         MyToast.show(toastInfo);
                     }
@@ -2724,7 +2726,7 @@ public class PlayerWrapper {
                     sb.append(PLAYBACK_WINDOW_POSITION_TAG);
                     sb.append(tempY);
                     mSP.edit().putString(PLAYBACK_WINDOW_POSITION, sb.toString()).commit();
-                    Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW sb.toString(): " + sb.toString());
+                    Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW : " + sb.toString());
                     break;
                 default:
                     break;
