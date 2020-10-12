@@ -217,7 +217,9 @@ struct AudioWrapper *audioWrapper = nullptr;
 struct VideoWrapper *videoWrapper = nullptr;
 pthread_mutex_t readLockMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t readLockCondition = PTHREAD_COND_INITIALIZER;
+// 是否是本地文件
 bool isLocal = false;
+// 不在这个文件中使用,在OnlyVideoPlayer.cpp中使用
 bool isH264 = false;
 bool isReading = false;
 bool isReadWaited = false;
@@ -4321,28 +4323,6 @@ namespace alexander_media_mediacodec {
         memset(inFilePath, '\0', sizeof(inFilePath));
         av_strlcpy(inFilePath, filePath, sizeof(inFilePath));
         LOGI("setJniParameters() filePath  : %s", inFilePath);
-
-        /*isLocal = false;
-        char *result = strstr(inFilePath, "http://");
-        if (result == nullptr) {
-            result = strstr(inFilePath, "https://");
-            if (result == nullptr) {
-                result = strstr(inFilePath, "rtmp://");
-                if (result == nullptr) {
-                    result = strstr(inFilePath, "rtsp://");
-                    if (result == nullptr) {
-                        isLocal = true;
-                    }
-                }
-            }
-        }*/
-        /*result = strstr(inFilePath, ".h264");
-        if (result == nullptr) {
-            result = strstr(inFilePath, ".H264");
-            if (result == nullptr) {
-                isH264 = false;
-            }
-        }*/
 
         isLocal = startsWith(inFilePath, "/storage/");
         isH264 = endsWith(inFilePath, ".h264");
