@@ -53,6 +53,19 @@ public class ContentsActivity extends Activity {
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "onStart()");
+        internalStart();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.i(TAG, "onRestart()");
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume()");
@@ -127,9 +140,7 @@ public class ContentsActivity extends Activity {
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
         }
-    }
 
-    private void internalResume() {
         if (!PlayerWrapper.mContentsMap.isEmpty()) {
             initAdapter();
             mRecyclerView.setLayoutManager(mLayoutManager);
@@ -154,6 +165,14 @@ public class ContentsActivity extends Activity {
                 mAdapter.setData(PlayerWrapper.mContentsMap);
             }
         }
+    }
+
+    private void internalStart() {
+
+    }
+
+    private void internalResume() {
+
     }
 
     private void internalDestroy() {

@@ -25,8 +25,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>-->
 
-            <!--android:layout_marginStart="@dimen/dimen_16_dp"-->
-            <!--android:textDirection="locale"-->
+        <!--android:layout_marginStart="@dimen/dimen_16_dp"-->
+        <!--android:textDirection="locale"-->
         <TextView
             android:id="@+id/content_title"
             android:layout_width="match_parent"
