@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
@@ -14,6 +15,7 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.OrientationEventListener;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -234,6 +236,7 @@ public class JniPlayerActivity extends Activity {
     // 气泡上显示时间
     private TextView mShowTimeTV;
     private boolean noFinish;
+    private OrientationListener myOrientationListener;
 
     public static boolean isRunService(Context context, String serviceName) {
         ActivityManager manager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
@@ -247,6 +250,15 @@ public class JniPlayerActivity extends Activity {
     }
 
     private void internalCreate() {
+        // 还没有测试
+        /*myOrientationListener = new OrientationListener(this);
+        boolean autoRotateOn = android.provider.Settings.System.getInt(getContentResolver(),
+                Settings.System.ACCELEROMETER_ROTATION, 0) == 1;
+        // 检查系统是否开启自动旋转
+        if (autoRotateOn) {
+            myOrientationListener.enable();
+        }*/
+
         Intent intent = getIntent();
         // 为flase时表示从外部打开一个视频进行播放.为true时只是使用Activity的全屏特性(在本应用打开).
         noFinish = intent.getBooleanExtra(COMMAND_NO_FINISH, false);
@@ -436,6 +448,10 @@ public class JniPlayerActivity extends Activity {
         if (mPlayerWrapper != null) {
             mPlayerWrapper.onDestroy();
         }
+
+        if (myOrientationListener != null) {
+            myOrientationListener.disable();
+        }
     }
 
     private void setFullscreen(boolean isShowStatusBar, boolean isShowNavigationBar) {
@@ -451,6 +467,49 @@ public class JniPlayerActivity extends Activity {
             uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
         }
         getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+    }
+
+    private class OrientationListener extends OrientationEventListener {
+
+        public OrientationListener(Context context) {
+            super(context);
+        }
+
+        public OrientationListener(Context context, int rate) {
+            super(context, rate);
+        }
+
+        @Override
+        public void onOrientationChanged(int orientation) {
+            //Log.d(TAG, "orention" + orientation);
+            int screenOrientation = getResources().getConfiguration().orientation;
+            if (((orientation >= 0) && (orientation < 45))
+                    || (orientation > 315)) {
+                // 设置竖屏
+                if (screenOrientation != ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        && orientation != ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+                    Log.d(TAG, "设置竖屏");
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                }
+            } else if (orientation > 225 && orientation < 315) {
+                // 设置横屏
+                Log.d(TAG, "设置横屏");
+                if (screenOrientation != ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                }
+            } else if (orientation > 45 && orientation < 135) {
+                // 设置反向横屏
+                Log.d(TAG, "反向横屏");
+                if (screenOrientation != ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+                }
+            } else if (orientation > 135 && orientation < 225) {
+                Log.d(TAG, "反向竖屏");
+                if (screenOrientation != ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+                }
+            }
+        }
     }
 
 }
