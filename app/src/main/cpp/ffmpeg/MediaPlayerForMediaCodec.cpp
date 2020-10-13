@@ -483,8 +483,8 @@ namespace alexander_media_mediacodec {
         runOneTime = true;
         isFrameByFrameMode = false;
         onlyDownloadNotPlayback = false;
-        needToDownload = false;
         isInitSuccess = false;
+        needToDownload = false;
     }
 
     void initAudio() {
@@ -2095,62 +2095,45 @@ namespace alexander_media_mediacodec {
                 }
             }// 文件已读完
 
+            if (srcAVPacket->data == nullptr) {
+                continue;
+            }
+
             // 关键帧的判断
             /*if (srcAVPacket->flags & AV_PKT_FLAG_KEY) {
                 LOGI("read a key frame");
             }*/
 
-            if (srcAVPacket->data == nullptr) {
+            Wrapper *wrapper = nullptr;
+            if (srcAVPacket->stream_index == audioWrapper->father->streamIndex) {
+                wrapper = audioWrapper->father;
+            } else if (srcAVPacket->stream_index == videoWrapper->father->streamIndex) {
+                wrapper = videoWrapper->father;
+            }
+
+            if (wrapper == nullptr) {
                 continue;
             }
 
-            if (srcAVPacket->stream_index == audioWrapper->father->streamIndex) {
-                if (needToDownload && isInitSuccess) {
-                    downloadImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
-                }
-                if (!onlyDownloadNotPlayback) {
-                    if (audioWrapper->father->useMediaCodec) {
-                        readFrame = av_bsf_send_packet(audioWrapper->father->avbsfContext,
-                                                       srcAVPacket);
-                        if (readFrame < 0) {
-                            LOGE("readData() audio av_bsf_send_packet failure\n");
-                            break;
-                        }
-
-                        while (av_bsf_receive_packet(
-                                audioWrapper->father->avbsfContext, srcAVPacket) == 0) {
-                            readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
-                        }
-                    } else {
-                        readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
-                    }
-                }
-            } else if (srcAVPacket->stream_index == videoWrapper->father->streamIndex) {
-                if (needToDownload && isInitSuccess) {
-                    downloadImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
-                }
-                if (!onlyDownloadNotPlayback) {
-                    if (videoWrapper->father->useMediaCodec) {
-                        readFrame = av_bsf_send_packet(videoWrapper->father->avbsfContext,
-                                                       srcAVPacket);
-                        if (readFrame < 0) {
-                            LOGE("readData() video av_bsf_send_packet failure\n");
-                            break;
-                        }
-
-                        while (av_bsf_receive_packet(
-                                videoWrapper->father->avbsfContext, srcAVPacket) == 0) {
-                            readDataImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
-                        }
-                    } else {
-                        readDataImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
-                    }
+            if (isInitSuccess && needToDownload) {
+                downloadImpl(wrapper, srcAVPacket, copyAVPacket);
+                if (onlyDownloadNotPlayback) {
+                    av_packet_unref(srcAVPacket);
+                    continue;
                 }
             }
-
-            if (onlyDownloadNotPlayback) {
-                av_packet_unref(srcAVPacket);
+            if (wrapper->useMediaCodec) {
+                readFrame = av_bsf_send_packet(wrapper->avbsfContext, srcAVPacket);
+                if (readFrame < 0) {
+                    LOGE("readData() video av_bsf_send_packet failure\n");
+                    break;
+                }
+                while (av_bsf_receive_packet(wrapper->avbsfContext, srcAVPacket) == 0) {
+                    readDataImpl(wrapper, srcAVPacket, copyAVPacket);
+                }
+                continue;
             }
+            readDataImpl(wrapper, srcAVPacket, copyAVPacket);
         }// for(;;) end
         LOGF("%s\n", "readData() end");
 
