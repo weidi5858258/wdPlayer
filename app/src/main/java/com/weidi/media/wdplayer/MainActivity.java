@@ -33,6 +33,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
+    public static final String PLAYERSERVICE =
+            "com.weidi.media.wdplayer.video_player.PlayerService";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         overridePendingTransition(
@@ -161,7 +164,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 申请浮窗权限
-            if (!isRunService(this, "com.weidi.media.wdplayer.video_player.PlayerService")) {
+            if (!isRunService(this, PLAYERSERVICE)) {
                 if (!Settings.canDrawOverlays(this)) {
                     Intent intent = new Intent(
                             Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

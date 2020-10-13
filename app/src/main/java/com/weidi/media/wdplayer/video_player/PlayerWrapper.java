@@ -1017,6 +1017,16 @@ public class PlayerWrapper {
             mSimpleVideoPlayer.setCallback(mFFMPEGPlayer.mCallback);
         }
 
+        /*new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                return null;
+            }
+            @Override
+            protected void onPostExecute(Void result) {
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);*/
+
         // 开启线程初始化ffmpeg
         ThreadPool.getFixedThreadPool().execute(new Runnable() {
             @Override
@@ -2462,7 +2472,7 @@ public class PlayerWrapper {
             if (f == null) {
                 continue;
             }
-            Log.i(TAG, "Environment.MEDIA_SHARED    : " + f.getAbsolutePath());
+            Log.i(TAG, "Environment.MEDIA_SHARED: " + f.getAbsolutePath());
             file = f;
         }
         if (file != null) {
@@ -2476,9 +2486,59 @@ public class PlayerWrapper {
                 Log.i(TAG, "loadContents() end");
                 return;
             }
+
+            if (copyFile(file)) {
+                loadContents();
+            }
         }
 
         Log.i(TAG, "loadContents() end");
+    }
+
+    private boolean copyFile(File targetFile) {
+        try {
+            // 遍历该目录下的文件和文件夹
+            String[] listFiles = mContext.getAssets().list("");
+            if (listFiles == null) {
+                return false;
+            }
+            boolean isSuccess = false;
+            // 判断目录是文件还是文件夹，这里只好用.做区分了
+            for (String path : listFiles) {
+                if (TextUtils.isEmpty(path)) {
+                    continue;
+                }
+                File file = new File(path);
+                String filePath = file.getAbsolutePath();
+                // /contents.txt
+                // /hw_pc_white_apps.xml
+                // /wifipro_regexlist.xml
+                Log.i(TAG, "getAssets               : " + filePath);
+                if (file.isFile()) {
+                    if (file.getAbsolutePath().contains("contents.")) {
+                        InputStream is = mContext.getAssets().open(filePath);
+                        FileOutputStream fos = new FileOutputStream(targetFile);
+                        byte[] buffer = new byte[2048];
+                        int byteCount = 0;
+                        while ((byteCount = is.read(buffer)) != -1) {
+                            fos.write(buffer, 0, byteCount);
+                        }
+                        fos.flush();
+                        is.close();
+                        fos.close();
+                        isSuccess = true;
+                        break;
+                    }
+                } else if (file.isDirectory()) {
+                }
+            }
+            if (isSuccess) {
+                return true;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     private void readContents(File file) {

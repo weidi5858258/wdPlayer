@@ -1,10 +1,12 @@
 package com.weidi.media.wdplayer.video_player;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.net.Uri;
@@ -26,18 +28,16 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.weidi.eventbus.EventBusUtils;
+import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.utils.PermissionsUtils;
+
+import static com.weidi.media.wdplayer.MainActivity.PLAYERSERVICE;
 
 /***
 
  */
 public class JniPlayerActivity extends Activity {
-
-    /*private static final String TAG =
-            JniPlayerActivity.class.getSimpleName();*/
-    private static final String TAG = "player_alexander";
-    private static final boolean DEBUG = true;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -146,17 +146,11 @@ public class JniPlayerActivity extends Activity {
             }
 
             if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                /*if (mPlayerWrapper != null) {
-                    mPlayerWrapper.handleLandscapeScreen(0);
-                }*/
                 EventBusUtils.post(
                         PlayerService.class,
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
-                /*if (mPlayerWrapper != null) {
-                    mPlayerWrapper.handlePortraitScreen();
-                }*/
                 EventBusUtils.post(
                         PlayerService.class,
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
@@ -210,33 +204,25 @@ public class JniPlayerActivity extends Activity {
 
     ///////////////////////////////////////////////////////////////////////
 
+    private static final String TAG = "player_alexander";
+    private static final boolean DEBUG = true;
+
     public static final String CONTENT_PATH = "content_path";
     public static final String COMMAND_NO_FINISH = "command_no_finish";
 
     public static boolean isAliveJniPlayerActivity = false;
 
-    private PlayerWrapper mPlayerWrapper;
     private String mPath;
-
-    public SurfaceView mSurfaceView;
-    public LinearLayout mControllerPanelLayout;
-    public ProgressBar mLoadingView;
-    public SeekBar mProgressBar;
-    public TextView mFileNameTV;
-    public TextView mProgressTimeTV;
-    public TextView mDurationTimeTV;
-    public ImageButton mPreviousIB;
-    public ImageButton mPlayIB;
-    public ImageButton mPauseIB;
-    public ImageButton mNextIB;
-
-    // 跟气泡相关
-    private LayoutInflater mLayoutInflater;
-    private View mBubbleView;
-    // 气泡上显示时间
-    private TextView mShowTimeTV;
+    private String mType;
     private boolean noFinish;
     private OrientationListener myOrientationListener;
+
+    private static final String[] REQUIRED_PERMISSIONS = {
+            android.Manifest.permission.READ_PHONE_STATE,
+
+            android.Manifest.permission.READ_EXTERNAL_STORAGE,
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
 
     public static boolean isRunService(Context context, String serviceName) {
         ActivityManager manager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
@@ -259,7 +245,7 @@ public class JniPlayerActivity extends Activity {
             myOrientationListener.enable();
         }*/
 
-        Intent intent = getIntent();
+        final Intent intent = getIntent();
         // 为flase时表示从外部打开一个视频进行播放.为true时只是使用Activity的全屏特性(在本应用打开).
         noFinish = intent.getBooleanExtra(COMMAND_NO_FINISH, false);
 
@@ -274,15 +260,6 @@ public class JniPlayerActivity extends Activity {
             }
         }
         setContentView(R.layout.transparent_layout);
-        /*findViewById(R.id.transparent_layout).setOnLongClickListener(
-                new View.OnLongClickListener() {
-                    @Override
-                    public boolean onLongClick(View v) {
-                        MyToast.show("finish Activity");
-                        finish();
-                        return false;
-                    }
-                });*/
 
         if (noFinish) {
             return;
@@ -290,7 +267,6 @@ public class JniPlayerActivity extends Activity {
 
         // 在本应用开启当前Activity时能得到这个路径,从其他应用打开时为null
         mPath = intent.getStringExtra(CONTENT_PATH);
-        String type = null;
         if (TextUtils.isEmpty(mPath)) {
             Log.d(TAG, "internalCreate()  mPath: null");
             /***
@@ -330,77 +306,57 @@ public class JniPlayerActivity extends Activity {
                     mPath = mPath.replace(":", "/");
                 }
                 // /storage/37C8-3904/myfiles/video/
-
                 Log.d(TAG, "internalCreate() mPath2: " + mPath);
-                if (TextUtils.isEmpty(mPath)) {
-                    finish();
-                    return;
-                }
+            }
+            if (TextUtils.isEmpty(mPath)) {
+                finish();
+                return;
             }
             // video/mp4
             // audio/mpeg audio/quicktime(flac) audio/x-ms-wma(wma) audio/x-wav(wav)
             // audio/amr(amr) audio/mp3
-            type = intent.getType();
-            Log.d(TAG, "internalCreate()   type: " + type);
-            if (TextUtils.isEmpty(type)
-                    || (!type.startsWith("video/")
-                    && !type.startsWith("audio/"))) {
+            mType = intent.getType();
+            Log.d(TAG, "internalCreate()   type: " + mType);
+            if (TextUtils.isEmpty(mType)
+                    || (!mType.startsWith("video/")
+                    && !mType.startsWith("audio/"))) {
                 finish();
                 return;
             }
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (!isRunService(this,
-                    "com.weidi.usefragments.business.video_player.PlayerService")) {
-                Log.d(TAG, "internalCreate() PlayerService is not alive");
-                if (!Settings.canDrawOverlays(this)) {
-                    Log.d(TAG, "internalCreate() startActivityForResult");
-                    intent = new Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:" + getPackageName()));
-                    startActivityForResult(intent, 0);
-                } else {
-                    Log.d(TAG, "internalCreate() start PlayerService");
-                    intent = new Intent();
-                    intent.setClass(this, PlayerService.class);
-                    intent.setAction(PlayerService.COMMAND_ACTION);
-                    intent.putExtra(PlayerService.COMMAND_PATH, mPath);
-                    intent.putExtra(PlayerService.COMMAND_TYPE, type);
-                    intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_SHOW_WINDOW);
-                    startService(intent);
-                }
-            } else {
-                Log.d(TAG, "internalCreate() PlayerService is alive");
-                //FFMPEG.getDefault().setMode(FFMPEG.USE_MODE_MEDIA);
-                EventBusUtils.post(
-                        PlayerService.class,
-                        PlayerService.COMMAND_SHOW_WINDOW,
-                        new Object[]{mPath, intent.getType()});
+            if (mPath.startsWith("/storage/")) {
+                // 申请存储权限
+                PermissionsUtils.checkAndRequestPermission(
+                        new PermissionsUtils.IRequestPermissionsResult() {
+                            @Override
+                            public Activity getRequiredActivity() {
+                                return JniPlayerActivity.this;
+                            }
+
+                            @Override
+                            public String[] getRequiredPermissions() {
+                                return REQUIRED_PERMISSIONS;
+                            }
+
+                            @Override
+                            public void onRequestPermissionsResult() {
+                                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                                        == PackageManager.PERMISSION_GRANTED) {
+                                    doSomething(intent);
+                                }
+                                finish();
+                            }
+                        });
             }
+
+            return;
         }
 
+        doSomething(intent);
+
         finish();
-
-        // Volume change should always affect media volume_normal
-        /*setVolumeControlStream(AudioManager.STREAM_MUSIC);*/
-
-        /*mSurfaceView = findViewById(R.id.surfaceView);
-        mControllerPanelLayout = findViewById(R.id.controller_panel_layout);
-        mLoadingView = findViewById(R.id.loading_view);
-        mProgressBar = findViewById(R.id.progress_bar);
-        mFileNameTV = findViewById(R.id.file_name_tv);
-        mProgressTimeTV = findViewById(R.id.progress_time_tv);
-        mDurationTimeTV = findViewById(R.id.duration_time_tv);
-        mPreviousIB = findViewById(R.id.button_prev);
-        mPlayIB = findViewById(R.id.button_play);
-        mPauseIB = findViewById(R.id.button_pause);
-        mNextIB = findViewById(R.id.button_next);
-
-        mPlayerWrapper = new PlayerWrapper();
-        mPlayerWrapper.setActivity(this, null);
-        mPlayerWrapper.setPath(mPath);
-        mPlayerWrapper.onCreate();*/
     }
 
     private void internalStart() {
@@ -408,22 +364,15 @@ public class JniPlayerActivity extends Activity {
     }
 
     private void internalResume() {
-        if (mPlayerWrapper != null) {
-            mPlayerWrapper.onResume();
-        }
+
     }
 
     private void internalPause() {
-        if (mPlayerWrapper != null) {
-            mPlayerWrapper.onPause();
-            finish();
-        }
+
     }
 
     private void internalStop() {
-        if (mPlayerWrapper != null) {
-            mPlayerWrapper.onStop();
-        }
+
     }
 
     private void internalDestroy() {
@@ -445,12 +394,27 @@ public class JniPlayerActivity extends Activity {
             setFullscreen(true, true);
         }
 
-        if (mPlayerWrapper != null) {
-            mPlayerWrapper.onDestroy();
-        }
-
         if (myOrientationListener != null) {
             myOrientationListener.disable();
+        }
+    }
+
+    private void doSomething(Intent intent) {
+        if (!isRunService(this, PLAYERSERVICE)) {
+            Log.d(TAG, "internalCreate() PlayerService is not alive");
+            intent = new Intent();
+            intent.setClass(this, PlayerService.class);
+            intent.setAction(PlayerService.COMMAND_ACTION);
+            intent.putExtra(PlayerService.COMMAND_PATH, mPath);
+            intent.putExtra(PlayerService.COMMAND_TYPE, mType);
+            intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_SHOW_WINDOW);
+            startService(intent);
+        } else {
+            Log.d(TAG, "internalCreate() PlayerService is alive");
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_SHOW_WINDOW,
+                    new Object[]{mPath, intent.getType()});
         }
     }
 
