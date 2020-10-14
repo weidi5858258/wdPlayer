@@ -233,6 +233,10 @@ public class PlayerWrapper {
         mService = playerService;
         mContext = playerService.getApplicationContext();
 
+        if (mSP == null) {
+            mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        }
+
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         mWindowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
@@ -294,10 +298,6 @@ public class PlayerWrapper {
         textInfoScrollView = mRootView.findViewById(R.id.text_scrollview);
         textInfoTV = mRootView.findViewById(R.id.text_info_tv);
 
-        if (mSP == null) {
-            mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        }
-
         mSurfaceView.setOnClickListener(mOnClickListener);
         mPreviousIB.setOnClickListener(mOnClickListener);
         mPlayIB.setOnClickListener(mOnClickListener);
@@ -307,6 +307,8 @@ public class PlayerWrapper {
         mDownloadTV.setOnClickListener(mOnClickListener);
         mVolumeNormal.setOnClickListener(mOnClickListener);
         mVolumeMute.setOnClickListener(mOnClickListener);
+
+        onCreate();
     }
 
     /*if (newPath.startsWith("http://")
@@ -338,15 +340,8 @@ public class PlayerWrapper {
         mType = type;
     }
 
-    public Handler getUiHandler() {
-        return mUiHandler;
-    }
-
-    public void onCreate() {
+    private void onCreate() {
         EventBusUtils.register(this);
-        if (mSP == null) {
-            mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        }
 
         mPathTimeMap.clear();
         mContentsMap.clear();
@@ -493,7 +488,7 @@ public class PlayerWrapper {
 
     // 调用之前,视频路径先设置好
     @SuppressLint("InvalidWakeLockTag")
-    public void onResume() {
+    private void onResume() {
         Log.i(TAG, "onResume()");
         if (mPowerWakeLock == null) {
             // When player view started,wake the lock.
@@ -512,14 +507,14 @@ public class PlayerWrapper {
         }
     }
 
-    public void onPause() {
+    private void onPause() {
         if (mPowerWakeLock != null && mPowerWakeLock.isHeld()) {
             mPowerWakeLock.release();
             mPowerWakeLock = null;
         }
     }
 
-    public void onStop() {
+    private void onStop() {
 
     }
 
@@ -535,7 +530,7 @@ public class PlayerWrapper {
         EventBusUtils.unregister(this);
     }
 
-    public void onRelease() {
+    private void onRelease() {
         if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
             if (mSimpleVideoPlayer != null) {
                 mSimpleVideoPlayer.release();

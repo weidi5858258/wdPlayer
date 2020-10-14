@@ -43,8 +43,8 @@ add_library(ffmpeg
 # 设置cpp目录路径
 set(CPP_DIR ${CMAKE_SOURCE_DIR}/src/main/cpp)
 
-# 设置jniLibs目录路径
-set(LIBS_DIR ${CMAKE_SOURCE_DIR}/src/main/jniLibs)
+# 设置jniLibs目录路径(jniLibs ---> nativeLibs)
+set(LIBS_DIR ${CMAKE_SOURCE_DIR}/src/main/nativeLibs)
 
 # 设置CPU目录
 # armeabi

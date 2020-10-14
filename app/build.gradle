@@ -19,9 +19,12 @@ android {
                         //"-DANDROID_STL=c++_static",// 需要使用到std::to_string()这个函数
                         "-DANDROID_TOOLCHAIN=gcc",
                         "-DANDROID_ARM_MODE=arm"
+                // 使用下面这种方式时,加载so出错
+                // abiFilters 'armeabi-v7a'//, 'x86', 'x86_64', 'arm64-v8a'
             }
+            // jniLibs ---> nativeLibs
             ndk {
-                abiFilters 'armeabi-v7a'
+                abiFilters 'armeabi-v7a'//, 'x86', 'x86_64', 'arm64-v8a'
             }
         }
         signingConfig signingConfigs.debug
@@ -58,6 +61,7 @@ android {
         debug {
             minifyEnabled false
             signingConfig signingConfigs.debug
+            jniDebuggable true
         }
         release {
             minifyEnabled false
@@ -73,15 +77,15 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    implementation 'com.google.android.support:wearable:2.5.0'
+    implementation 'com.google.android.support:wearable:2.8.1'
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
 
     implementation 'androidx.wear:wear:1.0.0'
-    compileOnly 'com.google.android.wearable:wearable:2.5.0'
+    compileOnly 'com.google.android.wearable:wearable:2.8.1'
 
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
     implementation project(":weidi_library")
 }

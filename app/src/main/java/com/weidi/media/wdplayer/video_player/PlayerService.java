@@ -352,7 +352,6 @@ public class PlayerService extends Service {
             mPlayerWrapper = new PlayerWrapper();
         }
         mPlayerWrapper.setService(this);
-        mPlayerWrapper.onCreate();
     }
 
     /////////////////////////////////////////////////////////////////
