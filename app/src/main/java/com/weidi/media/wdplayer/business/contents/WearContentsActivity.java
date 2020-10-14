@@ -8,7 +8,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v7.widget.RecyclerView;
-import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -25,6 +24,8 @@ import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import androidx.wear.activity.ConfirmationActivity;
+
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
@@ -33,12 +34,12 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
-public class WearContentsActivity extends WearableActivity {
+public class WearContentsActivity extends ConfirmationActivity {
 
     private static final String TAG = "ContentsActivity";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         overridePendingTransition(
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
@@ -47,7 +48,7 @@ public class WearContentsActivity extends WearableActivity {
         setContentView(R.layout.contents_layout);
 
         // Enables Always-on
-        setAmbientEnabled();
+        // setAmbientEnabled();
 
         internalCreate(savedInstanceState);
     }

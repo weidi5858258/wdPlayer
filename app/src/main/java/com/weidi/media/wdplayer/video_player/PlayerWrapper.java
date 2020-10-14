@@ -106,9 +106,12 @@ public class PlayerWrapper {
 
     private static final String TAG = "player_alexander";
 
-    public static final boolean IS_HIKEY970 = false;
+    public static boolean IS_PHONE = false;
+    public static boolean IS_WATCH = false;
+    public static boolean IS_TV = false;
+    public static boolean IS_HIKEY970 = false;
 
-    public static final int PLAYBACK_PROGRESS_UPDATED = 200;
+    private static final int PLAYBACK_PROGRESS_UPDATED = 200;
     private static final int MSG_ON_PROGRESS_UPDATED = 10;
     private static final int MSG_START_PLAYBACK = 11;
     private static final int MSG_SEEK_TO_ADD = 12;
@@ -247,6 +250,23 @@ public class PlayerWrapper {
                 (UiModeManager) mContext.getSystemService(Context.UI_MODE_SERVICE);
         whatIsDevice = uiModeManager.getCurrentModeType();
         Log.i(TAG, "setService() whatIsDevice: " + whatIsDevice);
+        IS_PHONE = false;
+        IS_WATCH = false;
+        IS_TV = false;
+        switch (whatIsDevice) {
+            case Configuration.UI_MODE_TYPE_NORMAL:
+                IS_PHONE = true;
+                break;
+            case Configuration.UI_MODE_TYPE_WATCH:
+                IS_WATCH = true;
+                break;
+            case Configuration.UI_MODE_TYPE_TELEVISION:
+                IS_TV = true;
+                break;
+            default:
+                IS_PHONE = true;
+                break;
+        }
 
         LayoutInflater inflater =
                 (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -626,10 +646,13 @@ public class PlayerWrapper {
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_PLAYED");
                 mPlayIB.setVisibility(View.VISIBLE);
                 mPauseIB.setVisibility(View.GONE);
-                if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                if (!IS_WATCH) {
                     mLoadingView.setVisibility(View.GONE);
                 } else {
-                    MyToast.show("Play");
+                    if (TextUtils.isEmpty(mType)
+                            || mType.startsWith("video/")) {
+                        MyToast.show("Play");
+                    }
                 }
                 break;
             case Callback.MSG_ON_TRANSACT_PAUSED:
@@ -637,10 +660,13 @@ public class PlayerWrapper {
                 //mPlayIB.setVisibility(View.GONE);
                 //mPauseIB.setVisibility(View.VISIBLE);
                 if (!mIsLocal) {
-                    if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                    if (!IS_WATCH) {
                         mLoadingView.setVisibility(View.VISIBLE);
                     } else {
-                        MyToast.show("Pause");
+                        if (TextUtils.isEmpty(mType)
+                                || mType.startsWith("video/")) {
+                            MyToast.show("Pause");
+                        }
                     }
                 }
                 break;
@@ -1356,9 +1382,9 @@ public class PlayerWrapper {
         if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
             String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
             y = Integer.parseInt(positions[1]);
-            if (whatIsDevice == Configuration.UI_MODE_TYPE_WATCH) {
+            /*if (IS_WATCH) {
                 y = 65;
-            }
+            }*/
         }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW x: " + x + " y: " + y);
 
@@ -1721,7 +1747,7 @@ public class PlayerWrapper {
         if (TextUtils.isEmpty(mType)
                 || mType.startsWith("video/")) {
             if (!mIsLocal) {
-                if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                if (!IS_WATCH) {
                     mLoadingView.setVisibility(View.VISIBLE);
                 }
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
@@ -1768,9 +1794,14 @@ public class PlayerWrapper {
         } else {
             title = mContentsMap.get(mCurPath);
         }
-        if (!TextUtils.isEmpty(title)
-                && whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
-            mFileNameTV.setText(title);
+        if (!TextUtils.isEmpty(title)) {
+            if (!IS_WATCH) {
+                mFileNameTV.setText(title);
+            } else {
+                if (!TextUtils.isEmpty(mType) && mType.startsWith("audio/")) {
+                    mFileNameTV.setText(title);
+                }
+            }
         } else {
             mFileNameTV.setText("");
         }
@@ -1835,21 +1866,23 @@ public class PlayerWrapper {
             edit.commit();
         }
 
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_NORMAL
-                && mContext.getResources().getConfiguration().orientation
-                == Configuration.ORIENTATION_PORTRAIT) {
+        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
+                && IS_PHONE) {
             // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 手机");
             // 手机并且竖屏
             handlePortraitScreen();
         } else {
             // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 电视机");
-            if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+            if (IS_WATCH) {
+                if (TextUtils.isEmpty(mType)
+                        || mType.startsWith("video/")) {
+                    handleLandscapeScreen(0);
+                } else {
+                    handlePortraitScreen();
+                }
+            } else {
                 handleScreenFlag = 1;
                 handlePortraitScreenWithTV();
-            } else {
-                // 手表
-                // handlePortraitScreen();
-                handleLandscapeScreen(0);
             }
         }
     }
@@ -2362,7 +2395,7 @@ public class PlayerWrapper {
         if (mFFMPEGPlayer == null) {
             return;
         }
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_WATCH) {
+        if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseVideo, null);
             return;
         }

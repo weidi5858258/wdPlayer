@@ -476,9 +476,14 @@ http://youku1.dianfubang.com/20190222/JK8mJKS5/2000kb/hls/index.m3u8@@@@@@@@@@5
 http://youku1.dianfubang.com/20190602/BgPUCxWc/index.m3u8@@@@@@@@@@6
 /////////////////////////////////////////////////////////////////
 
+#Ubuntu --> 大屏手机
 #adb push /root/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/1532-48AD/Android/data/com.weidi.media.wdplayer/files/shared/
-
+#Ubuntu --> 手表
+#adb push /root/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/
+#黑苹果 ---> 大屏手机
 #adb push /Users/alexander/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/1532-48AD/Android/data/com.weidi.usefragments/files/shared/
+#黑苹果 ---> 手表
+#adb push /Users/alexander/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/
 
 #adb push /root/mydev/workspace_github/myfiles/android/contents.txt /storage/1532-48AD/Android/data/com.weidi.usefragments/files/shared/
 

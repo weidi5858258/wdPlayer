@@ -5,7 +5,7 @@
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/dark_grey"
+    android:background="@color/timetimepicker_default_text_color"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context=".WearMainActivity"
     tools:deviceIds="wear">

@@ -12,7 +12,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.support.wearable.activity.WearableActivity;
+//import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.View;
 
@@ -20,21 +20,23 @@ import com.weidi.media.wdplayer.business.contents.ContentsActivity;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
+import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.utils.MyToast;
 
 import java.io.File;
 
 import androidx.annotation.NonNull;
+import androidx.wear.activity.ConfirmationActivity;
 
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
-public class WearMainActivity extends WearableActivity {
+public class WearMainActivity extends ConfirmationActivity {
 
 
     private static final String TAG = "MainActivity";
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         overridePendingTransition(
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
@@ -43,7 +45,7 @@ public class WearMainActivity extends WearableActivity {
         setContentView(R.layout.activity_main);
 
         // Enables Always-on
-        setAmbientEnabled();
+        // setAmbientEnabled();
 
         internalCreate(savedInstanceState);
     }
@@ -120,10 +122,14 @@ public class WearMainActivity extends WearableActivity {
                         startActivity(new Intent(WearMainActivity.this, ContentsActivity.class));
                         break;
                     case 3:
-                        Intent intent = new Intent();
-                        intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
-                        intent.setClass(WearMainActivity.this, JniPlayerActivity.class);
-                        startActivity(intent);
+                        if (!PlayerWrapper.IS_WATCH) {
+                            Intent intent = new Intent();
+                            intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
+                            intent.setClass(WearMainActivity.this, JniPlayerActivity.class);
+                            startActivity(intent);
+                        } else {
+                            finish();
+                        }
                         break;
                     case 4:
                         finish();
