@@ -220,6 +220,9 @@ public class MainActivity extends AppCompatActivity {
 
          DIRECTORY_NOTIFICATIONS:
          /storage/emulated/0/Android/data/com.weidi.usefragments/files/Notifications
+
+         getExternalMediaDirs();
+         /storage/emulated/0/Android/media/com.weidi.media.wdplayer
          */
 
         File file = null;

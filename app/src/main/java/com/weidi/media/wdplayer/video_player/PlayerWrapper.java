@@ -1,11 +1,13 @@
 package com.weidi.media.wdplayer.video_player;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Service;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.PixelFormat;
@@ -224,6 +226,8 @@ public class PlayerWrapper {
 
     // 第一个存储视频地址,第二个存储标题
     public static final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
+    public static LinkedHashMap<String, String> mLocalVideoContentsMap;
+    public static LinkedHashMap<String, String> mLocalAudioContentsMap;
 
     // 必须首先被调用
     public void setService(Service service) {
@@ -2511,16 +2515,61 @@ public class PlayerWrapper {
             file = new File(sb.toString());
             if (file.exists()) {
                 readContents(file);
-                Log.i(TAG, "loadContents() end");
-                return;
+                //Log.i(TAG, "loadContents() end");
+                //return;
+            } else {
+                if (copyFile(file)) {
+                    loadContents();
+                    return;
+                }
             }
+        }
 
-            if (copyFile(file)) {
-                loadContents();
+        if (IS_WATCH) {
+            PackageManager packageManager = mContext.getPackageManager();
+            if (PackageManager.PERMISSION_GRANTED == packageManager.checkPermission(
+                    Manifest.permission.READ_EXTERNAL_STORAGE, mContext.getPackageName())) {
+                mLocalVideoContentsMap = new LinkedHashMap();
+                mLocalAudioContentsMap = new LinkedHashMap();
+                // Alarms  DCIM      Download Music         Pictures Ringtones
+                // Android Documents Movies   Notifications Podcasts
+                // /storage/emulated/0/Movies/
+                file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+                saveLocalFile("video", file);
+                // /storage/emulated/0/Music/
+                file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+                saveLocalFile("audio", file);
             }
         }
 
         Log.i(TAG, "loadContents() end");
+    }
+
+    private void saveLocalFile(String type, File file) {
+        // path: /storage/emulated/0/Movies/SONY_CM_EXTRA_BASS_dance.mp4
+        // name: SONY_CM_EXTRA_BASS_dance.mp4
+        if (file != null) {
+            File[] files = file.listFiles();
+            if (files != null && files.length > 0) {
+                String path;
+                String name;
+                for (File f : files) {
+                    if (f == null) {
+                        continue;
+                    }
+                    if (f.isFile()) {
+                        path = f.getAbsolutePath();
+                        name = path.substring(path.lastIndexOf("/") + 1);
+                        //Log.i(TAG, "path: " + path + " name: " + name);
+                        if (TextUtils.equals("video", type)) {
+                            mLocalVideoContentsMap.put(path, name);
+                        } else if (TextUtils.equals("audio", type)) {
+                            mLocalAudioContentsMap.put(path, name);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private boolean copyFile(File targetFile) {

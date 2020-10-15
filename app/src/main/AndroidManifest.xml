@@ -80,6 +80,14 @@
             android:name="com.weidi.media.wdplayer.business.contents.LiveActivityForWear"
             android:screenOrientation="landscape"/>
 
+        <activity
+            android:name="com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name="com.weidi.media.wdplayer.business.contents.LocalVideoActivityForWear"
+            android:screenOrientation="landscape"/>
+
         <service
             android:name=".video_player.PlayerService"
             android:exported="true"

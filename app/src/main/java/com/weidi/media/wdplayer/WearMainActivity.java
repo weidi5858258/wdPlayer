@@ -15,6 +15,8 @@ import android.util.Log;
 import android.view.View;
 
 import com.weidi.media.wdplayer.business.contents.LiveActivityForWear;
+import com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear;
+import com.weidi.media.wdplayer.business.contents.LocalVideoActivityForWear;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.utils.MyToast;
 
@@ -134,8 +136,8 @@ public class WearMainActivity extends WearableActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 //super.handleMessage(msg);
-                if (clickCounts > 4) {
-                    clickCounts = 4;
+                if (clickCounts > 5) {
+                    clickCounts = 5;
                 }
                 switch (clickCounts) {
                     case 1:
@@ -146,10 +148,16 @@ public class WearMainActivity extends WearableActivity {
                                 new Intent(WearMainActivity.this, LiveActivityForWear.class));
                         break;
                     case 3:
-                        // 本地视频或音乐
-
+                        // 本地音乐
+                        startActivity(
+                                new Intent(WearMainActivity.this, LocalAudioActivityForWear.class));
                         break;
                     case 4:
+                        // 本地视频
+                        startActivity(
+                                new Intent(WearMainActivity.this, LocalVideoActivityForWear.class));
+                        break;
+                    case 5:
                         finish();
                         break;
                     default:
