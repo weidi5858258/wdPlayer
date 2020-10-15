@@ -29,7 +29,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!--需要注释的地方: 1-->
-    <!--<uses-feature android:name="android.hardware.type.watch" />-->
+    <uses-feature android:name="android.hardware.type.watch" />
 
     <application
         android:name=".MyApplication"
@@ -42,7 +42,7 @@
         android:usesCleartextTraffic="true">
 
         <!--需要注释的地方: 2-->
-        <!--<uses-library
+        <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
         <meta-data
@@ -58,26 +58,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_GALLERY" />
             </intent-filter>
-        </activity>-->
+        </activity>
 
         <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
-            <intent-filter>
+            <!--<intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_GALLERY" />
-            </intent-filter>
+            </intent-filter>-->
         </activity>
 
         <activity
-            android:name="com.weidi.media.wdplayer.business.contents.ContentsActivity"
+            android:name="com.weidi.media.wdplayer.business.contents.LiveActivity"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"/>
 
         <activity
-            android:name="com.weidi.media.wdplayer.business.contents.WearContentsActivity"
+            android:name="com.weidi.media.wdplayer.business.contents.LiveActivityForWear"
             android:screenOrientation="landscape"/>
 
         <service

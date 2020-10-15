@@ -2,7 +2,6 @@ package com.weidi.media.wdplayer;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.media.MediaFormat;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -10,30 +9,27 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.os.PowerManager;
 import android.provider.Settings;
-//import android.support.wearable.activity.WearableActivity;
+import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.View;
 
-import com.weidi.media.wdplayer.business.contents.ContentsActivity;
-import com.weidi.media.wdplayer.util.MediaUtils;
-import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
+import com.weidi.media.wdplayer.business.contents.LiveActivityForWear;
 import com.weidi.media.wdplayer.video_player.PlayerService;
-import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.utils.MyToast;
 
 import java.io.File;
 
 import androidx.annotation.NonNull;
-import androidx.wear.activity.ConfirmationActivity;
 
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
-public class WearMainActivity extends ConfirmationActivity {
+//import android.support.wearable.activity.WearableActivity;
+
+public class WearMainActivity extends WearableActivity {
 
 
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "WearMainActivity";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,13 +37,20 @@ public class WearMainActivity extends ConfirmationActivity {
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate()");
 
         setContentView(R.layout.activity_main);
 
         // Enables Always-on
-        // setAmbientEnabled();
+        setAmbientEnabled();
 
         internalCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.i(TAG, "onResume()");
     }
 
     @Override
@@ -89,18 +92,37 @@ public class WearMainActivity extends ConfirmationActivity {
                 if (Settings.canDrawOverlays(this)) {
                     startService(new Intent(this, PlayerService.class));
                 }
-
-                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-                boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
-                // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
-                if (!hasIgnored) {
-                    Intent intent =
-                            new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                    intent.setData(Uri.parse("package:" + getPackageName()));
-                    startActivity(intent);
-                }
             }
         }
+    }
+
+    /***
+     进入待机的情况，在一定时间内没有接受到其他指令.应用退出不会被执行.
+     */
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+        Log.i(TAG, "onEnterAmbient()");
+    }
+
+    /***
+     只要应用运行情况下每一分钟（就是手表分钟发生变化）触发.
+     */
+    public void onUpdateAmbient() {
+        super.onUpdateAmbient();
+        Log.i(TAG, "onUpdateAmbient()");
+    }
+
+    /***
+     再次收到指令，并且被唤醒，类似手机被唤醒.第一次进入应用的时候 该方法不被执行.
+     */
+    public void onExitAmbient() {
+        super.onExitAmbient();
+        Log.i(TAG, "onExitAmbient()");
+    }
+
+    public void onInvalidateAmbientOffload() {
+        super.onInvalidateAmbientOffload();
+        Log.i(TAG, "onInvalidateAmbientOffload()");
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -119,17 +141,13 @@ public class WearMainActivity extends ConfirmationActivity {
                     case 1:
                         break;
                     case 2:
-                        startActivity(new Intent(WearMainActivity.this, ContentsActivity.class));
+                        // 直播类节目
+                        startActivity(
+                                new Intent(WearMainActivity.this, LiveActivityForWear.class));
                         break;
                     case 3:
-                        if (!PlayerWrapper.IS_WATCH) {
-                            Intent intent = new Intent();
-                            intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
-                            intent.setClass(WearMainActivity.this, JniPlayerActivity.class);
-                            startActivity(intent);
-                        } else {
-                            finish();
-                        }
+                        // 本地视频或音乐
+
                         break;
                     case 4:
                         finish();
@@ -160,14 +178,6 @@ public class WearMainActivity extends ConfirmationActivity {
         });
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-            boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
-            // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
-            if (!hasIgnored) {
-                Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-            }
             // 申请浮窗权限
             if (!isRunService(this, "com.weidi.media.wdplayer.video_player.PlayerService")) {
                 if (!Settings.canDrawOverlays(this)) {
@@ -273,7 +283,7 @@ public class WearMainActivity extends ConfirmationActivity {
             Log.i(TAG, "Environment.MEDIA_SHARED    : " + f.getAbsolutePath());
         }
 
-        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_RAW);
+        /*MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_RAW);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_MPEG);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AAC);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AC3);
@@ -283,6 +293,6 @@ public class WearMainActivity extends ConfirmationActivity {
         // 不支持
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_QCELP);
         MediaUtils.findAllDecodersByMime("audio/mpeg-L2");
-        MediaUtils.findAllDecodersByMime("audio/x-ms-wma");
+        MediaUtils.findAllDecodersByMime("audio/x-ms-wma");*/
     }
 }

@@ -16,7 +16,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 
-import com.weidi.media.wdplayer.business.contents.ContentsActivity;
+import com.weidi.media.wdplayer.business.contents.LiveActivity;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
@@ -126,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                     case 1:
                         break;
                     case 2:
-                        startActivity(new Intent(MainActivity.this, ContentsActivity.class));
+                        startActivity(new Intent(MainActivity.this, LiveActivity.class));
                         break;
                     case 3:
                         Intent intent = new Intent();

@@ -1,8 +1,10 @@
 package com.weidi.media.wdplayer.business.contents;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,15 +18,13 @@ import android.widget.EditText;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
-import com.weidi.recycler_view.VerticalLayoutManager;
-import com.weidi.utils.MyToast;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
+import com.weidi.recycler_view.VerticalLayoutManager;
+import com.weidi.utils.MyToast;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import androidx.wear.activity.ConfirmationActivity;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
@@ -34,23 +34,35 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
-public class WearContentsActivity extends ConfirmationActivity {
+public class LiveActivity extends Activity {
 
     private static final String TAG = "ContentsActivity";
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         overridePendingTransition(
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
+        // Volume change should always affect media volume_normal
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
         setContentView(R.layout.contents_layout);
 
-        // Enables Always-on
-        // setAmbientEnabled();
-
         internalCreate(savedInstanceState);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "onStart()");
+        internalStart();
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        Log.i(TAG, "onRestart()");
     }
 
     @Override
@@ -107,7 +119,7 @@ public class WearContentsActivity extends ConfirmationActivity {
     private SharedPreferences mPreferences;
     private int mContentsCount = 0;
     private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
-    private static final int ONE_TIME_ADD_COUNT = 20;
+    private static final int ONE_TIME_ADD_COUNT = 40;
     private static final int MSG_ON_CLICK_PLAYBACK_BUTTOM = 1;
     private int mClickCount = 0;
 
@@ -116,7 +128,7 @@ public class WearContentsActivity extends ConfirmationActivity {
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                WearContentsActivity.this.uiHandleMessage(msg);
+                LiveActivity.this.uiHandleMessage(msg);
             }
         };
 
@@ -128,9 +140,7 @@ public class WearContentsActivity extends ConfirmationActivity {
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
         }
-    }
 
-    private void internalResume() {
         if (!PlayerWrapper.mContentsMap.isEmpty()) {
             initAdapter();
             mRecyclerView.setLayoutManager(mLayoutManager);
@@ -140,7 +150,7 @@ public class WearContentsActivity extends ConfirmationActivity {
             MLog.d(TAG, "initView() PlayerWrapper.mContentsMap.size(): " +
                     PlayerWrapper.mContentsMap.size());
 
-            if (PlayerWrapper.mContentsMap.size() > 500) {
+            if (PlayerWrapper.mContentsMap.size() > 100) {
                 // 太多的先加载20个
                 mContentsMap.clear();
                 for (Map.Entry<String, String> tempMap : PlayerWrapper.mContentsMap.entrySet()) {
@@ -155,6 +165,14 @@ public class WearContentsActivity extends ConfirmationActivity {
                 mAdapter.setData(PlayerWrapper.mContentsMap);
             }
         }
+    }
+
+    private void internalStart() {
+
+    }
+
+    private void internalResume() {
+
     }
 
     private void internalDestroy() {
@@ -353,9 +371,9 @@ public class WearContentsActivity extends ConfirmationActivity {
                     switch (v.getId()) {
                         case R.id.playback_btn:
                             mClickCount++;
-
+                            MyToast.show(String.valueOf(mClickCount));
                             mUiHandler.removeMessages(MSG_ON_CLICK_PLAYBACK_BUTTOM);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 500);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 1000);
                             break;
                         case R.id.download_tv:
                             break;
