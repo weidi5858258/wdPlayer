@@ -2249,42 +2249,15 @@ namespace alexander_media_mediacodec {
                     /***
                      0.505212 0.517508 0.524924 0.531797 0.543092
                      */
-                    double step = -0.000500;
                     if (videoWrapper->father->useMediaCodec) {
-                        if (audioWrapper->father->useMediaCodec) {
-                            step = -0.105000;
-                        }
-
-                        if (averageTimeDiff > 0.590000) {
-                            TIME_DIFFERENCE = 0.299500 + step;
-                        } else if (averageTimeDiff > 0.580000 && averageTimeDiff < 0.590000) {
-                            TIME_DIFFERENCE = 0.299000 + step;
-                        } else if (averageTimeDiff > 0.570000 && averageTimeDiff < 0.580000) {
-                            TIME_DIFFERENCE = 0.298500 + step;
-                        } else if (averageTimeDiff > 0.560000 && averageTimeDiff < 0.570000) {
-                            TIME_DIFFERENCE = 0.298000 + step;
-                        } else if (averageTimeDiff > 0.550000 && averageTimeDiff < 0.560000) {
-                            TIME_DIFFERENCE = 0.297500 + step;
-                        } else if (averageTimeDiff > 0.540000 && averageTimeDiff < 0.550000) {
-                            TIME_DIFFERENCE = 0.297000 + step;
-                        } else if (averageTimeDiff > 0.530000 && averageTimeDiff < 0.540000) {
-                            TIME_DIFFERENCE = 0.296500 + step;
-                        } else if (averageTimeDiff > 0.520000 && averageTimeDiff < 0.530000) {
-                            TIME_DIFFERENCE = 0.296000 + step;
-                        } else if (averageTimeDiff > 0.510000 && averageTimeDiff < 0.520000) {
-                            TIME_DIFFERENCE = 0.295500 + step;
-                        } else if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.510000) {
-                            TIME_DIFFERENCE = 0.295000 + step;
-                        }
-
-                        //TIME_DIFFERENCE = 0.300000;
+                        TIME_DIFFERENCE = 0.300000;
                     } else {
                         TIME_DIFFERENCE = 0.400000;
                     }
                     needToGetResultAgain = false;
-                    /*if (audioWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    }*/
+                    if (audioWrapper->father->useMediaCodec) {
+                        TIME_DIFFERENCE = 0.500000;
+                    }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     /***
                      0.405114 0.418364 0.429602 0.439030 0.449823
@@ -2335,8 +2308,7 @@ namespace alexander_media_mediacodec {
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.050000;
-                        //TIME_DIFFERENCE = 0.300000;
+                        TIME_DIFFERENCE = 0.300000;
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
