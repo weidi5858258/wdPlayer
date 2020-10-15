@@ -229,6 +229,17 @@ public class PlayerWrapper {
     public static LinkedHashMap<String, String> mLocalVideoContentsMap;
     public static LinkedHashMap<String, String> mLocalAudioContentsMap;
 
+    public enum Shuffle {
+        Shuffle_On, Shuffle_Off
+    }
+
+    public enum Repeat {
+        Repeat_All, Repeat_One, Repeat_Off
+    }
+
+    private Shuffle mShuffle = Shuffle.Shuffle_Off;
+    private Repeat mRepeat = Repeat.Repeat_Off;
+
     // 必须首先被调用
     public void setService(Service service) {
         mService = null;
@@ -2725,6 +2736,13 @@ public class PlayerWrapper {
                 break;
             // 85 86 87 88 126 127 这些都是蓝牙耳机发出的事件
             case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:// 85
+                // 由LocalAudioActivityForWear发过来的
+                // objArray = new Object[]{Shuffle.Shuffle_On, Repeat.Repeat_All};
+                if (objArray == null || objArray.length <= 0) {
+                    return null;
+                }
+                mShuffle = (Shuffle) objArray[0];
+                mRepeat = (Repeat) objArray[1];
                 break;
             case KeyEvent.KEYCODE_MEDIA_STOP:// 86
                 break;

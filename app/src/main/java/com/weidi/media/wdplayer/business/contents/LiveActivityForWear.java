@@ -139,7 +139,7 @@ public class LiveActivityForWear extends WearableActivity {
             MLog.d(TAG, "initView() PlayerWrapper.mContentsMap.size(): " +
                     PlayerWrapper.mContentsMap.size());
 
-            if (PlayerWrapper.mContentsMap.size() > 500) {
+            if (PlayerWrapper.mContentsMap.size() > 60) {
                 // 太多的先加载20个
                 mContentsMap.clear();
                 for (Map.Entry<String, String> tempMap : PlayerWrapper.mContentsMap.entrySet()) {
@@ -208,6 +208,15 @@ public class LiveActivityForWear extends WearableActivity {
                     mClickCount = 3;
                 }
 
+                switch (mClickCount) {
+                    case 3:
+                        mClickCount = 0;
+                        finish();
+                        return;
+                    default:
+                        break;
+                }
+
                 String videoPlaybackPath = mAddressET.getText().toString().trim();
                 if (TextUtils.isEmpty(videoPlaybackPath)) {
                     videoPlaybackPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
@@ -243,9 +252,6 @@ public class LiveActivityForWear extends WearableActivity {
                                 break;
                             case 2:
                                 maybeJumpToPosition(String.valueOf(index));
-                                break;
-                            case 3:
-                                finish();
                                 break;
                             default:
                                 break;
@@ -352,9 +358,9 @@ public class LiveActivityForWear extends WearableActivity {
                     switch (v.getId()) {
                         case R.id.playback_btn:
                             mClickCount++;
-
+                            MyToast.show(String.valueOf(mClickCount));
                             mUiHandler.removeMessages(MSG_ON_CLICK_PLAYBACK_BUTTOM);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 500);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 1000);
                             break;
                         case R.id.download_tv:
                             break;

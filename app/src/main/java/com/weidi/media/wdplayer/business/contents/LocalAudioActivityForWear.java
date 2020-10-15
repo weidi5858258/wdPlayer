@@ -209,27 +209,36 @@ public class LocalAudioActivityForWear extends WearableActivity {
                     mClickCount = 3;
                 }
 
-                String videoPlaybackPath = mAddressET.getText().toString().trim();
-                if (TextUtils.isEmpty(videoPlaybackPath)) {
-                    videoPlaybackPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
+                switch (mClickCount) {
+                    case 3:
+                        mClickCount = 0;
+                        finish();
+                        return;
+                    default:
+                        break;
                 }
-                if (TextUtils.isEmpty(videoPlaybackPath)) {
+
+                String audioPlaybackPath = mAddressET.getText().toString().trim();
+                /*if (TextUtils.isEmpty(audioPlaybackPath)) {
+                    audioPlaybackPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
+                }*/
+                if (TextUtils.isEmpty(audioPlaybackPath)) {
                     mClickCount = 0;
                     return;
                 }
-                String newPath = videoPlaybackPath.toLowerCase();
+                String newPath = audioPlaybackPath.toLowerCase();
                 if (!newPath.startsWith("http://")
                         && !newPath.startsWith("https://")
                         && !newPath.startsWith("rtmp://")
                         && !newPath.startsWith("rtsp://")
                         && !newPath.startsWith("/storage/")) {
                     int index = 0;
-                    if (PlayerWrapper.mLocalAudioContentsMap.containsValue(videoPlaybackPath)) {
+                    if (PlayerWrapper.mLocalAudioContentsMap.containsValue(audioPlaybackPath)) {
                         for (Map.Entry<String, String> entry :
                                 PlayerWrapper.mLocalAudioContentsMap.entrySet()) {
                             index++;
-                            if (TextUtils.equals(videoPlaybackPath, entry.getValue())) {
-                                videoPlaybackPath = entry.getKey();
+                            if (TextUtils.equals(audioPlaybackPath, entry.getValue())) {
+                                audioPlaybackPath = entry.getKey();
                                 break;
                             }
                         }
@@ -240,25 +249,22 @@ public class LocalAudioActivityForWear extends WearableActivity {
                                 EventBusUtils.post(
                                         PlayerService.class,
                                         PlayerService.COMMAND_SHOW_WINDOW,
-                                        new Object[]{videoPlaybackPath, "video/"});
+                                        new Object[]{audioPlaybackPath, "audio/"});
                                 break;
                             case 2:
                                 maybeJumpToPosition(String.valueOf(index));
-                                break;
-                            case 3:
-                                finish();
                                 break;
                             default:
                                 break;
                         }
                     } else {
-                        maybeJumpToPosition(videoPlaybackPath);
+                        maybeJumpToPosition(audioPlaybackPath);
                     }
                 } else {
                     EventBusUtils.post(
                             PlayerService.class,
                             PlayerService.COMMAND_SHOW_WINDOW,
-                            new Object[]{videoPlaybackPath, "video/"});
+                            new Object[]{audioPlaybackPath, "audio/"});
                 }
                 mClickCount = 0;
                 break;
@@ -353,9 +359,9 @@ public class LocalAudioActivityForWear extends WearableActivity {
                     switch (v.getId()) {
                         case R.id.playback_btn:
                             mClickCount++;
-
+                            MyToast.show(String.valueOf(mClickCount));
                             mUiHandler.removeMessages(MSG_ON_CLICK_PLAYBACK_BUTTOM);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 500);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_ON_CLICK_PLAYBACK_BUTTOM, 1000);
                             break;
                         case R.id.download_tv:
                             break;

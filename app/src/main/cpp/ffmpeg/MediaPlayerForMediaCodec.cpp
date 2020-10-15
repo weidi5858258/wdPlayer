@@ -4118,10 +4118,12 @@ namespace alexander_media_mediacodec {
             if (audioWrapper->father->streamIndex == -1) {
                 if (frameRate != 0) {
                     videoSleepTime = (int) (1000 / frameRate);
+                } else {
+                    videoSleepTime = 15;
                 }
-                if (isWatch) {
+                /*if (isWatch) {
                     videoSleepTime = 11;
-                }
+                }*/
                 LOGI("initPlayer() videoSleepTime: %d", videoSleepTime);
             }
         }
