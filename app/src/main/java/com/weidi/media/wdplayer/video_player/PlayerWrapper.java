@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
@@ -104,6 +105,12 @@ import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AUDIO_VIDEO;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
 
+/***
+ /Users/alexander/mydev/workspace_android/wdPlayer/gradle/wrapper/gradle-wrapper.properties
+ https://www.kagura.me/dev/20200828131600.html
+ distributionUrl=https://code.aliyun.com/kar/gradle-bin-zip/raw/master/gradle-6.5-bin.zip
+ distributionUrl=https\://services.gradle.org/distributions/gradle-6.5-bin.zip
+ */
 public class PlayerWrapper {
 
     private static final String TAG = "player_alexander";
@@ -237,7 +244,9 @@ public class PlayerWrapper {
         Repeat_All, Repeat_One, Repeat_Off
     }
 
+    // 关闭随机播放
     private Shuffle mShuffle = Shuffle.Shuffle_Off;
+    // 关闭重复播放
     private Repeat mRepeat = Repeat.Repeat_Off;
 
     // 必须首先被调用
@@ -620,6 +629,46 @@ public class PlayerWrapper {
         if (mPrePath != null) {
             addView();
             return true;
+        } else if (IS_WATCH) {
+            if (mRepeat == Repeat.Repeat_Off) {
+                return false;
+            }
+            if (mRepeat == Repeat.Repeat_One) {
+                startForGetMediaFormat();
+                return true;
+            }
+            // mRepeat == Repeat.Repeat_All
+            if (mShuffle == Shuffle.Shuffle_Off) {
+                int index = -1;
+                int curPathIndex = -1;
+                for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
+                    index++;
+                    if (TextUtils.equals(tempMap.getKey(), mCurPath)) {
+                        curPathIndex = index;
+                        if (curPathIndex == mLocalAudioContentsMap.size() - 1) {
+                            // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
+                            index = 0;
+                            curPathIndex = -1;
+                            break;
+                        }
+                    }
+                    if (index == curPathIndex + 1) {
+                        mCurPath = tempMap.getKey();
+                        break;
+                    }
+                }
+                if (index == 0 && curPathIndex == -1) {
+                    for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
+                        index++;
+                        mCurPath = tempMap.getKey();
+                        if (index == 1) {
+                            break;
+                        }
+                    }
+                }
+                return true;
+            }
+            // mShuffle == Shuffle.Shuffle_On
         }
 
         // 不需要播放另一个视频
@@ -2201,6 +2250,10 @@ public class PlayerWrapper {
                     mDownloadClickCounts = 0;
                     mIsDownloading = false;
                     isFrameByFrameMode = false;
+                    if (IS_WATCH) {
+                        mShuffle = Shuffle.Shuffle_Off;
+                        mRepeat = Repeat.Repeat_Off;
+                    }
                     // 表示用户主动关闭,不需要再继续播放
                     removeView();
                     break;

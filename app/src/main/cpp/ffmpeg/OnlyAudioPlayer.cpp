@@ -628,6 +628,7 @@ namespace alexander_only_audio {
                     audioWrapper->father->isReading = true;
                     continue;
                 } else {
+                    onInfo("AVERROR_EOF");
                     // for (;;) end
                     break;
                 }
