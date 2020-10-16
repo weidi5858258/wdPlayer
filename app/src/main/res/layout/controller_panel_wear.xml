@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:padding="@dimen/box_inset_layout_padding"
+    tools:deviceIds="wear">
+
+    <LinearLayout
+        android:id="@+id/controller_panel_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="visible"
+        app:boxedEdges="all">
+
+        <SeekBar
+            android:id="@+id/progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="true"
+            android:max="3840"
+            android:thumbOffset="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:progress="1"
+            android:progressBackgroundTint="@color/white"
+            android:secondaryProgress="1"
+            android:secondaryProgressTint="@color/red"
+            android:text="SeekTo" />
+
+        <!--android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"-->
+        <RelativeLayout
+            android:id="@+id/show_time_rl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/progress_time_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/white" />
+
+            <TextView
+                android:id="@+id/seek_time_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="@dimen/dimen_60_dp"
+                android:textColor="@color/slateblue"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/file_name_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:maxLines="1"
+                android:textColor="@color/white"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/duration_time_tv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:textColor="@color/white" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/pause_rl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="bottom|center_horizontal"
+            android:orientation="horizontal"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp">
+
+            <ImageButton
+                android:id="@+id/button_prev"
+                style="@style/StyleImageButton"
+                android:layout_alignParentStart="true"
+                android:contentDescription="Previous"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_fr" />
+
+            <ImageButton
+                android:id="@+id/button_next"
+                style="@style/StyleImageButton"
+                android:layout_marginLeft="@dimen/dimen_2_dp"
+                android:layout_toRightOf="@id/button_prev"
+                android:contentDescription="Next"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_ff" />
+
+            <ImageButton
+                android:id="@+id/volume_normal"
+                style="@style/StyleImageButton"
+                android:layout_marginLeft="@dimen/dimen_2_dp"
+                android:layout_toRightOf="@id/button_next"
+                android:contentDescription="volume_normal"
+                android:padding="0dp"
+                android:src="@drawable/volume_normal" />
+
+            <ImageButton
+                android:id="@+id/volume_mute"
+                style="@style/StyleImageButton"
+                android:layout_marginLeft="@dimen/dimen_2_dp"
+                android:layout_toRightOf="@id/button_next"
+                android:contentDescription="volume_mute"
+                android:padding="0dp"
+                android:src="@drawable/volume_mute"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/button_play"
+                style="@style/StyleImageButton"
+                android:layout_width="@dimen/dimen_36_dp"
+                android:layout_height="@dimen/dimen_36_dp"
+                android:layout_centerInParent="true"
+                android:layout_margin="0dp"
+                android:contentDescription="Play"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_pause" />
+
+            <ImageButton
+                android:id="@+id/button_pause"
+                style="@style/StyleImageButton"
+                android:layout_width="@dimen/dimen_36_dp"
+                android:layout_height="@dimen/dimen_36_dp"
+                android:layout_centerInParent="true"
+                android:layout_margin="0dp"
+                android:contentDescription="Play"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_play"
+                android:visibility="gone" />
+
+            <ImageButton
+                android:id="@+id/button_exit"
+                style="@style/StyleImageButton"
+                android:layout_toRightOf="@id/button_play"
+                android:contentDescription="Exit"
+                android:padding="0dp"
+                android:src="@drawable/exit_view" />
+
+            <ImageButton
+                android:id="@+id/button_shuffle_off"
+                style="@style/StyleImageButton"
+                android:layout_alignParentEnd="true"
+                android:contentDescription="Shuffle_Off"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_option_shuffle_off_" />
+
+            <ImageButton
+                android:id="@+id/button_shuffle_on"
+                style="@style/StyleImageButton"
+                android:layout_alignParentEnd="true"
+                android:contentDescription="Shuffle_On"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_option_shuffle_on"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/button_repeat_off"
+                style="@style/StyleImageButton"
+                android:layout_marginRight="@dimen/dimen_2_dp"
+                android:layout_toLeftOf="@id/button_shuffle_off"
+                android:contentDescription="Repeat_Off"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_option_repeat_off" />
+
+            <ImageButton
+                android:id="@+id/button_repeat_all"
+                style="@style/StyleImageButton"
+                android:layout_marginRight="@dimen/dimen_2_dp"
+                android:layout_toLeftOf="@id/button_shuffle_off"
+                android:contentDescription="Repeat_All"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_option_repeat_all"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/button_repeat_one"
+                style="@style/StyleImageButton"
+                android:layout_marginRight="@dimen/dimen_2_dp"
+                android:layout_toLeftOf="@id/button_shuffle_off"
+                android:contentDescription="Repeat_One"
+                android:padding="0dp"
+                android:src="@drawable/media_ic_option_repeat_one"
+                android:visibility="invisible" />
+
+            <TextView
+                android:id="@+id/download_tv"
+                style="@style/StyleImageButton"
+                android:layout_width="@dimen/dimen_40_dp"
+                android:layout_height="@dimen/dimen_40_dp"
+                android:layout_marginStart="@dimen/dimen_230_dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="download"
+                android:gravity="center"
+                android:textSize="24sp"
+                android:visibility="invisible" />
+
+        </RelativeLayout>
+
+    </LinearLayout>
+</androidx.wear.widget.BoxInsetLayout>

@@ -5,18 +5,19 @@
     android:id="@+id/controller_panel_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/transparent"
-    android:orientation="vertical"
-    android:visibility="visible">
+    android:paddingStart="@dimen/dimen_8_dp"
+    android:paddingEnd="@dimen/dimen_8_dp"
+    android:orientation="vertical">
 
     <SeekBar
         android:id="@+id/progress_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="0dp"
-        android:paddingEnd="0dp"
         android:enabled="true"
         android:max="3840"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:thumbOffset="0dip"
         android:progress="1"
         android:progressBackgroundTint="@color/white"
         android:secondaryProgress="1"
@@ -80,10 +81,19 @@
             android:src="@drawable/media_ic_fr" />
 
         <ImageButton
+            android:id="@+id/button_next"
+            style="@style/StyleImageButton"
+            android:layout_marginLeft="@dimen/dimen_24_dp"
+            android:layout_toRightOf="@id/button_prev"
+            android:contentDescription="Next"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_ff" />
+
+        <ImageButton
             android:id="@+id/button_exit"
             style="@style/StyleImageButton"
-            android:layout_alignParentStart="true"
-            android:layout_marginStart="@dimen/dimen_45_dp"
+            android:layout_marginLeft="@dimen/dimen_24_dp"
+            android:layout_toRightOf="@id/button_next"
             android:contentDescription="Exit"
             android:padding="0dp"
             android:src="@drawable/exit_view" />
@@ -111,6 +121,71 @@
             android:src="@drawable/media_ic_play"
             android:visibility="gone" />
 
+        <ImageButton
+            android:id="@+id/button_shuffle_off"
+            style="@style/StyleImageButton"
+            android:layout_alignParentEnd="true"
+            android:contentDescription="Shuffle_Off"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_option_shuffle_off_" />
+
+        <ImageButton
+            android:id="@+id/button_repeat_off"
+            style="@style/StyleImageButton"
+            android:layout_marginRight="@dimen/dimen_24_dp"
+            android:layout_toLeftOf="@id/button_shuffle_off"
+            android:contentDescription="Repeat_Off"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_option_repeat_off" />
+
+        <ImageButton
+            android:id="@+id/button_shuffle_on"
+            style="@style/StyleImageButton"
+            android:layout_alignParentEnd="true"
+            android:contentDescription="Shuffle_On"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_option_shuffle_on"
+            android:visibility="invisible" />
+
+        <ImageButton
+            android:id="@+id/button_repeat_all"
+            style="@style/StyleImageButton"
+            android:layout_marginRight="@dimen/dimen_24_dp"
+            android:layout_toLeftOf="@id/button_shuffle_off"
+            android:contentDescription="Repeat_All"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_option_repeat_all"
+            android:visibility="invisible" />
+
+        <ImageButton
+            android:id="@+id/button_repeat_one"
+            style="@style/StyleImageButton"
+            android:layout_marginRight="@dimen/dimen_24_dp"
+            android:layout_toLeftOf="@id/button_shuffle_off"
+            android:contentDescription="Repeat_One"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_option_repeat_one"
+            android:visibility="invisible" />
+
+        <ImageButton
+            android:id="@+id/volume_normal"
+            style="@style/StyleImageButton"
+            android:layout_marginRight="@dimen/dimen_24_dp"
+            android:layout_toLeftOf="@id/button_repeat_off"
+            android:contentDescription="volume_normal"
+            android:padding="0dp"
+            android:src="@drawable/volume_normal" />
+
+        <ImageButton
+            android:id="@+id/volume_mute"
+            style="@style/StyleImageButton"
+            android:layout_marginRight="@dimen/dimen_24_dp"
+            android:layout_toLeftOf="@id/button_repeat_off"
+            android:contentDescription="volume_mute"
+            android:padding="0dp"
+            android:src="@drawable/volume_mute"
+            android:visibility="invisible" />
+
         <TextView
             android:id="@+id/download_tv"
             style="@style/StyleImageButton"
@@ -123,32 +198,6 @@
             android:textSize="24sp"
             android:visibility="invisible" />
 
-        <ImageButton
-            android:id="@+id/volume_normal"
-            style="@style/StyleImageButton"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="@dimen/dimen_45_dp"
-            android:contentDescription="volume_normal"
-            android:padding="0dp"
-            android:src="@drawable/volume_normal" />
-
-        <ImageButton
-            android:id="@+id/volume_mute"
-            style="@style/StyleImageButton"
-            android:layout_alignParentEnd="true"
-            android:layout_marginEnd="@dimen/dimen_45_dp"
-            android:contentDescription="volume_mute"
-            android:padding="0dp"
-            android:src="@drawable/volume_mute"
-            android:visibility="gone" />
-
-        <ImageButton
-            android:id="@+id/button_next"
-            style="@style/StyleImageButton"
-            android:layout_alignParentEnd="true"
-            android:contentDescription="Next"
-            android:padding="0dp"
-            android:src="@drawable/media_ic_ff" />
     </RelativeLayout>
 
 </LinearLayout>

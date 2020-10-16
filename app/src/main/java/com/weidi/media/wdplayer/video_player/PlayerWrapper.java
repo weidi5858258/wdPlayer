@@ -186,6 +186,11 @@ public class PlayerWrapper {
     // 声音
     private ImageButton mVolumeNormal;
     private ImageButton mVolumeMute;
+    private ImageButton mRepeatOff;
+    private ImageButton mRepeatAll;
+    private ImageButton mRepeatOne;
+    private ImageButton mShuffleOff;
+    private ImageButton mShuffleOn;
     // 下载
     private TextView mDownloadTV;
     private boolean mIsDownloading = false;
@@ -245,18 +250,18 @@ public class PlayerWrapper {
     private ArrayList<Integer> mLocalContentsHasPlayedList;
     private Random mRandom;
 
-    public enum Shuffle {
-        Shuffle_On, Shuffle_Off
-    }
-
     public enum Repeat {
-        Repeat_All, Repeat_One, Repeat_Off
+        Repeat_Off, Repeat_All, Repeat_One
     }
 
-    // 关闭随机播放
-    private Shuffle mShuffle = Shuffle.Shuffle_On;
+    public enum Shuffle {
+        Shuffle_Off, Shuffle_On
+    }
+
     // 关闭重复播放
-    private Repeat mRepeat = Repeat.Repeat_All;
+    private Repeat mRepeat = Repeat.Repeat_Off;
+    // 关闭随机播放
+    private Shuffle mShuffle = Shuffle.Shuffle_Off;
 
     // 必须首先被调用
     public void setService(Service service) {
@@ -303,10 +308,10 @@ public class PlayerWrapper {
 
         LayoutInflater inflater =
                 (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
-            mRootView = inflater.inflate(R.layout.activity_player, null);
-        } else {
+        if (!IS_WATCH) {
             mRootView = inflater.inflate(R.layout.media_player, null);
+        } else {
+            mRootView = inflater.inflate(R.layout.media_player_wear, null);
         }
         mLayoutParams = new WindowManager.LayoutParams();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -343,6 +348,11 @@ public class PlayerWrapper {
         mDownloadTV = mRootView.findViewById(R.id.download_tv);
         mVolumeNormal = mRootView.findViewById(R.id.volume_normal);
         mVolumeMute = mRootView.findViewById(R.id.volume_mute);
+        mRepeatOff = mRootView.findViewById(R.id.button_repeat_off);
+        mRepeatAll = mRootView.findViewById(R.id.button_repeat_all);
+        mRepeatOne = mRootView.findViewById(R.id.button_repeat_one);
+        mShuffleOff = mRootView.findViewById(R.id.button_shuffle_off);
+        mShuffleOn = mRootView.findViewById(R.id.button_shuffle_on);
 
         mProgressBarLayout = mRootView.findViewById(R.id.progress_bar_layout);
         mVideoProgressBar = mRootView.findViewById(R.id.video_progress_bar);
@@ -360,6 +370,11 @@ public class PlayerWrapper {
         mDownloadTV.setOnClickListener(mOnClickListener);
         mVolumeNormal.setOnClickListener(mOnClickListener);
         mVolumeMute.setOnClickListener(mOnClickListener);
+        mRepeatOff.setOnClickListener(mOnClickListener);
+        mRepeatAll.setOnClickListener(mOnClickListener);
+        mRepeatOne.setOnClickListener(mOnClickListener);
+        mShuffleOff.setOnClickListener(mOnClickListener);
+        mShuffleOn.setOnClickListener(mOnClickListener);
 
         onCreate();
     }
@@ -694,7 +709,7 @@ public class PlayerWrapper {
         if (mPrePath != null) {
             addView();
             return true;
-        } else if (IS_WATCH) {
+        } else if (IS_PHONE || IS_WATCH) {
             if (mRepeat == Repeat.Repeat_Off) {
                 return false;
             }
@@ -810,7 +825,7 @@ public class PlayerWrapper {
             case Callback.MSG_ON_TRANSACT_PLAYED:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_PLAYED");
                 mPlayIB.setVisibility(View.VISIBLE);
-                mPauseIB.setVisibility(View.GONE);
+                mPauseIB.setVisibility(View.INVISIBLE);
                 if (!IS_WATCH) {
                     mLoadingView.setVisibility(View.GONE);
                 } else {
@@ -822,7 +837,7 @@ public class PlayerWrapper {
                 break;
             case Callback.MSG_ON_TRANSACT_PAUSED:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_PAUSED");
-                //mPlayIB.setVisibility(View.GONE);
+                //mPlayIB.setVisibility(View.INVISIBLE);
                 //mPauseIB.setVisibility(View.VISIBLE);
                 if (!mIsLocal) {
                     if (!IS_WATCH) {
@@ -1923,6 +1938,43 @@ public class PlayerWrapper {
         mCouldPlaybackPathList.add("");
     }
 
+    private void setRepeatView() {
+        switch (mRepeat) {
+            case Repeat_Off:
+                mRepeatOff.setVisibility(View.VISIBLE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
+                break;
+            case Repeat_All:
+                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.VISIBLE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
+                break;
+            case Repeat_One:
+                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void setShuffleView() {
+        switch (mShuffle) {
+            case Shuffle_Off:
+                mShuffleOff.setVisibility(View.VISIBLE);
+                mShuffleOn.setVisibility(View.INVISIBLE);
+                break;
+            case Shuffle_On:
+                mShuffleOff.setVisibility(View.INVISIBLE);
+                mShuffleOn.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+    }
+
     private void onReady() {
         // 是否显示控制面板
         if (TextUtils.isEmpty(mType)
@@ -1946,29 +1998,31 @@ public class PlayerWrapper {
         mProgressTimeTV.setText("");
         mDurationTimeTV.setText("");
         mProgressBar.setProgress(0);
+        mProgressBar.setPadding(0, 0, 0, 0);
+        mProgressBar.setThumbOffset(0);
         mVideoProgressBar.setProgress(0);
         mVideoProgressBar.setSecondaryProgress(0);
         mAudioProgressBar.setProgress(0);
         mAudioProgressBar.setSecondaryProgress(0);
         mProgressBarLayout.setVisibility(View.GONE);
         mPlayIB.setVisibility(View.VISIBLE);
-        mPauseIB.setVisibility(View.GONE);
+        mPauseIB.setVisibility(View.INVISIBLE);
         textInfoScrollView.setVisibility(View.GONE);
         textInfoTV.setText("");
-        if (mService != null) {
-            mDownloadTV.setText("");
-            // R.color.lightgray
-            mDownloadTV.setBackgroundColor(
-                    mContext.getResources().getColor(android.R.color.transparent));
-            boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
-            if (!isMute) {
-                mVolumeNormal.setVisibility(View.VISIBLE);
-                mVolumeMute.setVisibility(View.GONE);
-            } else {
-                mVolumeNormal.setVisibility(View.GONE);
-                mVolumeMute.setVisibility(View.VISIBLE);
-            }
+        mDownloadTV.setText("");
+        // R.color.lightgray
+        mDownloadTV.setBackgroundColor(
+                mContext.getResources().getColor(android.R.color.transparent));
+        boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
+        if (!isMute) {
+            mVolumeNormal.setVisibility(View.VISIBLE);
+            mVolumeMute.setVisibility(View.INVISIBLE);
+        } else {
+            mVolumeNormal.setVisibility(View.INVISIBLE);
+            mVolumeMute.setVisibility(View.VISIBLE);
         }
+        setRepeatView();
+        setShuffleView();
         String title;
         if (mIsLocal) {
             title = mCurPath.substring(mCurPath.lastIndexOf("/") + 1);
@@ -2298,57 +2352,6 @@ public class PlayerWrapper {
                         }
                     }
                     break;
-                case R.id.button_play:
-                    if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        if (mSimpleVideoPlayer.isRunning()) {
-                            if (mSimpleVideoPlayer.isPlaying()) {
-                                mPlayIB.setVisibility(View.GONE);
-                                mPauseIB.setVisibility(View.VISIBLE);
-                                mSimpleVideoPlayer.pause();
-                            }
-                        }
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
-                                    DO_SOMETHING_CODE_isRunning, null))) {
-                                mPlayIB.setVisibility(View.GONE);
-                                mPauseIB.setVisibility(View.VISIBLE);
-                                sendEmptyMessage(DO_SOMETHING_CODE_pause);
-                            }
-                        }
-                    }
-                    break;
-                case R.id.button_pause:
-                    if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        if (mSimpleVideoPlayer.isRunning()) {
-                            if (!mSimpleVideoPlayer.isPlaying()) {
-                                mPlayIB.setVisibility(View.VISIBLE);
-                                mPauseIB.setVisibility(View.GONE);
-                                mSimpleVideoPlayer.play();
-                            }
-                        }
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            if (isFrameByFrameMode) {
-                                isFrameByFrameMode = false;
-                                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrameForFinish,
-                                        null);
-                                mVolumeNormal.setVisibility(View.VISIBLE);
-                                mVolumeMute.setVisibility(View.GONE);
-                                mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
-                                mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
-                                MyToast.show("帧模式已关闭");
-                            }
-                            mPlayIB.setVisibility(View.VISIBLE);
-                            mPauseIB.setVisibility(View.GONE);
-                            if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
-                                mLoadingView.setVisibility(View.GONE);
-                            }
-                            sendEmptyMessage(DO_SOMETHING_CODE_play);
-                        }
-                    }
-                    break;
                 case R.id.button_next:
                     if (!isFrameByFrameMode) {
                         if (IS_WATCH) {
@@ -2391,6 +2394,57 @@ public class PlayerWrapper {
                         }
                     }
                     break;
+                case R.id.button_play:
+                    if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                        if (mSimpleVideoPlayer.isRunning()) {
+                            if (mSimpleVideoPlayer.isPlaying()) {
+                                mPlayIB.setVisibility(View.INVISIBLE);
+                                mPauseIB.setVisibility(View.VISIBLE);
+                                mSimpleVideoPlayer.pause();
+                            }
+                        }
+                    } else {
+                        if (mFFMPEGPlayer != null) {
+                            if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
+                                    DO_SOMETHING_CODE_isRunning, null))) {
+                                mPlayIB.setVisibility(View.INVISIBLE);
+                                mPauseIB.setVisibility(View.VISIBLE);
+                                sendEmptyMessage(DO_SOMETHING_CODE_pause);
+                            }
+                        }
+                    }
+                    break;
+                case R.id.button_pause:
+                    if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                        if (mSimpleVideoPlayer.isRunning()) {
+                            if (!mSimpleVideoPlayer.isPlaying()) {
+                                mPlayIB.setVisibility(View.VISIBLE);
+                                mPauseIB.setVisibility(View.INVISIBLE);
+                                mSimpleVideoPlayer.play();
+                            }
+                        }
+                    } else {
+                        if (mFFMPEGPlayer != null) {
+                            if (isFrameByFrameMode) {
+                                isFrameByFrameMode = false;
+                                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrameForFinish,
+                                        null);
+                                mVolumeNormal.setVisibility(View.VISIBLE);
+                                mVolumeMute.setVisibility(View.INVISIBLE);
+                                mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
+                                mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
+                                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                                MyToast.show("帧模式已关闭");
+                            }
+                            mPlayIB.setVisibility(View.VISIBLE);
+                            mPauseIB.setVisibility(View.INVISIBLE);
+                            if (!IS_WATCH) {
+                                mLoadingView.setVisibility(View.GONE);
+                            }
+                            sendEmptyMessage(DO_SOMETHING_CODE_play);
+                        }
+                    }
+                    break;
                 case R.id.surfaceView:
                     mIsScreenPress = true;
                     onEvent(KeyEvent.KEYCODE_HEADSETHOOK, null);
@@ -2399,15 +2453,11 @@ public class PlayerWrapper {
                     mDownloadClickCounts = 0;
                     mIsDownloading = false;
                     isFrameByFrameMode = false;
-                    if (IS_WATCH) {
-                        mShuffle = Shuffle.Shuffle_Off;
-                        mRepeat = Repeat.Repeat_Off;
-                    }
                     // 表示用户主动关闭,不需要再继续播放
                     removeView();
                     break;
                 case R.id.volume_normal:
-                    mVolumeNormal.setVisibility(View.GONE);
+                    mVolumeNormal.setVisibility(View.INVISIBLE);
                     mVolumeMute.setVisibility(View.VISIBLE);
                     if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                         mSimpleVideoPlayer.setVolume(VOLUME_MUTE);
@@ -2422,7 +2472,7 @@ public class PlayerWrapper {
                         return;
                     }
                     mVolumeNormal.setVisibility(View.VISIBLE);
-                    mVolumeMute.setVisibility(View.GONE);
+                    mVolumeMute.setVisibility(View.INVISIBLE);
                     if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                         mSimpleVideoPlayer.setVolume(VOLUME_NORMAL);
                     } else {
@@ -2430,6 +2480,31 @@ public class PlayerWrapper {
                         mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
                     }
                     mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                    break;
+                case R.id.button_repeat_off:
+                    MyToast.show("Repeat All");
+                    mRepeat = Repeat.Repeat_All;
+                    setRepeatView();
+                    break;
+                case R.id.button_repeat_all:
+                    MyToast.show("Repeat One");
+                    mRepeat = Repeat.Repeat_One;
+                    setRepeatView();
+                    break;
+                case R.id.button_repeat_one:
+                    MyToast.show("Repeat Off");
+                    mRepeat = Repeat.Repeat_Off;
+                    setRepeatView();
+                    break;
+                case R.id.button_shuffle_off:
+                    MyToast.show("Shuffle On");
+                    mShuffle = Shuffle.Shuffle_On;
+                    setShuffleView();
+                    break;
+                case R.id.button_shuffle_on:
+                    MyToast.show("Shuffle Off");
+                    mShuffle = Shuffle.Shuffle_Off;
+                    setShuffleView();
                     break;
                 case R.id.download_tv:
                     if (TextUtils.isEmpty(mDownloadTV.getText())) {
@@ -2496,13 +2571,13 @@ public class PlayerWrapper {
         // 播放与暂停
         if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
                 DO_SOMETHING_CODE_isPlaying, null))) {
-            mPlayIB.setVisibility(View.GONE);
+            mPlayIB.setVisibility(View.INVISIBLE);
             mPauseIB.setVisibility(View.VISIBLE);
             sendEmptyMessage(DO_SOMETHING_CODE_pause);
         } else {
             mPlayIB.setVisibility(View.VISIBLE);
-            mPauseIB.setVisibility(View.GONE);
-            if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+            mPauseIB.setVisibility(View.INVISIBLE);
+            if (!IS_WATCH) {
                 mLoadingView.setVisibility(View.GONE);
             }
             sendEmptyMessage(DO_SOMETHING_CODE_play);
@@ -2531,7 +2606,7 @@ public class PlayerWrapper {
         /***
          缓冲过程中,按三下进行暂停,继续缓冲.
          */
-        mPlayIB.setVisibility(View.GONE);
+        mPlayIB.setVisibility(View.INVISIBLE);
         mPauseIB.setVisibility(View.VISIBLE);
         if (!mIsLocal) {
             if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
@@ -2592,7 +2667,7 @@ public class PlayerWrapper {
                 DO_SOMETHING_CODE_frameByFrameForReady, null));
         if (isFrameByFrameMode) {
             // 静音
-            mVolumeNormal.setVisibility(View.GONE);
+            mVolumeNormal.setVisibility(View.INVISIBLE);
             mVolumeMute.setVisibility(View.VISIBLE);
             mFFMPEGPlayer.setVolume(VOLUME_MUTE);
             mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
@@ -2602,7 +2677,7 @@ public class PlayerWrapper {
             textInfoScrollView.setVisibility(View.VISIBLE);
             mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, true).commit();
             // 显示"暂停"按钮
-            mPlayIB.setVisibility(View.GONE);
+            mPlayIB.setVisibility(View.INVISIBLE);
             mPauseIB.setVisibility(View.VISIBLE);
             MyToast.show("帧模式已开启");
         }
@@ -2738,7 +2813,7 @@ public class PlayerWrapper {
             }
         }
 
-        if (IS_WATCH) {
+        if (IS_PHONE || IS_WATCH) {
             PackageManager packageManager = mContext.getPackageManager();
             if (PackageManager.PERMISSION_GRANTED == packageManager.checkPermission(
                     Manifest.permission.READ_EXTERNAL_STORAGE, mContext.getPackageName())) {
@@ -2763,7 +2838,7 @@ public class PlayerWrapper {
     private void saveLocalFile(String type, File file) {
         // path: /storage/emulated/0/Movies/SONY_CM_EXTRA_BASS_dance.mp4
         // name: SONY_CM_EXTRA_BASS_dance.mp4
-        if (file != null) {
+        if (file != null && file.isDirectory() && file.exists()) {
             File[] files = file.listFiles();
             if (files != null && files.length > 0) {
                 String path;
@@ -2980,17 +3055,17 @@ public class PlayerWrapper {
                 if (!isMute) {
                     mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
                     mVolumeNormal.setVisibility(View.VISIBLE);
-                    mVolumeMute.setVisibility(View.GONE);
+                    mVolumeMute.setVisibility(View.INVISIBLE);
                 } else {
                     mFFMPEGPlayer.setVolume(VOLUME_MUTE);
-                    mVolumeNormal.setVisibility(View.GONE);
+                    mVolumeNormal.setVisibility(View.INVISIBLE);
                     mVolumeMute.setVisibility(View.VISIBLE);
                 }
 
                 if (!Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
                         DO_SOMETHING_CODE_isPlaying, null))) {
                     mPlayIB.setVisibility(View.VISIBLE);
-                    mPauseIB.setVisibility(View.GONE);
+                    mPauseIB.setVisibility(View.INVISIBLE);
                     sendEmptyMessage(DO_SOMETHING_CODE_play);
                 }
             }
@@ -3001,7 +3076,7 @@ public class PlayerWrapper {
         if (mFFMPEGPlayer != null) {
             if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
                     DO_SOMETHING_CODE_isRunning, null))) {
-                mPlayIB.setVisibility(View.GONE);
+                mPlayIB.setVisibility(View.INVISIBLE);
                 mPauseIB.setVisibility(View.VISIBLE);
                 sendEmptyMessage(DO_SOMETHING_CODE_pause);
             }
