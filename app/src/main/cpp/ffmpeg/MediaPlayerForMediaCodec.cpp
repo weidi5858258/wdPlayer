@@ -2200,52 +2200,7 @@ namespace alexander_media_mediacodec {
 
             if (isGoodResult) {
                 bool needToGetResultAgain = true;
-                if (averageTimeDiff > 1.000000) {
-                    /***
-                     还没遇到过
-                     */
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.900000;
-                    }
-                } else if (averageTimeDiff > 0.900000 && averageTimeDiff < 1.000000) {
-                    /***
-                     还没遇到过
-                     */
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.800000;
-                    }
-                } else if (averageTimeDiff > 0.800000 && averageTimeDiff < 0.900000) {
-                    /***
-                     还没遇到过
-                     */
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.700000;
-                    }
-                } else if (averageTimeDiff > 0.700000 && averageTimeDiff < 0.800000) {
-                    /***
-                     还没遇到过
-                     */
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.600000;
-                    }
-                } else if (averageTimeDiff > 0.600000 && averageTimeDiff < 0.700000) {
-                    /***
-                     还没遇到过
-                     */
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.500000;
-                    }
-                } else if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
+                if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
                     /***
                      0.505212 0.517508 0.524924 0.531797 0.543092
                      */
@@ -2259,6 +2214,8 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.500000;
                     }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
+                    // region 走进这里算是比较好的一个结果
+
                     /***
                      0.405114 0.418364 0.429602 0.439030 0.449823
                      0.457614 0.461167 0.472319 0.486549 0.494847
@@ -2296,9 +2253,10 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.300000;
                     }
                     needToGetResultAgain = false;
+
+                    // endregion
                 } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
                     /***
-                     http://ivi.bupt.edu.cn/hls/sdetv.m3u8@@@@@@@@@@山东教育卫视 这个直播不能同步
                      0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
                      */
                     if (videoWrapper->father->useMediaCodec) {
@@ -2308,6 +2266,7 @@ namespace alexander_media_mediacodec {
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
+                        //TIME_DIFFERENCE = 0.050000;
                         TIME_DIFFERENCE = 0.300000;
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
@@ -2631,13 +2590,13 @@ namespace alexander_media_mediacodec {
                         || !audioWrapper->father->isHandling
                             ) //
                     {
-                        LOGI("handleVideoOutputBuffer() videoWrapper->father->isStarted return\n");
+                        LOGI("handleVideoDataImpl() videoWrapper->father->isStarted return\n");
                         break;
                     }
                     av_usleep(1000);
                 }
             } else {
-                LOGD("handleVideoOutputBuffer() 视频已经准备好,开始播放!!!\n");
+                LOGD("handleVideoDataImpl() 视频已经准备好,开始播放!!!\n");
                 onPlayed();
                 hope_to_get_a_good_result();
                 runOneTime = false;
@@ -2681,7 +2640,7 @@ namespace alexander_media_mediacodec {
                     if ((audioWrapper->father->streamIndex != -1
                          && !audioWrapper->father->isHandling)
                         || !videoWrapper->father->isHandling) {
-                        LOGW("handleVideoOutputBuffer() RUN_COUNTS return\n");
+                        LOGW("handleVideoDataImpl() RUN_COUNTS return\n");
                         return 0;
                     }
                     totleTimeDiff += timeDiff[i];
@@ -2998,6 +2957,20 @@ namespace alexander_media_mediacodec {
             videoWrapper->father->isSleeping = false;
 
             // endregion
+        }
+
+        if (/*audioWrapper->father->useMediaCodec || */isWatch) {
+            return 0;
+        }
+
+        videoSleepTime = ((int) ((videoPts - preVideoPts) * 1000)) - 30;
+        if (videoSleepTime > 0 && videoSleepTime < 12) {
+            videoSleep(videoSleepTime);
+        } else {
+            if (videoSleepTime > 0) {
+                // 好像是个比较合理的值
+                videoSleep(11);
+            }
         }
 
         return 0;
@@ -3518,7 +3491,6 @@ namespace alexander_media_mediacodec {
                     if (mediaDuration < 0 && preVideoPts > videoPts) {
                         continue;
                     }
-                    preVideoPts = videoPts;
 
                     if (isFrameByFrameMode) {
                         long long prePts = (long long) (preVideoPts * 1000000);
@@ -3537,6 +3509,7 @@ namespace alexander_media_mediacodec {
                             copyAVPacket->size,
                             (long long) copyAVPacket->pts);
                     av_packet_unref(copyAVPacket);
+                    preVideoPts = videoPts;
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
                         LOGE("handleData() video feedInputBufferAndDrainOutputBuffer failure\n");
