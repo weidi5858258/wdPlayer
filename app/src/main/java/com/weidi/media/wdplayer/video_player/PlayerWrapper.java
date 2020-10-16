@@ -278,6 +278,7 @@ public class PlayerWrapper {
             mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         }
 
+        mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics displayMetrics = new DisplayMetrics();
         mWindowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
@@ -375,6 +376,18 @@ public class PlayerWrapper {
         mRepeatOne.setOnClickListener(mOnClickListener);
         mShuffleOff.setOnClickListener(mOnClickListener);
         mShuffleOn.setOnClickListener(mOnClickListener);
+
+        mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        curVolume,
+                        AudioManager.FLAG_SHOW_UI);
+                return true;
+            }
+        });
 
         onCreate();
     }
@@ -529,7 +542,6 @@ public class PlayerWrapper {
             }
         });
 
-        mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             minVolume = mAudioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC);
             maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
@@ -2621,7 +2633,7 @@ public class PlayerWrapper {
         mPlayIB.setVisibility(View.INVISIBLE);
         mPauseIB.setVisibility(View.VISIBLE);
         if (!mIsLocal) {
-            if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+            if (!IS_WATCH) {
                 mLoadingView.setVisibility(View.VISIBLE);
             }
         }
@@ -2696,14 +2708,6 @@ public class PlayerWrapper {
     }
 
     private void clickSix() {
-        if (mFFMPEGPlayer == null) {
-            return;
-        }
-        if (IS_WATCH) {
-            mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseVideo, null);
-            return;
-        }
-
         String whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
         if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
             MyToast.show(PLAYER_FFMPEG);
@@ -2726,34 +2730,22 @@ public class PlayerWrapper {
         }
     }
 
+    // 关闭音频部分
     private void clickEight() {
         if (mFFMPEGPlayer == null) {
             return;
         }
-        if (!Boolean.parseBoolean(
-                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isRunning, null))) {
-            return;
-        }
 
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_WATCH) {
-            mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
-            return;
-        }
+        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
     }
 
+    // 关闭视频部分
     private void clickNine() {
         if (mFFMPEGPlayer == null) {
             return;
         }
-        if (!Boolean.parseBoolean(
-                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isRunning, null))) {
-            return;
-        }
 
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_WATCH) {
-            mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseVideo, null);
-            return;
-        }
+        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseVideo, null);
         /*Intent intent = new Intent();
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
