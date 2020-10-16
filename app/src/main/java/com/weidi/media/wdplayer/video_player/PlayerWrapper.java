@@ -2267,16 +2267,28 @@ public class PlayerWrapper {
             RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
             ImageButton button_prev = mRootView.findViewById(R.id.button_prev);
             ImageButton button_next = mRootView.findViewById(R.id.button_next);
+            ImageButton button_repeat_off = mRootView.findViewById(R.id.button_repeat_off);
+            ImageButton button_repeat_all = mRootView.findViewById(R.id.button_repeat_all);
+            ImageButton button_repeat_one = mRootView.findViewById(R.id.button_repeat_one);
+            ImageButton button_shuffle_off = mRootView.findViewById(R.id.button_shuffle_off);
+            ImageButton button_shuffle_on = mRootView.findViewById(R.id.button_shuffle_on);
             if (mMediaDuration <= 0 && !mIsH264) {
                 progress_bar.setVisibility(View.GONE);
                 show_time_rl.setVisibility(View.GONE);
                 button_prev.setVisibility(View.INVISIBLE);
                 button_next.setVisibility(View.INVISIBLE);
+                button_repeat_off.setVisibility(View.INVISIBLE);
+                button_repeat_all.setVisibility(View.INVISIBLE);
+                button_repeat_one.setVisibility(View.INVISIBLE);
+                button_shuffle_off.setVisibility(View.INVISIBLE);
+                button_shuffle_on.setVisibility(View.INVISIBLE);
             } else {
                 progress_bar.setVisibility(View.VISIBLE);
                 show_time_rl.setVisibility(View.VISIBLE);
                 button_prev.setVisibility(View.VISIBLE);
                 button_next.setVisibility(View.VISIBLE);
+                setRepeatView();
+                setShuffleView();
             }
         }
         return pauseRlHeight;
