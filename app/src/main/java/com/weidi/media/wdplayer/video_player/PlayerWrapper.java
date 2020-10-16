@@ -65,6 +65,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
@@ -163,6 +164,8 @@ public class PlayerWrapper {
 
     private AudioManager mAudioManager;
     private AudioFocusRequest mAudioFocusRequest;
+    private int minVolume;
+    private int maxVolume;
 
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
@@ -235,6 +238,9 @@ public class PlayerWrapper {
     public static final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
     public static LinkedHashMap<String, String> mLocalVideoContentsMap;
     public static LinkedHashMap<String, String> mLocalAudioContentsMap;
+    // 当mShuffle = Shuffle.Shuffle_On;时,保存已经播放过的文件
+    private ArrayList<Integer> mLocalContentsHasPlayedList;
+    private Random mRandom;
 
     public enum Shuffle {
         Shuffle_On, Shuffle_Off
@@ -245,9 +251,9 @@ public class PlayerWrapper {
     }
 
     // 关闭随机播放
-    private Shuffle mShuffle = Shuffle.Shuffle_Off;
+    private Shuffle mShuffle = Shuffle.Shuffle_On;
     // 关闭重复播放
-    private Repeat mRepeat = Repeat.Repeat_Off;
+    private Repeat mRepeat = Repeat.Repeat_All;
 
     // 必须首先被调用
     public void setService(Service service) {
@@ -505,6 +511,14 @@ public class PlayerWrapper {
         });
 
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            minVolume = mAudioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC);
+            maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+            Log.i(TAG, "onCreate() minVolume: " + minVolume);// 0
+            Log.i(TAG, "onCreate() maxVolume: " + maxVolume);// 15
+            Log.i(TAG, "onCreate() curVolume: " + curVolume);
+        }
 
         // Test
         /*new Thread(new Runnable() {
@@ -637,10 +651,14 @@ public class PlayerWrapper {
                 startForGetMediaFormat();
                 return true;
             }
+            if (mLocalAudioContentsMap.size() <= 1) {
+                startForGetMediaFormat();
+                return true;
+            }
             // mRepeat == Repeat.Repeat_All
             if (mShuffle == Shuffle.Shuffle_Off) {
                 int index = -1;
-                int curPathIndex = -1;
+                int curPathIndex = -2;
                 for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
                     index++;
                     if (TextUtils.equals(tempMap.getKey(), mCurPath)) {
@@ -648,27 +666,58 @@ public class PlayerWrapper {
                         if (curPathIndex == mLocalAudioContentsMap.size() - 1) {
                             // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
                             index = 0;
-                            curPathIndex = -1;
+                            curPathIndex = -2;
                             break;
                         }
                     }
                     if (index == curPathIndex + 1) {
+                        mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
                         break;
                     }
                 }
-                if (index == 0 && curPathIndex == -1) {
+                if (index == 0 && curPathIndex == -2) {
+                    // 播放第一个文件
                     for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
                         index++;
+                        mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
                         if (index == 1) {
                             break;
                         }
                     }
                 }
+                startForGetMediaFormat();
                 return true;
             }
             // mShuffle == Shuffle.Shuffle_On
+            if (mLocalContentsHasPlayedList == null)
+                mLocalContentsHasPlayedList = new ArrayList<>();
+            if (mRandom == null)
+                mRandom = new Random();
+            int size = mLocalAudioContentsMap.size();
+            for (; ; ) {
+                int randomNumber = mRandom.nextInt(size);
+                if (!mLocalContentsHasPlayedList.contains(randomNumber)) {
+                    mLocalContentsHasPlayedList.add(randomNumber);
+                    int index = -1;
+                    for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
+                        index++;
+                        if (index == randomNumber) {
+                            mPrePath = mCurPath;
+                            mCurPath = tempMap.getKey();
+                            break;
+                        }
+                    }
+                    break;
+                } else {
+                    if (mLocalContentsHasPlayedList.size() == size) {
+                        mLocalContentsHasPlayedList.clear();
+                    }
+                }
+            }
+            startForGetMediaFormat();
+            return true;
         }
 
         // 不需要播放另一个视频
@@ -858,6 +907,14 @@ public class PlayerWrapper {
                 }
                 break;
             case MSG_SEEK_TO_ADD:
+                if (IS_WATCH) {
+                    mAudioManager.setStreamVolume(
+                            AudioManager.STREAM_MUSIC,
+                            (int) addStep,
+                            AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                    addStep = 0;
+                    break;
+                }
                 if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                     mSimpleVideoPlayer.setProgressUs(
                             mSimpleVideoPlayer.getCurrentPosition() + addStep * 1000000);
@@ -871,6 +928,14 @@ public class PlayerWrapper {
                 addStep = 0;
                 break;
             case MSG_SEEK_TO_SUBTRACT:
+                if (IS_WATCH) {
+                    mAudioManager.setStreamVolume(
+                            AudioManager.STREAM_MUSIC,
+                            (int) subtractStep,
+                            AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                    subtractStep = 0;
+                    break;
+                }
                 if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                     mSimpleVideoPlayer.setProgressUs(
                             mSimpleVideoPlayer.getCurrentPosition() - subtractStep * 1000000);
@@ -2141,6 +2206,22 @@ public class PlayerWrapper {
             switch (v.getId()) {
                 case R.id.button_prev:
                     if (!isFrameByFrameMode) {
+                        if (IS_WATCH) {
+                            if (subtractStep == 0) {
+                                int curVolume =
+                                        mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                                subtractStep = curVolume - 1;
+                            } else {
+                                subtractStep -= 1;
+                            }
+                            if (subtractStep < minVolume) {
+                                subtractStep = minVolume;
+                            }
+                            MyToast.show(String.valueOf(subtractStep));
+                            mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
+                            return;
+                        }
                         if (mFFMPEGPlayer != null) {
                             if (!mIsH264) {
                                 if (mMediaDuration > 300) {
@@ -2157,7 +2238,7 @@ public class PlayerWrapper {
                             }
                             Log.d(TAG, "onClick() subtractStep: " + subtractStep);
                             mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 500);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
                         }
                     } else {
                         if (mFFMPEGPlayer != null) {
@@ -2218,6 +2299,22 @@ public class PlayerWrapper {
                     break;
                 case R.id.button_next:
                     if (!isFrameByFrameMode) {
+                        if (IS_WATCH) {
+                            if (addStep == 0) {
+                                int curVolume =
+                                        mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                                addStep = curVolume + 1;
+                            } else {
+                                addStep += 1;
+                            }
+                            if (addStep > maxVolume) {
+                                addStep = maxVolume;
+                            }
+                            MyToast.show(String.valueOf(addStep));
+                            mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
+                            return;
+                        }
                         if (mFFMPEGPlayer != null) {
                             if (!mIsH264) {
                                 if (mMediaDuration > 300) {
@@ -2234,7 +2331,7 @@ public class PlayerWrapper {
                             }
                             Log.d(TAG, "onClick() addStep: " + addStep);
                             mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 500);
+                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
                         }
                     } else {
                         if (mFFMPEGPlayer != null) {
@@ -2593,8 +2690,10 @@ public class PlayerWrapper {
             PackageManager packageManager = mContext.getPackageManager();
             if (PackageManager.PERMISSION_GRANTED == packageManager.checkPermission(
                     Manifest.permission.READ_EXTERNAL_STORAGE, mContext.getPackageName())) {
-                mLocalVideoContentsMap = new LinkedHashMap();
-                mLocalAudioContentsMap = new LinkedHashMap();
+                if (mLocalVideoContentsMap == null)
+                    mLocalVideoContentsMap = new LinkedHashMap();
+                if (mLocalAudioContentsMap == null)
+                    mLocalAudioContentsMap = new LinkedHashMap();
                 // Alarms  DCIM      Download Music         Pictures Ringtones
                 // Android Documents Movies   Notifications Podcasts
                 // /storage/emulated/0/Movies/
