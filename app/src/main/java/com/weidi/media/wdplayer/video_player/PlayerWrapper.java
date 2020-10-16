@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.app.Service;
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -14,6 +16,7 @@ import android.graphics.PixelFormat;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -373,14 +376,15 @@ public class PlayerWrapper {
             Log.i(TAG, "setDataSource() path is null");
             return;
         }
-        mCurPath = path;
-        if (TextUtils.equals(mCurPath, mPrePath)) {
+        if (TextUtils.equals(path, mCurPath)) {
             Log.i(TAG, "setDataSource() path:\n" + path + "\n正在播放中......");
             return;
         }
+
+        mCurPath = path;
+        mPrePath = path;
         Log.i(TAG, "setDataSource() mPrePath:\n" + mPrePath);
         Log.i(TAG, "setDataSource() mCurPath:\n" + mCurPath);
-        mPrePath = mCurPath.substring(0);
 
         addView();
     }
@@ -613,20 +617,7 @@ public class PlayerWrapper {
         onResume();
         mWindowManager.addView(mRootView, mLayoutParams);
 
-        md5Path = md5(mCurPath);
-        String newPath = mCurPath.toLowerCase();
-        if (newPath.startsWith("/storage/")) {
-            mIsLocal = true;
-        } else {
-            mIsLocal = false;
-        }
-        if (newPath.endsWith(".h264")) {
-            mIsH264 = true;
-        } else {
-            mIsH264 = false;
-        }
-        Log.i(TAG, "addView()        mIsLocal: " + mIsLocal);
-        Log.i(TAG, "addView()         mIsH264: " + mIsH264);
+        getMD5ForPath();
     }
 
     public void removeView() {
@@ -639,6 +630,66 @@ public class PlayerWrapper {
         }
     }
 
+    private void getMD5ForPath() {
+        md5Path = md5(mCurPath);
+        String newPath = mCurPath.toLowerCase();
+        if (newPath.startsWith("/storage/")) {
+            mIsLocal = true;
+        } else {
+            mIsLocal = false;
+        }
+        if (newPath.endsWith(".h264")) {
+            mIsH264 = true;
+        } else {
+            mIsH264 = false;
+        }
+        Log.i(TAG, "getMD5ForPath()  mIsLocal: " + mIsLocal);
+        Log.i(TAG, "getMD5ForPath()   mIsH264: " + mIsH264);
+    }
+
+    private boolean allowToPlayback() {
+        IntentFilter intentFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        Intent batteryStatusIntent = mContext.registerReceiver(null, intentFilter);
+
+        int status = batteryStatusIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+        boolean isCharging =
+                (status == BatteryManager.BATTERY_STATUS_CHARGING)
+                        || (status == BatteryManager.BATTERY_STATUS_FULL);
+        Log.i(TAG, "allowToPlayback() 设备是否正在充电: " + (isCharging ? "是" : "否"));
+
+        // 手机正在充电
+        if (isCharging) {
+            int plugged = batteryStatusIntent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+            boolean usbPlugged = (plugged == BatteryManager.BATTERY_PLUGGED_USB);
+            boolean acPlugged = (plugged == BatteryManager.BATTERY_PLUGGED_AC);
+            Log.i(TAG, "allowToPlayback() usbPlugged: " + usbPlugged);
+            Log.i(TAG, "allowToPlayback()  acPlugged: " + acPlugged);
+            if (usbPlugged) {
+                // 手机正处于USB连接
+            } else if (acPlugged) {
+                // 手机通过电源充电中
+            }
+            return true;
+        }
+
+        // 手机没在充电
+        try {
+            BatteryManager batteryManager =
+                    (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
+            int battery =
+                    batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            Log.i(TAG, "allowToPlayback()    battery: " + battery);
+            if (battery <= 15) {
+                Log.e(TAG, "allowToPlayback() 电量过低,不允许再循环播放!!!");
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return true;
+    }
+
     private boolean needToPlaybackOtherVideo() {
         if (mPrePath != null) {
             addView();
@@ -647,11 +698,11 @@ public class PlayerWrapper {
             if (mRepeat == Repeat.Repeat_Off) {
                 return false;
             }
-            if (mRepeat == Repeat.Repeat_One) {
-                startForGetMediaFormat();
-                return true;
+            if (!allowToPlayback()) {
+                return false;
             }
-            if (mLocalAudioContentsMap.size() <= 1) {
+            if (mRepeat == Repeat.Repeat_One
+                    || mLocalAudioContentsMap.size() <= 1) {
                 startForGetMediaFormat();
                 return true;
             }
@@ -673,16 +724,17 @@ public class PlayerWrapper {
                     if (index == curPathIndex + 1) {
                         mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
+                        getMD5ForPath();
                         break;
                     }
                 }
                 if (index == 0 && curPathIndex == -2) {
                     // 播放第一个文件
                     for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
-                        index++;
                         mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
-                        if (index == 1) {
+                        getMD5ForPath();
+                        if (++index == 1) {
                             break;
                         }
                     }
@@ -702,10 +754,10 @@ public class PlayerWrapper {
                     mLocalContentsHasPlayedList.add(randomNumber);
                     int index = -1;
                     for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
-                        index++;
-                        if (index == randomNumber) {
+                        if (++index == randomNumber) {
                             mPrePath = mCurPath;
                             mCurPath = tempMap.getKey();
+                            getMD5ForPath();
                             break;
                         }
                     }
