@@ -377,17 +377,19 @@ public class PlayerWrapper {
         mShuffleOff.setOnClickListener(mOnClickListener);
         mShuffleOn.setOnClickListener(mOnClickListener);
 
-        mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                mAudioManager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        curVolume,
-                        AudioManager.FLAG_SHOW_UI);
-                return true;
-            }
-        });
+        if (!IS_WATCH) {
+            mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    mAudioManager.setStreamVolume(
+                            AudioManager.STREAM_MUSIC,
+                            curVolume,
+                            AudioManager.FLAG_SHOW_UI);
+                    return true;
+                }
+            });
+        }
 
         onCreate();
     }
@@ -404,7 +406,7 @@ public class PlayerWrapper {
             Log.i(TAG, "setDataSource() path is null");
             return;
         }
-        if (TextUtils.equals(path, mCurPath)) {
+        if (TextUtils.equals(path, mCurPath) && mPrePath != null) {
             Log.i(TAG, "setDataSource() path:\n" + path + "\n正在播放中......");
             return;
         }
