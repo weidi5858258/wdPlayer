@@ -19,10 +19,16 @@ http://ivi.bupt.edu.cn/hls/cctv15.m3u8@@@@@@@@@@CCTV-15音乐
 http://ivi.bupt.edu.cn/hls/cctv16.m3u8@@@@@@@@@@CGTN
 http://ivi.bupt.edu.cn/hls/cctv17.m3u8@@@@@@@@@@CCTV-17农业农村
 
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8@@@@@@@@@@黑莓电影
 http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226292/1.m3u8@@@@@@@@@@黑莓电影
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8@@@@@@@@@@黑莓电影
 http://112.50.243.8/PLTV/88888888/224/3221225891/1.m3u8@@@@@@@@@@黑莓电影
 http://scgctvshow.sctv.com/hdlive/emei/1.m3u8@@@@@@@@@@峨眉电影
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226550/1.m3u8@@@@@@@@@@北京IPTV4K超清
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226552/1.m3u8@@@@@@@@@@北京IPTV淘电影
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u8@@@@@@@@@@北京IPTV淘剧场
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226551/1.m3u8@@@@@@@@@@北京IPTV淘娱乐
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226554/1.m3u8@@@@@@@@@@北京IPTV淘BABY
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226555/1.m3u8@@@@@@@@@@北京IPTV萌宠TV
 https://zb3.qhqsnedu.com/live/zhouxingxinga/playlist.m3u8@@@@@@@@@@周星驰系列电影
 http://tx.hls.huya.com/huyalive/94525224-2460685313-10568562945082523648-2789274524-10057-A-0-1.m3u8@@@@@@@@@@周星驰系列电影
 https://zb3.qhqsnedu.com/live/jiesen/playlist.m3u8@@@@@@@@@@斯坦森系列电影
@@ -41,13 +47,8 @@ http://125.210.152.18:9090/live/QSKX_1200.m3u8@@@@@@@@@@求索科学
 http://125.210.152.18:9090/live/QSDW_1200.m3u8@@@@@@@@@@求索动物
 http://125.210.152.18:9090/live/QSSH_1200.m3u8@@@@@@@@@@求索生活
 http://112.17.40.145/PLTV/88888888/224/3221226610/index.m3u8@@@@@@@@@@求索纪录
+
 // http://111.13.111.242/otttv.bj.chinamobile.com ---> http://221.179.217.9
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226550/1.m3u8@@@@@@@@@@北京IPTV4K超清
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226552/1.m3u8@@@@@@@@@@北京IPTV淘电影
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u8@@@@@@@@@@北京IPTV淘剧场
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226551/1.m3u8@@@@@@@@@@北京IPTV淘娱乐
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226554/1.m3u8@@@@@@@@@@北京IPTV淘BABY
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226555/1.m3u8@@@@@@@@@@北京IPTV萌宠TV
 http://221.179.217.9/PLTV/88888888/224/3221226295/1.m3u8@@@@@@@@@@明星大片
 http://221.179.217.9/PLTV/88888888/224/3221226302/1.m3u8@@@@@@@@@@海外综合
 http://221.179.217.9/PLTV/88888888/224/3221226233/1.m3u8@@@@@@@@@@NewTV超级电影
@@ -481,7 +482,7 @@ http://youku1.dianfubang.com/20190602/BgPUCxWc/index.m3u8@@@@@@@@@@6
 #Ubuntu --> 手表
 #adb push /root/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/
 #黑苹果 ---> 大屏手机
-#adb push /Users/alexander/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/1532-48AD/Android/data/com.weidi.usefragments/files/shared/
+#adb push /Users/alexander/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/1532-48AD/Android/data/com.weidi.media.wdplayer/files/shared/
 #黑苹果 ---> 手表
 #adb push /Users/alexander/mydev/workspace_android/wdPlayer/app/src/main/assets/contents.txt /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/
 

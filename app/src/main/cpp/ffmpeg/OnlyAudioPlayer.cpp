@@ -840,6 +840,8 @@ namespace alexander_only_audio {
 
             // endregion
 
+            // region 从队列中取出一个AVPacket(copyAVPacket)进行处理
+
             allowDecode = false;
             if (wrapper->list1->size() > 0) {
                 srcAVPacket = &wrapper->list1->front();
@@ -849,6 +851,10 @@ namespace alexander_only_audio {
                 wrapper->list1->pop_front();
                 allowDecode = true;
             }
+
+            // endregion
+
+            // region 复制数据
 
             size_t list2Size = wrapper->list2->size();
             if (wrapper->isReading) {
@@ -884,13 +890,14 @@ namespace alexander_only_audio {
                 }
             }
 
+            // endregion
+
             // region 缓冲处理
 
             if (wrapper->isReading
                 && wrapper->isHandling
                 && !wrapper->isReadList1Full
                 && wrapper->list2->size() == 0) {
-                // 开始暂停
                 onPaused();
 
                 LOGE("handleData() wait() Cache audio start\n");
@@ -902,29 +909,23 @@ namespace alexander_only_audio {
                     continue;
                 }
 
-                // 开始播放
                 onPlayed();
             }
 
             // endregion
 
-            if (!wrapper->isHandling) {
-                // for (;;) end
-                break;
-            }
-
             if (!allowDecode) {
                 continue;
             }
 
+            // region 硬解码过程
+
             if (wrapper->useMediaCodec) {
                 audioPts = copyAVPacket->pts * av_q2d(stream->time_base);
-                if (mediaDuration < 0
-                    && preAudioPts > audioPts
-                    && preAudioPts > 0
-                    && audioPts > 0) {
+                if (mediaDuration < 0 && preAudioPts > audioPts) {
                     continue;
                 }
+                preAudioPts = audioPts;
 
                 feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                         0x0001,
@@ -932,7 +933,6 @@ namespace alexander_only_audio {
                         copyAVPacket->size,
                         (long long) copyAVPacket->pts);
                 av_packet_unref(copyAVPacket);
-                preAudioPts = audioPts;
 
                 if (!feedAndDrainRet && wrapper->isHandling) {
                     LOGE("handleData() audio feedInputBufferAndDrainOutputBuffer failure\n");
@@ -942,7 +942,9 @@ namespace alexander_only_audio {
                 continue;
             }
 
-            // region 解码过程
+            // endregion
+
+            // region 软解码过程
 
             ret = avcodec_send_packet(wrapper->avCodecContext, copyAVPacket);
             av_packet_unref(copyAVPacket);
@@ -994,17 +996,13 @@ namespace alexander_only_audio {
 
             // endregion
 
-            if (!wrapper->isHandling) {
-                // for (;;) end
-                break;
-            }
-
             if (ret != 0) {
                 continue;
             }
 
             // 播放声音
             handleAudioDataImpl(stream, decodedAVFrame);
+            av_frame_unref(decodedAVFrame);
         }//for(;;) end
 
         if (srcAVPacket != NULL) {

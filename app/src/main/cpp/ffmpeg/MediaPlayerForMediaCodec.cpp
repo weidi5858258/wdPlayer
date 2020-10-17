@@ -2214,7 +2214,7 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.500000;
                     }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
-                    // region 走进这里算是比较好的一个结果
+                    // region 走进这里算是得到一个比较好的结果
 
                     /***
                      0.405114 0.418364 0.429602 0.439030 0.449823
@@ -2267,11 +2267,11 @@ namespace alexander_media_mediacodec {
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
                         //TIME_DIFFERENCE = 0.050000;
-                        TIME_DIFFERENCE = 0.300000;
+                        TIME_DIFFERENCE = 0.300000;// 好
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
-                     0.204199 0.245688 0.263926
+                     0.204199 0.245688 0.263926 0.271427 0.284538
                      */
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.080000;

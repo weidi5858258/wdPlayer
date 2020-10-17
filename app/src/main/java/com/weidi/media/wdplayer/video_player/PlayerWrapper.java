@@ -727,15 +727,19 @@ public class PlayerWrapper {
             if (mRepeat == Repeat.Repeat_Off) {
                 return false;
             }
+
             if (!allowToPlayback()) {
                 return false;
             }
+
             if (mRepeat == Repeat.Repeat_One
                     || mLocalAudioContentsMap.size() <= 1) {
                 startForGetMediaFormat();
                 return true;
             }
-            // mRepeat == Repeat.Repeat_All
+
+            // region mRepeat == Repeat.Repeat_All
+            // 按mLocalAudioContentsMap顺序播放
             if (mShuffle == Shuffle.Shuffle_Off) {
                 int index = -1;
                 int curPathIndex = -2;
@@ -771,7 +775,10 @@ public class PlayerWrapper {
                 startForGetMediaFormat();
                 return true;
             }
-            // mShuffle == Shuffle.Shuffle_On
+            // endregion
+
+            // region mShuffle == Shuffle.Shuffle_On
+            // 按mLocalAudioContentsMap随机播放
             if (mLocalContentsHasPlayedList == null)
                 mLocalContentsHasPlayedList = new ArrayList<>();
             if (mRandom == null)
@@ -799,6 +806,7 @@ public class PlayerWrapper {
             }
             startForGetMediaFormat();
             return true;
+            // endregion
         }
 
         // 不需要播放另一个视频
@@ -2035,8 +2043,8 @@ public class PlayerWrapper {
             mVolumeNormal.setVisibility(View.INVISIBLE);
             mVolumeMute.setVisibility(View.VISIBLE);
         }
-        setRepeatView();
-        setShuffleView();
+        //setRepeatView();
+        //setShuffleView();
         String title;
         if (mIsLocal) {
             title = mCurPath.substring(mCurPath.lastIndexOf("/") + 1);
@@ -2820,6 +2828,9 @@ public class PlayerWrapper {
         }
 
         if (IS_PHONE || IS_WATCH) {
+            // 最好把文件放在下面这些目录中
+            // Alarms  DCIM      Download Music         Pictures Ringtones
+            // Android Documents Movies   Notifications Podcasts
             PackageManager packageManager = mContext.getPackageManager();
             if (PackageManager.PERMISSION_GRANTED == packageManager.checkPermission(
                     Manifest.permission.READ_EXTERNAL_STORAGE, mContext.getPackageName())) {
@@ -2827,8 +2838,6 @@ public class PlayerWrapper {
                     mLocalVideoContentsMap = new LinkedHashMap();
                 if (mLocalAudioContentsMap == null)
                     mLocalAudioContentsMap = new LinkedHashMap();
-                // Alarms  DCIM      Download Music         Pictures Ringtones
-                // Android Documents Movies   Notifications Podcasts
                 // /storage/emulated/0/Movies/
                 file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
                 saveLocalFile("video", file);
