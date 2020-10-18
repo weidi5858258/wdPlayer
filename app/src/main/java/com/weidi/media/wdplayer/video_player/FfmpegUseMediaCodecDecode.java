@@ -641,9 +641,9 @@ public class FfmpegUseMediaCodecDecode {
         }
 
         Log.d(TAG, "initAudioMediaCodec() end");
-        if (!TextUtils.isEmpty(mType) && mType.startsWith("audio/")) {
+        /*if (!TextUtils.isEmpty(mType) && mType.startsWith("audio/")) {
             MyToast.show("音频硬解码");
-        }
+        }*/
         return true;
     }
 

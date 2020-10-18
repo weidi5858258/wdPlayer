@@ -178,10 +178,16 @@ public class PlayerWrapper {
     private TextView mProgressTimeTV;
     private TextView mSeekTimeTV;
     private TextView mDurationTimeTV;
-    private ImageButton mPreviousIB;
+    // 快退
+    private ImageButton mFrIB;
+    // 快进
+    private ImageButton mFfIB;
+    // 歌曲上一首
+    private ImageButton mPrevIB;
+    // 歌曲下一首
+    private ImageButton mNextIB;
     private ImageButton mPlayIB;
     private ImageButton mPauseIB;
-    private ImageButton mNextIB;
     private ImageButton mExitIB;
     // 声音
     private ImageButton mVolumeNormal;
@@ -262,6 +268,9 @@ public class PlayerWrapper {
     private Repeat mRepeat = Repeat.Repeat_Off;
     // 关闭随机播放
     private Shuffle mShuffle = Shuffle.Shuffle_Off;
+    // 当mShuffle == Shuffle.Shuffle_Off时,上一首,下一首才有效
+    private boolean mPlayPrevFile = false;
+    private boolean mPlayNextFile = false;
 
     // 必须首先被调用
     public void setService(Service service) {
@@ -339,14 +348,14 @@ public class PlayerWrapper {
         mProgressTimeTV = mRootView.findViewById(R.id.progress_time_tv);
         mSeekTimeTV = mRootView.findViewById(R.id.seek_time_tv);
         mDurationTimeTV = mRootView.findViewById(R.id.duration_time_tv);
-        mPreviousIB = mRootView.findViewById(R.id.button_prev);
+
+        mFrIB = mRootView.findViewById(R.id.button_fr);
+        mFfIB = mRootView.findViewById(R.id.button_ff);
+        mPrevIB = mRootView.findViewById(R.id.button_prev);
+        mNextIB = mRootView.findViewById(R.id.button_next);
         mPlayIB = mRootView.findViewById(R.id.button_play);
         mPauseIB = mRootView.findViewById(R.id.button_pause);
-        mNextIB = mRootView.findViewById(R.id.button_next);
-
         mExitIB = mRootView.findViewById(R.id.button_exit);
-        mExitIB.setVisibility(View.VISIBLE);
-        mDownloadTV = mRootView.findViewById(R.id.download_tv);
         mVolumeNormal = mRootView.findViewById(R.id.volume_normal);
         mVolumeMute = mRootView.findViewById(R.id.volume_mute);
         mRepeatOff = mRootView.findViewById(R.id.button_repeat_off);
@@ -354,6 +363,7 @@ public class PlayerWrapper {
         mRepeatOne = mRootView.findViewById(R.id.button_repeat_one);
         mShuffleOff = mRootView.findViewById(R.id.button_shuffle_off);
         mShuffleOn = mRootView.findViewById(R.id.button_shuffle_on);
+        mDownloadTV = mRootView.findViewById(R.id.download_tv);
 
         mProgressBarLayout = mRootView.findViewById(R.id.progress_bar_layout);
         mVideoProgressBar = mRootView.findViewById(R.id.video_progress_bar);
@@ -363,10 +373,12 @@ public class PlayerWrapper {
         textInfoTV = mRootView.findViewById(R.id.text_info_tv);
 
         mSurfaceView.setOnClickListener(mOnClickListener);
-        mPreviousIB.setOnClickListener(mOnClickListener);
+        mFrIB.setOnClickListener(mOnClickListener);
+        mFfIB.setOnClickListener(mOnClickListener);
+        mPrevIB.setOnClickListener(mOnClickListener);
+        mNextIB.setOnClickListener(mOnClickListener);
         mPlayIB.setOnClickListener(mOnClickListener);
         mPauseIB.setOnClickListener(mOnClickListener);
-        mNextIB.setOnClickListener(mOnClickListener);
         mExitIB.setOnClickListener(mOnClickListener);
         mDownloadTV.setOnClickListener(mOnClickListener);
         mVolumeNormal.setOnClickListener(mOnClickListener);
@@ -376,6 +388,30 @@ public class PlayerWrapper {
         mRepeatOne.setOnClickListener(mOnClickListener);
         mShuffleOff.setOnClickListener(mOnClickListener);
         mShuffleOn.setOnClickListener(mOnClickListener);
+
+        mPlayIB.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        curVolume,
+                        AudioManager.FLAG_SHOW_UI);
+                return true;
+            }
+        });
+
+        mPauseIB.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        curVolume,
+                        AudioManager.FLAG_SHOW_UI);
+                return true;
+            }
+        });
 
         if (!IS_WATCH) {
             mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
@@ -441,7 +477,7 @@ public class PlayerWrapper {
         mFFMPEGPlayer.setContext(mContext);
         mFFMPEGPlayer.setFfmpegUseMediaCodecDecode(mFfmpegUseMediaCodecDecode);
         mFfmpegUseMediaCodecDecode.setContext(mContext);
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_WATCH) {
+        if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
         }
 
@@ -722,13 +758,24 @@ public class PlayerWrapper {
     private boolean needToPlaybackOtherVideo() {
         if (mPrePath != null) {
             addView();
+            Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
             return true;
         } else if (IS_PHONE || IS_WATCH) {
+            if (!mIsAddedView || !mRootView.isShown()) {
+                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                        " for mRootView isn't showed");
+                return false;
+            }
+
             if (mRepeat == Repeat.Repeat_Off) {
+                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                        " for mRepeat == Repeat.Repeat_Off");
                 return false;
             }
 
             if (!allowToPlayback()) {
+                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                        " for doesn't allowToPlayback");
                 return false;
             }
 
@@ -741,37 +788,71 @@ public class PlayerWrapper {
             // region mRepeat == Repeat.Repeat_All
             // 按mLocalAudioContentsMap顺序播放
             if (mShuffle == Shuffle.Shuffle_Off) {
+                if (!mPlayPrevFile && !mPlayNextFile) {
+                    mPlayNextFile = true;
+                }
                 int index = -1;
-                int curPathIndex = -2;
+                int prevPathIndex = -2;
+                int nextPathIndex = -2;
+                String prevPath = null;
                 for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
                     index++;
                     if (TextUtils.equals(tempMap.getKey(), mCurPath)) {
-                        curPathIndex = index;
-                        if (curPathIndex == mLocalAudioContentsMap.size() - 1) {
-                            // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
-                            index = 0;
-                            curPathIndex = -2;
+                        if (mPlayPrevFile) {
+                            if (index == 0) {
+                                prevPathIndex = mLocalAudioContentsMap.size() - 1;
+                            }
                             break;
+                        } else if (mPlayNextFile) {
+                            nextPathIndex = index;
+                            if (nextPathIndex == mLocalAudioContentsMap.size() - 1) {
+                                // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
+                                index = 0;
+                                break;
+                            }
                         }
+                    } else {
+                        prevPath = tempMap.getKey();
                     }
-                    if (index == curPathIndex + 1) {
+                    if (index == nextPathIndex + 1) {
                         mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
                         getMD5ForPath();
                         break;
                     }
                 }
-                if (index == 0 && curPathIndex == -2) {
-                    // 播放第一个文件
-                    for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
+                if (mPlayPrevFile) {
+                    if (index == 0) {
+                        // 播放最后一个文件
+                        for (Map.Entry<String, String> tempMap :
+                                mLocalAudioContentsMap.entrySet()) {
+                            mPrePath = mCurPath;
+                            mCurPath = tempMap.getKey();
+                            if (index++ == prevPathIndex) {
+                                break;
+                            }
+                        }
+                    } else {
                         mPrePath = mCurPath;
-                        mCurPath = tempMap.getKey();
-                        getMD5ForPath();
-                        if (++index == 1) {
-                            break;
+                        mCurPath = prevPath;
+                    }
+                    getMD5ForPath();
+                } else if (mPlayNextFile) {
+                    if (index == 0) {
+                        // 播放第一个文件
+                        for (Map.Entry<String, String> tempMap :
+                                mLocalAudioContentsMap.entrySet()) {
+                            mPrePath = mCurPath;
+                            mCurPath = tempMap.getKey();
+                            getMD5ForPath();
+                            if (++index == 1) {
+                                break;
+                            }
                         }
                     }
                 }
+                mPlayPrevFile = false;
+                mPlayNextFile = false;
                 startForGetMediaFormat();
                 return true;
             }
@@ -809,6 +890,7 @@ public class PlayerWrapper {
             // endregion
         }
 
+        Log.i(TAG, "needToPlaybackOtherVideo() return false");
         // 不需要播放另一个视频
         return false;
     }
@@ -1197,7 +1279,7 @@ public class PlayerWrapper {
 
     private void startPlayback() {
         Log.d(TAG, "startPlayback() start");
-        if (!mIsAddedView || !mRootView.isShown()) {
+        if (!mIsAddedView || !mRootView.isShown() || TextUtils.isEmpty(mCurPath)) {
             Log.e(TAG, "startPlayback() The condition is not satisfied");
             return;
         }
@@ -1952,14 +2034,6 @@ public class PlayerWrapper {
         mThreadHandler.sendEmptyMessage(MSG_LOAD_CONTENTS);
     }
 
-    private boolean mIsTesting = false;
-
-    public void startTest() {
-        mIsTesting = true;
-        mCouldPlaybackPathList.clear();
-        mCouldPlaybackPathList.add("");
-    }
-
     private void setRepeatView() {
         switch (mRepeat) {
             case Repeat_Off:
@@ -2114,14 +2188,14 @@ public class PlayerWrapper {
             if (!mCouldPlaybackPathList.contains(mCurPath)) {
                 mCouldPlaybackPathList.add(mCurPath);
             }
-            SharedPreferences.Editor edit = mSP.edit();
-            // 保存播放地址
-            edit.putString(PLAYBACK_ADDRESS, mCurPath);
-            // 开始播放设置为false,表示初始化状态
-            edit.putBoolean(PLAYBACK_NORMAL_FINISH, false);
-            edit.putString(PLAYBACK_MEDIA_TYPE, mType);
-            edit.commit();
         }
+        SharedPreferences.Editor edit = mSP.edit();
+        // 保存播放地址
+        edit.putString(PLAYBACK_ADDRESS, mCurPath);
+        // 开始播放设置为false,表示初始化状态
+        edit.putBoolean(PLAYBACK_NORMAL_FINISH, false);
+        edit.putString(PLAYBACK_MEDIA_TYPE, mType);
+        edit.commit();
 
         if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
                 && IS_PHONE) {
@@ -2155,10 +2229,7 @@ public class PlayerWrapper {
             startForGetMediaFormat();
         } else {
             MyToast.show("Safe Exit");
-            if (mIsTesting) {
 
-                return;
-            }
             // 播放结束
             if (!needToPlaybackOtherVideo()) {
                 removeView();
@@ -2172,11 +2243,8 @@ public class PlayerWrapper {
                 System.gc();
             }
         }
-        if (TextUtils.isEmpty(mType)
-                || mType.startsWith("video/")) {
-            // 正常结束设置为true
-            mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
-        }
+
+        mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
     }
 
     private void onError(Message msg) {
@@ -2287,6 +2355,8 @@ public class PlayerWrapper {
             pauseRlHeight = pause_rl.getHeight();
             SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
             RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
+            ImageButton button_fr = mRootView.findViewById(R.id.button_fr);
+            ImageButton button_ff = mRootView.findViewById(R.id.button_ff);
             ImageButton button_prev = mRootView.findViewById(R.id.button_prev);
             ImageButton button_next = mRootView.findViewById(R.id.button_next);
             ImageButton button_repeat_off = mRootView.findViewById(R.id.button_repeat_off);
@@ -2297,6 +2367,10 @@ public class PlayerWrapper {
             if (mMediaDuration <= 0 && !mIsH264) {
                 progress_bar.setVisibility(View.GONE);
                 show_time_rl.setVisibility(View.GONE);
+                if (!IS_WATCH) {
+                    button_fr.setVisibility(View.INVISIBLE);
+                    button_ff.setVisibility(View.INVISIBLE);
+                }
                 button_prev.setVisibility(View.INVISIBLE);
                 button_next.setVisibility(View.INVISIBLE);
                 button_repeat_off.setVisibility(View.INVISIBLE);
@@ -2307,6 +2381,10 @@ public class PlayerWrapper {
             } else {
                 progress_bar.setVisibility(View.VISIBLE);
                 show_time_rl.setVisibility(View.VISIBLE);
+                if (!IS_WATCH) {
+                    button_fr.setVisibility(View.VISIBLE);
+                    button_ff.setVisibility(View.VISIBLE);
+                }
                 button_prev.setVisibility(View.VISIBLE);
                 button_next.setVisibility(View.VISIBLE);
                 setRepeatView();
@@ -2344,7 +2422,7 @@ public class PlayerWrapper {
         @Override
         public void onClick(View v) {
             switch (v.getId()) {
-                case R.id.button_prev:
+                case R.id.button_fr:
                     if (!isFrameByFrameMode) {
                         if (IS_WATCH) {
                             if (subtractStep == 0) {
@@ -2386,7 +2464,7 @@ public class PlayerWrapper {
                         }
                     }
                     break;
-                case R.id.button_next:
+                case R.id.button_ff:
                     if (!isFrameByFrameMode) {
                         if (IS_WATCH) {
                             if (addStep == 0) {
@@ -2427,6 +2505,18 @@ public class PlayerWrapper {
                             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
                         }
                     }
+                    break;
+                case R.id.button_prev:
+                    mPlayPrevFile = true;
+                    mPlayNextFile = false;
+                    mPrePath = null;
+                    onRelease();
+                    break;
+                case R.id.button_next:
+                    mPlayPrevFile = false;
+                    mPlayNextFile = true;
+                    mPrePath = null;
+                    onRelease();
                     break;
                 case R.id.button_play:
                     if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
@@ -2801,29 +2891,41 @@ public class PlayerWrapper {
             Log.e(TAG, "loadContents() files is null");
             return;
         }
+
         File file = null;
-        for (File f : files) {
-            if (f == null) {
-                continue;
-            }
-            Log.i(TAG, "Environment.MEDIA_SHARED: " + f.getAbsolutePath());
-            file = f;
-        }
-        if (file != null) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(file.getAbsolutePath());
-            sb.append("/");
-            sb.append("contents.txt");
-            file = new File(sb.toString());
-            if (file.exists()) {
-                readContents(file);
-                //Log.i(TAG, "loadContents() end");
-                //return;
-            } else {
-                if (copyFile(file)) {
-                    loadContents();
-                    return;
+        String rootDir = null;
+        if (files.length == 1) {
+            file = files[0];
+            rootDir = file.getAbsolutePath();
+        } else {
+            for (File f : files) {
+                if (f == null) {
+                    continue;
                 }
+                if (!f.getAbsolutePath().startsWith("/storage/emulated/0")) {
+                    file = f;
+                    rootDir = f.getAbsolutePath();
+                    break;
+                }
+            }
+        }
+        if (file == null) {
+            return;
+        }
+
+        Log.i(TAG, "Environment.MEDIA_SHARED: " + file.getAbsolutePath());
+        StringBuilder sb = new StringBuilder();
+        sb.append(file.getAbsolutePath());
+        sb.append("/");
+        sb.append("contents.txt");
+        file = new File(sb.toString());
+        if (file.exists()) {
+            readContents(file);
+            //return;
+        } else {
+            if (copyFile(file)) {
+                loadContents();
+                return;
             }
         }
 
@@ -2838,11 +2940,24 @@ public class PlayerWrapper {
                     mLocalVideoContentsMap = new LinkedHashMap();
                 if (mLocalAudioContentsMap == null)
                     mLocalAudioContentsMap = new LinkedHashMap();
+                rootDir = rootDir.substring(0, rootDir.indexOf("/Android/"));
+                Log.i(TAG, "loadContents()   rootDir: " + rootDir);
+                sb.delete(0, sb.length());
+                sb.append(rootDir);
+                sb.append("/Movies");
                 // /storage/emulated/0/Movies/
-                file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+                // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+                file = new File(sb.toString());
+                Log.i(TAG, "loadContents()      file: " + file.getAbsolutePath());
                 saveLocalFile("video", file);
+
+                sb.delete(0, sb.length());
+                sb.append(rootDir);
+                sb.append("/Music");
                 // /storage/emulated/0/Music/
-                file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+                // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
+                file = new File(sb.toString());
+                Log.i(TAG, "loadContents()      file: " + file.getAbsolutePath());
                 saveLocalFile("audio", file);
             }
         }

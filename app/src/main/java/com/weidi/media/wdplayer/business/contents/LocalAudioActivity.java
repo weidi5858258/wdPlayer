@@ -1,5 +1,6 @@
 package com.weidi.media.wdplayer.business.contents;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,7 +9,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.support.v7.widget.RecyclerView;
-import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -33,7 +33,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
-public class LocalAudioActivityForWear extends WearableActivity {
+public class LocalAudioActivity extends Activity {
 
     private static final String TAG = "ContentsActivity";
 
@@ -45,9 +45,6 @@ public class LocalAudioActivityForWear extends WearableActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.contents_layout);
-
-        // Enables Always-on
-        setAmbientEnabled();
 
         internalCreate(savedInstanceState);
     }
@@ -115,7 +112,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                LocalAudioActivityForWear.this.uiHandleMessage(msg);
+                LocalAudioActivity.this.uiHandleMessage(msg);
             }
         };
 

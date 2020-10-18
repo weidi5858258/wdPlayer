@@ -17,9 +17,11 @@ import android.util.Log;
 import android.view.View;
 
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
+import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
+import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.utils.MyToast;
 
 import java.io.File;
@@ -119,8 +121,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 //super.handleMessage(msg);
-                if (clickCounts > 4) {
-                    clickCounts = 4;
+                if (clickCounts > 5) {
+                    clickCounts = 5;
                 }
                 switch (clickCounts) {
                     case 1:
@@ -135,6 +137,13 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(intent);
                         break;
                     case 4:
+                        if (PlayerWrapper.IS_PHONE) {
+                            startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
+                        } else {
+                            finish();
+                        }
+                        break;
+                    case 5:
                         finish();
                         break;
                     default:

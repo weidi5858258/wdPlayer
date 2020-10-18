@@ -73,27 +73,45 @@
         android:paddingBottom="0dp">
 
         <ImageButton
-            android:id="@+id/button_prev"
+            android:id="@+id/button_fr"
             style="@style/StyleImageButton"
             android:layout_alignParentStart="true"
-            android:contentDescription="Previous"
+            android:contentDescription="FR"
             android:padding="0dp"
             android:src="@drawable/media_ic_fr" />
 
         <ImageButton
-            android:id="@+id/button_next"
+            android:id="@+id/button_ff"
             style="@style/StyleImageButton"
-            android:layout_marginLeft="@dimen/dimen_24_dp"
-            android:layout_toRightOf="@id/button_prev"
-            android:contentDescription="Next"
+            android:layout_marginLeft="@dimen/dimen_8_dp"
+            android:layout_toRightOf="@id/button_fr"
+            android:contentDescription="FF"
             android:padding="0dp"
             android:src="@drawable/media_ic_ff" />
 
         <ImageButton
+            android:id="@+id/button_prev"
+            style="@style/StyleImageButton"
+            android:layout_marginLeft="@dimen/dimen_8_dp"
+            android:layout_toRightOf="@id/button_ff"
+            android:contentDescription="Prev"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_prev" />
+
+        <ImageButton
+            android:id="@+id/button_next"
+            style="@style/StyleImageButton"
+            android:layout_marginLeft="@dimen/dimen_8_dp"
+            android:layout_toRightOf="@id/button_prev"
+            android:contentDescription="Next"
+            android:padding="0dp"
+            android:src="@drawable/media_ic_next" />
+
+        <ImageButton
             android:id="@+id/button_exit"
             style="@style/StyleImageButton"
-            android:layout_marginLeft="@dimen/dimen_24_dp"
-            android:layout_toRightOf="@id/button_next"
+            android:layout_marginRight="@dimen/dimen_16_dp"
+            android:layout_toLeftOf="@id/button_play"
             android:contentDescription="Exit"
             android:padding="0dp"
             android:src="@drawable/exit_view" />
@@ -170,8 +188,8 @@
         <ImageButton
             android:id="@+id/volume_normal"
             style="@style/StyleImageButton"
-            android:layout_marginRight="@dimen/dimen_24_dp"
-            android:layout_toLeftOf="@id/button_repeat_off"
+            android:layout_marginLeft="@dimen/dimen_16_dp"
+            android:layout_toRightOf="@id/button_play"
             android:contentDescription="volume_normal"
             android:padding="0dp"
             android:src="@drawable/volume_normal" />
@@ -179,8 +197,8 @@
         <ImageButton
             android:id="@+id/volume_mute"
             style="@style/StyleImageButton"
-            android:layout_marginRight="@dimen/dimen_24_dp"
-            android:layout_toLeftOf="@id/button_repeat_off"
+            android:layout_marginLeft="@dimen/dimen_16_dp"
+            android:layout_toRightOf="@id/button_play"
             android:contentDescription="volume_mute"
             android:padding="0dp"
             android:src="@drawable/volume_mute"

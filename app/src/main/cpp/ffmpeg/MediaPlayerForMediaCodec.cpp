@@ -2112,6 +2112,7 @@ namespace alexander_media_mediacodec {
             }
 
             if (wrapper == nullptr) {
+                av_packet_unref(srcAVPacket);
                 continue;
             }
 
@@ -3611,27 +3612,23 @@ namespace alexander_media_mediacodec {
                         }
                         break;
                 }// switch (ret) end
-            }// ret == 0
 
-
-            if (!wrapper->isHandling) {
-                // for (;;) end
-                break;
-            }
-
-            if (ret != 0) {
-                av_frame_unref(decodedAVFrame);
-                if (wrapper->type == TYPE_AUDIO && preAudioAVFrame->pkt_size > 0) {
-                    av_frame_ref(decodedAVFrame, preAudioAVFrame);
-                    LOGD("handleData() audio av_frame_ref\n");
-                } else if (wrapper->type == TYPE_VIDEO && preVideoAVFrame->pkt_size > 0) {
-                    av_frame_ref(decodedAVFrame, preVideoAVFrame);
-                    //http://101.71.255.229:6610/zjhs/2/10106/index.m3u8?virtualDomain=zjhs.live_hls.zte.com
-                    //http://101.71.255.229:6610/zjhs/2/10109/index.m3u8?virtualDomain=zjhs.live_hls.zte.com
-                    //LOGW("handleData() video av_frame_ref\n");
-                } else {
-                    continue;
+                if (ret != 0) {
+                    av_frame_unref(decodedAVFrame);
+                    if (wrapper->type == TYPE_AUDIO && preAudioAVFrame->pkt_size > 0) {
+                        av_frame_ref(decodedAVFrame, preAudioAVFrame);
+                        LOGD("handleData() audio av_frame_ref\n");
+                    } else if (wrapper->type == TYPE_VIDEO && preVideoAVFrame->pkt_size > 0) {
+                        av_frame_ref(decodedAVFrame, preVideoAVFrame);
+                        //http://101.71.255.229:6610/zjhs/2/10106/index.m3u8?virtualDomain=zjhs.live_hls.zte.com
+                        //http://101.71.255.229:6610/zjhs/2/10109/index.m3u8?virtualDomain=zjhs.live_hls.zte.com
+                        //LOGW("handleData() video av_frame_ref\n");
+                    } else {
+                        continue;
+                    }
                 }
+            } else {
+                continue;
             }
 
             // endregion

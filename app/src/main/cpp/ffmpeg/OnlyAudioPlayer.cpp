@@ -575,17 +575,18 @@ namespace alexander_only_audio {
          3.list1中还没满n个文件就读完了
          */
         for (;;) {
-            // exit
+            // region exit
             if (!audioWrapper->father->isReading) {
-                // for (;;) end
                 break;
             }
+            // endregion
 
-            // seekTo
+            // region seekTo
             if (audioWrapper->father->isPausedForSeek
                 && timeStamp >= 0) {
                 seekToImpl();
             }
+            // endregion
 
             // 0 if OK, < 0 on error or end of file
             readFrame = av_read_frame(avFormatContext, srcAVPacket);
@@ -636,8 +637,8 @@ namespace alexander_only_audio {
 
             if (srcAVPacket->stream_index == audioWrapper->father->streamIndex) {
                 if (audioWrapper->father->useMediaCodec) {
-                    readFrame = av_bsf_send_packet(audioWrapper->father->avbsfContext,
-                                                   srcAVPacket);
+                    readFrame = av_bsf_send_packet(
+                            audioWrapper->father->avbsfContext, srcAVPacket);
                     if (readFrame < 0) {
                         LOGE("readData() audio av_bsf_send_packet failure\n");
                         break;
@@ -650,6 +651,8 @@ namespace alexander_only_audio {
                 } else {
                     readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
                 }
+            } else {
+                av_packet_unref(srcAVPacket);
             }
         }// for(;;) end
 
@@ -828,6 +831,10 @@ namespace alexander_only_audio {
                     LOGD("handleData() wait() User  audio start\n");
                 }
                 notifyToHandleWait(wrapper);
+                if (!wrapper->isHandling) {
+                    // for (;;) end
+                    break;
+                }
                 if (wrapper->isPausedForUser || wrapper->isPausedForSeek) {
                     continue;
                 }
@@ -836,7 +843,7 @@ namespace alexander_only_audio {
                 } else {
                     LOGD("handleData() wait() User  audio end\n");
                 }
-            }// 暂停装置 end
+            }
 
             // endregion
 
@@ -908,6 +915,10 @@ namespace alexander_only_audio {
                 if (wrapper->isPausedForSeek) {
                     continue;
                 }
+                if (!wrapper->isHandling) {
+                    // for (;;) end
+                    break;
+                }
 
                 onPlayed();
             }
@@ -950,59 +961,63 @@ namespace alexander_only_audio {
             av_packet_unref(copyAVPacket);
             switch (ret) {
                 case AVERROR(EAGAIN):
-                    LOGE("handleData() audio avcodec_send_packet   ret: %d\n", ret);
+                    LOGE("handleData() audio avcodec_send_packet   ret: %d\n", ret);// -11
                     break;
                 case AVERROR(EINVAL):
                 case AVERROR(ENOMEM):
                 case AVERROR_EOF:
-                    LOGE("handleData() audio avcodec_send_packet 发送数据包到解码器时出错 %d", ret);
-                    // wrapper->isHandling = false;
+                    LOGE("audio 发送数据包到解码器时出错 %d", ret);// -22
+                    //wrapper->isHandling = false;
                     break;
                 case 0:
-                default:
                     break;
-            }// switch (ret) end
-
-            if (!wrapper->isHandling) {
-                // for (;;) end
-                break;
+                default:
+                    // audio 发送数据包时出现异常 -50531338
+                    LOGE("audio 发送数据包时出现异常 %d", ret);// -1094995529
+                    break;
             }
 
-            if (ret != 0) {
+            if (!ret) {
+                ret = avcodec_receive_frame(wrapper->avCodecContext, decodedAVFrame);
+                switch (ret) {
+                    // 输出是不可用的,必须发送新的输入
+                    case AVERROR(EAGAIN):
+                        LOGE("handleData() audio avcodec_receive_frame ret: %d\n", ret);
+                        break;
+                    case AVERROR(EINVAL):
+                        // codec打不开,或者是一个encoder
+                    case AVERROR_EOF:
+                        // 已经完全刷新,不会再有输出帧了
+                        LOGE("audio 从解码器接收解码帧时出错 %d", ret);
+                        //wrapper->isHandling = false;
+                        break;
+                    case 0: {
+                        // 解码成功,返回一个输出帧
+                        //av_frame_unref(preAudioAVFrame);
+                        //av_frame_ref(preAudioAVFrame, decodedAVFrame);
+                        break;
+                    }
+                    default:
+                        LOGE("audio 接收解码帧时出现异常 %d", ret);
+                        break;
+                }
+
+                if (ret != 0) {
+                    av_frame_unref(decodedAVFrame);
+                    continue;
+                }
+            } else {
                 continue;
             }
-
-            ret = avcodec_receive_frame(wrapper->avCodecContext, decodedAVFrame);
-            switch (ret) {
-                // 输出是不可用的,必须发送新的输入
-                case AVERROR(EAGAIN):
-                    LOGE("handleData() audio avcodec_receive_frame ret: %d\n", ret);
-                    break;
-                case AVERROR(EINVAL):
-                    // codec打不开,或者是一个encoder
-                case AVERROR_EOF:
-                    // 已经完全刷新,不会再有输出帧了
-                    // wrapper->isHandling = false;
-                    break;
-                case 0: {
-                    // 解码成功,返回一个输出帧
-                    break;
-                }
-                default:
-                    // 合法的解码错误
-                    LOGE("handleData() audio avcodec_receive_frame 从解码器接收帧时出错 %d", ret);
-                    break;
-            }// switch (ret) end
 
             // endregion
 
-            if (ret != 0) {
-                continue;
-            }
+            // region 处理软解码后的数据(播放声音)
 
-            // 播放声音
             handleAudioDataImpl(stream, decodedAVFrame);
             av_frame_unref(decodedAVFrame);
+
+            // endregion
         }//for(;;) end
 
         if (srcAVPacket != NULL) {

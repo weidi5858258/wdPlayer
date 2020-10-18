@@ -80,6 +80,10 @@
             android:screenOrientation="landscape"/>
 
         <activity
+            android:name="com.weidi.media.wdplayer.business.contents.LocalAudioActivity"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+
+        <activity
             android:name="com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear"
             android:screenOrientation="portrait"/>
 
