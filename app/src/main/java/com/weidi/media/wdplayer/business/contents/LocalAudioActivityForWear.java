@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.v7.widget.RecyclerView;
 import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -17,6 +16,7 @@ import android.widget.EditText;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.recycler_view.VerticalLayoutManager;
@@ -24,6 +24,9 @@ import com.weidi.utils.MyToast;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.wear.widget.WearableRecyclerView;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
@@ -35,7 +38,7 @@ import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 public class LocalAudioActivityForWear extends WearableActivity {
 
-    private static final String TAG = "ContentsActivity";
+    private static final String TAG = "LAAForWear";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -44,7 +47,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.contents_layout);
+        setContentView(R.layout.contents_layout_wear);
 
         // Enables Always-on
         setAmbientEnabled();
@@ -97,12 +100,12 @@ public class LocalAudioActivityForWear extends WearableActivity {
     /////////////////////////////////////////////////////////////////////////
 
     private EditText mAddressET;
-    private RecyclerView mRecyclerView;
+    private WearableRecyclerView mRecyclerView;
+    private WearableVerticalLayoutManager mLayoutManager;
+    private ContentsAdapterForWear mAdapter;
 
     private Handler mUiHandler;
     private long contentLength = -1;
-    private VerticalLayoutManager mLayoutManager;
-    private ContentsAdapter mAdapter;
     private SharedPreferences mPreferences;
     private int mContentsCount = 0;
     private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
@@ -111,7 +114,6 @@ public class LocalAudioActivityForWear extends WearableActivity {
     private int mClickCount = 0;
 
     private void internalCreate(Bundle savedInstanceState) {
-        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
@@ -123,15 +125,17 @@ public class LocalAudioActivityForWear extends WearableActivity {
         mRecyclerView = findViewById(R.id.contents_rv);
         findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
 
+        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mLocalAudioContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mLocalAudioContentsMap.get(path));
         }
-    }
 
-    private void internalResume() {
         if (!PlayerWrapper.mLocalAudioContentsMap.isEmpty()) {
             initAdapter();
+            mRecyclerView.requestFocus();
+            mRecyclerView.isEdgeItemsCenteringEnabled();
+            mRecyclerView.isCircularScrollingGestureEnabled();
             mRecyclerView.setLayoutManager(mLayoutManager);
             mLayoutManager.setRecyclerView(mRecyclerView);
             mRecyclerView.setAdapter(mAdapter);
@@ -157,6 +161,10 @@ public class LocalAudioActivityForWear extends WearableActivity {
         }
     }
 
+    private void internalResume() {
+
+    }
+
     private void internalDestroy() {
         mPreferences = null;
         mUiHandler = null;
@@ -167,15 +175,15 @@ public class LocalAudioActivityForWear extends WearableActivity {
     }
 
     private void initAdapter() {
-        mLayoutManager = new VerticalLayoutManager(getApplicationContext());
-        mAdapter = new ContentsAdapter(getApplicationContext());
+        mLayoutManager = new WearableVerticalLayoutManager(getApplicationContext());
+        mAdapter = new ContentsAdapterForWear(getApplicationContext());
         mAdapter.setOnItemClickListener(
-                new ContentsAdapter.OnItemClickListener() {
+                new ContentsAdapterForWear.OnItemClickListener() {
                     @Override
                     public void onItemClick(String key, int position, int viewId) {
                         MLog.d(TAG, "onItemClick() audioPlaybackPath: " + key);
 
-                        String videoPlaybackPath = key;
+                        String audioPlaybackPath = key;
                         if (TextUtils.isEmpty(key)) {
                             return;
                         }
@@ -187,7 +195,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                                 EventBusUtils.post(
                                         PlayerService.class,
                                         PlayerService.COMMAND_SHOW_WINDOW,
-                                        new Object[]{videoPlaybackPath, "audio/"});
+                                        new Object[]{audioPlaybackPath, "audio/"});
                                 break;
                             case R.id.item_download_btn:
                                 break;
