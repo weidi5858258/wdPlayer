@@ -741,7 +741,7 @@ public class PlayerWrapper {
     };
 
     private void setControllerPanelBackgroundColor() {
-        if (!mIsPortraitScreen) {
+        if (mContext.getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT) {
             return;
         }
         if (mColorsHasUsedList == null)
