@@ -763,7 +763,7 @@ public class PlayerWrapper {
                 }
                 break;
             } else {
-                if (mColorsHasUsedList.size() == length) {
+                if (mColorsHasUsedList.size() >= length) {
                     mColorsHasUsedList.clear();
                 }
             }
@@ -777,8 +777,14 @@ public class PlayerWrapper {
                 ContextCompat.getColor(mContext, targetColor));
         if (!IS_WATCH) {
             ObjectAnimator objectAnimator =
-                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
-            objectAnimator.setDuration(3000);
+                    ObjectAnimator.ofFloat(mControllerPanelLayout,
+                            "alpha",
+                            0f, 1f);
+            if (mIsLocal) {
+                objectAnimator.setDuration(5000);
+            } else {
+                objectAnimator.setDuration(8000);
+            }
             objectAnimator.start();
         }
     }
@@ -968,7 +974,7 @@ public class PlayerWrapper {
                     }
                     break;
                 } else {
-                    if (mLocalContentsHasPlayedList.size() == size) {
+                    if (mLocalContentsHasPlayedList.size() >= size) {
                         mLocalContentsHasPlayedList.clear();
                     }
                 }
@@ -1842,8 +1848,8 @@ public class PlayerWrapper {
         } else {
             frameParams.setMargins(
                     0, mNeedVideoHeight, 0, 0);
-            mControllerPanelLayout.setBackgroundColor(
-                    mContext.getResources().getColor(R.color.lightgray));
+            /*mControllerPanelLayout.setBackgroundColor(
+                    mContext.getResources().getColor(R.color.lightgray));*/
         }
         frameParams.width = mScreenWidth;
         frameParams.height = mControllerPanelLayoutHeight;
@@ -1959,8 +1965,8 @@ public class PlayerWrapper {
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
             frameParams.setMargins(0, mNeedVideoHeight, 0, 0);
-            mControllerPanelLayout.setBackgroundColor(
-                    mContext.getResources().getColor(R.color.lightgray));
+            /*mControllerPanelLayout.setBackgroundColor(
+                    mContext.getResources().getColor(R.color.lightgray));*/
         }
         frameParams.width = mScreenWidth;
         frameParams.height = mControllerPanelLayoutHeight;
@@ -2172,8 +2178,7 @@ public class PlayerWrapper {
         } else if (mIsAudio) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
-        mControllerPanelLayout.setBackgroundColor(
-                ContextCompat.getColor(mContext, R.color.transparent));
+        setControllerPanelBackgroundColor();
         mProgressTimeTV.setText("");
         mDurationTimeTV.setText("");
         mProgressBar.setProgress(0);
@@ -2301,7 +2306,7 @@ public class PlayerWrapper {
             }
         }
 
-        setControllerPanelBackgroundColor();
+        //setControllerPanelBackgroundColor();
     }
 
     private void onFinished() {
