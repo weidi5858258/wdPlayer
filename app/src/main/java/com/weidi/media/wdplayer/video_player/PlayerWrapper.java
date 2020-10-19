@@ -1021,8 +1021,7 @@ public class PlayerWrapper {
                 if (!IS_WATCH) {
                     mLoadingView.setVisibility(View.GONE);
                 } else {
-                    if (TextUtils.isEmpty(mType)
-                            || mType.startsWith("video/")) {
+                    if (mIsVideo) {
                         MyToast.show("Play");
                     }
                 }
@@ -1035,8 +1034,7 @@ public class PlayerWrapper {
                     if (!IS_WATCH) {
                         mLoadingView.setVisibility(View.VISIBLE);
                     } else {
-                        if (TextUtils.isEmpty(mType)
-                                || mType.startsWith("video/")) {
+                        if (mIsVideo) {
                             MyToast.show("Pause");
                         }
                     }
@@ -1296,8 +1294,7 @@ public class PlayerWrapper {
                                     } else {
                                         mDownloadTV.setText("4");
                                     }
-                                    if (TextUtils.isEmpty(mType)
-                                            || mType.startsWith("video/")) {
+                                    if (mIsVideo) {
                                         mVideoWidth = 0;
                                         mVideoHeight = 0;
                                         handlePortraitScreen();
@@ -1355,8 +1352,7 @@ public class PlayerWrapper {
                 && !mPath.endsWith(".h264")
                 && !mPath.endsWith(".aac")
                 //&& mIsLocal
-                && (TextUtils.isEmpty(mType)
-                || mType.startsWith("video/"))) {
+                && mIsVideo) {
             onReady();
             mGetMediaFormat.start(mPath);
             return;
@@ -1509,8 +1505,7 @@ public class PlayerWrapper {
                     } else {
                         sendEmptyMessage(DO_SOMETHING_CODE_init);
                         mFfmpegUseMediaCodecDecode.mType = mType;
-                        if (TextUtils.isEmpty(mType)
-                                || mType.startsWith("video/")) {
+                        if (mIsVideo) {
                             if (!mCurPath.endsWith(".h264")) {
                                 mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_setMode,
                                         JniObject.obtain().writeInt(
@@ -1520,7 +1515,7 @@ public class PlayerWrapper {
                                         JniObject.obtain().writeInt(
                                                 FFMPEG.USE_MODE_ONLY_VIDEO));
                             }
-                        } else if (mType.startsWith("audio/")) {
+                        } else if (mIsAudio) {
                             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_setMode,
                                     JniObject.obtain().writeInt(FFMPEG.USE_MODE_ONLY_AUDIO));
                         }
@@ -1873,8 +1868,7 @@ public class PlayerWrapper {
                     }
                 }
             } else {
-                if (TextUtils.isEmpty(mType)
-                        || mType.startsWith("video/")) {
+                if (mIsVideo) {
                     if (mMediaDuration <= 0) {
                         // 是视频并且只下载不播放的情况下
                         updateRootViewLayout(mScreenWidth, pauseRlHeight, x, y);
@@ -2161,8 +2155,7 @@ public class PlayerWrapper {
 
     private void onReady() {
         // 是否显示控制面板
-        if (TextUtils.isEmpty(mType)
-                || mType.startsWith("video/")) {
+        if (mIsVideo) {
             if (!mIsLocal) {
                 if (!IS_WATCH) {
                     mLoadingView.setVisibility(View.VISIBLE);
@@ -2176,7 +2169,7 @@ public class PlayerWrapper {
                     mControllerPanelLayout.setVisibility(View.INVISIBLE);
                 }
             }
-        } else if (mType.startsWith("audio/")) {
+        } else if (mIsAudio) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
         mControllerPanelLayout.setBackgroundColor(
@@ -2221,7 +2214,7 @@ public class PlayerWrapper {
             if (!IS_WATCH) {
                 mFileNameTV.setText(title);
             } else {
-                if (!TextUtils.isEmpty(mType) && mType.startsWith("audio/")) {
+                if (mIsAudio) {
                     mFileNameTV.setText(title);
                 }
             }
@@ -2252,8 +2245,7 @@ public class PlayerWrapper {
             mDurationTimeTV.setText(String.valueOf(mMediaDuration));
         }
 
-        if (TextUtils.isEmpty(mType)
-                || mType.startsWith("video/")) {
+        if (mIsVideo) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 boolean show = mSP.getBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, true);
                 if (!mIsLocal) {
@@ -2298,8 +2290,7 @@ public class PlayerWrapper {
         } else {
             // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 电视机");
             if (IS_WATCH) {
-                if (TextUtils.isEmpty(mType)
-                        || mType.startsWith("video/")) {
+                if (mIsVideo) {
                     handleLandscapeScreen(0);
                 } else {
                     handlePortraitScreen();
@@ -2358,8 +2349,7 @@ public class PlayerWrapper {
                 break;
             case Callback.ERROR_FFMPEG_INIT:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                if (TextUtils.isEmpty(mType)
-                        || mType.startsWith("video/")) {
+                if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
                         // startPlayback();
@@ -2809,10 +2799,9 @@ public class PlayerWrapper {
         }
         if (!Boolean.parseBoolean(
                 mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isRunning, null))) {
-            if (TextUtils.isEmpty(mType)
-                    || mType.startsWith("video/")) {
+            if (mIsVideo) {
                 setType("video/");
-            } else if (mType.startsWith("audio/")) {
+            } else if (mIsAudio) {
                 setType("audio/");
             }
             EventBusUtils.post(
