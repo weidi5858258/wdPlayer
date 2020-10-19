@@ -306,6 +306,48 @@ namespace alexander_media_mediacodec {
 
     void closeOther();
 
+    // 基本形式为strcmp(str1,str2)
+    // 若str1=str2，则返回零；
+    // 若str1<str2，则返回负数；
+    // 若str1>str2，则返回正数。
+    int startsWith(const char *str1, char *str2) {
+        if (str1 == nullptr || str2 == nullptr) {
+            return false;
+        }
+        int len1 = strlen(str1);
+        int len2 = strlen(str2);
+        if (len1 < len2 || len1 == 0 || len2 == 0) {
+            return false;
+        }
+        char temp[len2];
+        strncpy(temp, str1, len2);
+        int ret = strcmp(temp, str2);
+        if (!ret) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool endsWith(const char *str1, char *str2) {
+        if (str1 == nullptr || str2 == nullptr) {
+            return false;
+        }
+        int len1 = strlen(str1);
+        int len2 = strlen(str2);
+        if (len1 < len2 || len1 == 0 || len2 == 0) {
+            return false;
+        }
+        char temp[len2];
+        strncpy(temp, str1 + (len1 - len2), len2);
+        int ret = strcmp(temp, str2);
+        if (!ret) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /***
      在Android logcat中打印FFmpeg调试信息
      https://zhuanlan.zhihu.com/p/48384062
@@ -2214,7 +2256,20 @@ namespace alexander_media_mediacodec {
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.500000;
+                        if (!strcmp(inFilePath,
+                                    "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226292/1.m3u8")
+                            || !strcmp(inFilePath,
+                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8")
+                            || !strcmp(inFilePath,
+                                       "http://112.50.243.8/PLTV/88888888/224/3221225891/1.m3u8")
+                            || !strcmp(inFilePath,
+                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226552/1.m3u8")
+                            || !strcmp(inFilePath,
+                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u8")) {
+                            TIME_DIFFERENCE = 1.000000;
+                        } else {
+                            TIME_DIFFERENCE = 0.500000;
+                        }
                     }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
@@ -2899,7 +2954,7 @@ namespace alexander_media_mediacodec {
         if (videoPts > 0 && audioPts > 0) {
             //LOGW("handleVideoDataImpl()    videoPts: %lf\n", videoPts);
             //LOGD("handleVideoDataImpl()    audioPts: %lf\n", audioPts);
-            //LOGW("handleVideoDataImpl() preVideoPts: %lf\n", preVideoPts);
+            //LOGW("handleVideoDataImpl() tempTimeDifference: %llf\n", tempTimeDifference);
             double tempTimeDifference = videoPts - audioPts;
             if (tempTimeDifference <= 0) {
                 // 正常情况下videoTimeDifference比audioTimeDifference大一些
@@ -2962,10 +3017,9 @@ namespace alexander_media_mediacodec {
             // endregion
         }
 
-        if (/*audioWrapper->father->useMediaCodec || */isWatch) {
+        /*if (isWatch) {
             return 0;
         }
-
         videoSleepTime = ((int) ((videoPts - preVideoPts) * 1000)) - 30;
         if (videoSleepTime > 0 && videoSleepTime < 12) {
             videoSleep(videoSleepTime);
@@ -2974,7 +3028,7 @@ namespace alexander_media_mediacodec {
                 // 好像是个比较合理的值
                 videoSleep(11);
             }
-        }
+        }*/
 
         return 0;
     }
@@ -4179,48 +4233,6 @@ namespace alexander_media_mediacodec {
             len1--;
         }
         return 1;
-    }
-
-    // 基本形式为strcmp(str1,str2)
-    // 若str1=str2，则返回零；
-    // 若str1<str2，则返回负数；
-    // 若str1>str2，则返回正数。
-    int startsWith(const char *str1, char *str2) {
-        if (str1 == nullptr || str2 == nullptr) {
-            return false;
-        }
-        int len1 = strlen(str1);
-        int len2 = strlen(str2);
-        if (len1 < len2 || len1 == 0 || len2 == 0) {
-            return false;
-        }
-        char temp[len2];
-        strncpy(temp, str1, len2);
-        int ret = strcmp(temp, str2);
-        if (!ret) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    bool endsWith(const char *str1, char *str2) {
-        if (str1 == nullptr || str2 == nullptr) {
-            return false;
-        }
-        int len1 = strlen(str1);
-        int len2 = strlen(str2);
-        if (len1 < len2 || len1 == 0 || len2 == 0) {
-            return false;
-        }
-        char temp[len2];
-        strncpy(temp, str1 + (len1 - len2), len2);
-        int ret = strcmp(temp, str2);
-        if (!ret) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     void setJniParameters(JNIEnv *env, const char *filePath, jobject surfaceJavaObject) {
