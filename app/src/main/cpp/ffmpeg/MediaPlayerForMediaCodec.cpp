@@ -2105,11 +2105,11 @@ namespace alexander_media_mediacodec {
             }*/
 
             Wrapper *wrapper = nullptr;
-            if (srcAVPacket->stream_index == audioWrapper->father->streamIndex
-                && audioWrapper->father->streamIndex != -1) {
+            if (audioWrapper->father->streamIndex != -1
+                && srcAVPacket->stream_index == audioWrapper->father->streamIndex) {
                 wrapper = audioWrapper->father;
-            } else if (srcAVPacket->stream_index == videoWrapper->father->streamIndex
-                       && videoWrapper->father->streamIndex != -1) {
+            } else if (videoWrapper->father->streamIndex != -1
+                       && srcAVPacket->stream_index == videoWrapper->father->streamIndex) {
                 wrapper = videoWrapper->father;
             }
 

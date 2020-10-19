@@ -651,9 +651,9 @@ namespace alexander_only_audio {
                 } else {
                     readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
                 }
-            } else {
-                av_packet_unref(srcAVPacket);
+                continue;
             }
+            av_packet_unref(srcAVPacket);
         }// for(;;) end
 
         if (!audioHasSentNullPacket) {

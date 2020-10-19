@@ -775,10 +775,12 @@ public class PlayerWrapper {
 
         mControllerPanelLayout.setBackgroundColor(
                 ContextCompat.getColor(mContext, targetColor));
-        ObjectAnimator objectAnimator =
-                ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
-        objectAnimator.setDuration(3000);
-        objectAnimator.start();
+        if (!IS_WATCH) {
+            ObjectAnimator objectAnimator =
+                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
+            objectAnimator.setDuration(3000);
+            objectAnimator.start();
+        }
     }
 
     private void getMD5ForPath() {
