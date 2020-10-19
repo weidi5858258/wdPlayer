@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@android:color/transparent"
+    android:background="@color/transparent"
     android:padding="@dimen/box_inset_layout_padding"
     tools:deviceIds="wear">
 
@@ -22,14 +22,14 @@
             android:layout_height="wrap_content"
             android:enabled="true"
             android:max="3840"
-            android:thumbOffset="0dp"
             android:paddingStart="0dp"
             android:paddingEnd="0dp"
             android:progress="1"
             android:progressBackgroundTint="@color/white"
             android:secondaryProgress="1"
             android:secondaryProgressTint="@color/red"
-            android:text="SeekTo" />
+            android:text="SeekTo"
+            android:thumbOffset="0dp" />
 
         <!--android:layout_marginStart="@dimen/dimen_16_dp"
             android:layout_marginEnd="@dimen/dimen_16_dp"-->

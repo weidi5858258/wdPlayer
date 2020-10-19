@@ -1,6 +1,7 @@
 package com.weidi.media.wdplayer.video_player;
 
 import android.Manifest;
+import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Service;
@@ -69,6 +70,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+
+import androidx.core.content.ContextCompat;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
@@ -159,6 +162,8 @@ public class PlayerWrapper {
     private long mMediaDuration;
     private boolean mIsLocal = true;
     private boolean mIsH264 = false;
+    private boolean mIsVideo = false;
+    private boolean mIsAudio = false;
     private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private WindowManager mWindowManager;
@@ -458,6 +463,14 @@ public class PlayerWrapper {
     public void setType(String type) {
         Log.i(TAG, "setType()          mType: " + type);
         mType = type;
+        mIsVideo = false;
+        mIsAudio = false;
+        if (TextUtils.isEmpty(mType)
+                || mType.startsWith("video/")) {
+            mIsVideo = true;
+        } else if (mType.startsWith("audio/")) {
+            mIsAudio = true;
+        }
     }
 
     private void onCreate() {
@@ -693,6 +706,79 @@ public class PlayerWrapper {
             mWindowManager.removeView(mRootView);
             mIsAddedView = false;
         }
+    }
+
+    private ArrayList<Integer> mColorsHasUsedList;
+    private static final int[] COLORS = new int[]{
+            R.color.lightgray,// 原来的颜色
+            R.color.aqua,
+            R.color.deepskyblue,
+            R.color.maroon,
+            R.color.olivedrab,
+            R.color.lightgreen,
+            R.color.saddlebrown,
+            R.color.lightsalmon,
+            R.color.gold,
+            R.color.lightpink,
+            R.color.result_view,
+            R.color.salmon,
+            R.color.violet,
+            R.color.pink,
+            R.color.hotpink,
+            R.color.palevioletred,
+            R.color.navajowhite,
+            R.color.wheat,
+            R.color.lavender,
+            R.color.darkseagreen,
+            R.color.darkslateblue,
+            R.color.palegoldenrod,
+            R.color.khaki,
+            R.color.darkkhaki,
+            R.color.indianred,
+            R.color.powderblue,
+            R.color.palegreen,
+            R.color.olive,
+    };
+
+    private void setControllerPanelBackgroundColor() {
+        if (!mIsPortraitScreen) {
+            return;
+        }
+        if (mColorsHasUsedList == null)
+            mColorsHasUsedList = new ArrayList<>();
+        if (mRandom == null)
+            mRandom = new Random();
+        int length = COLORS.length;
+        int targetColor = -1;
+        for (; ; ) {
+            int randomNumber = mRandom.nextInt(length);
+            if (!mColorsHasUsedList.contains(randomNumber)) {
+                mColorsHasUsedList.add(randomNumber);
+                int index = -1;
+                for (int color : COLORS) {
+                    if (++index == randomNumber) {
+                        targetColor = color;
+                        break;
+                    }
+                }
+                break;
+            } else {
+                if (mColorsHasUsedList.size() == length) {
+                    mColorsHasUsedList.clear();
+                }
+            }
+        }
+
+        if (targetColor < 0) {
+            return;
+        }
+
+        mControllerPanelLayout.setBackgroundColor(
+                ContextCompat.getColor(mContext, targetColor));
+        ObjectAnimator objectAnimator =
+                ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
+        objectAnimator.setDuration(3000);
+        objectAnimator.start();
     }
 
     private void getMD5ForPath() {
@@ -2091,6 +2177,8 @@ public class PlayerWrapper {
         } else if (mType.startsWith("audio/")) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
+        mControllerPanelLayout.setBackgroundColor(
+                ContextCompat.getColor(mContext, R.color.transparent));
         mProgressTimeTV.setText("");
         mDurationTimeTV.setText("");
         mProgressBar.setProgress(0);
@@ -2107,8 +2195,10 @@ public class PlayerWrapper {
         textInfoTV.setText("");
         mDownloadTV.setText("");
         // R.color.lightgray
+        /*mDownloadTV.setBackgroundColor(
+                mContext.getResources().getColor(android.R.color.transparent));*/
         mDownloadTV.setBackgroundColor(
-                mContext.getResources().getColor(android.R.color.transparent));
+                ContextCompat.getColor(mContext, android.R.color.transparent));
         boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
         if (!isMute) {
             mVolumeNormal.setVisibility(View.VISIBLE);
@@ -2180,7 +2270,7 @@ public class PlayerWrapper {
             }
 
             if (mVideoWidth == 0 && mVideoHeight == 0) {
-                mType = "audio/";
+                setType("audio/");
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.GONE);
             }
@@ -2189,6 +2279,7 @@ public class PlayerWrapper {
                 mCouldPlaybackPathList.add(mCurPath);
             }
         }
+
         SharedPreferences.Editor edit = mSP.edit();
         // 保存播放地址
         edit.putString(PLAYBACK_ADDRESS, mCurPath);
@@ -2216,6 +2307,8 @@ public class PlayerWrapper {
                 handlePortraitScreenWithTV();
             }
         }
+
+        setControllerPanelBackgroundColor();
     }
 
     private void onFinished() {
@@ -2716,9 +2809,9 @@ public class PlayerWrapper {
                 mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isRunning, null))) {
             if (TextUtils.isEmpty(mType)
                     || mType.startsWith("video/")) {
-                mType = "video/";
+                setType("video/");
             } else if (mType.startsWith("audio/")) {
-                mType = "audio/";
+                setType("audio/");
             }
             EventBusUtils.post(
                     PlayerService.class,
