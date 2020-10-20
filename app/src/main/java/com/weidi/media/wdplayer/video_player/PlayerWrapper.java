@@ -770,9 +770,11 @@ public class PlayerWrapper {
 
     private void setControllerPanelBackgroundColor() {
         Log.i(TAG, "setControllerPanelBackgroundColor()");
-        if (mContext.getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT
-                //|| mControllerPanelLayout.getVisibility() != View.VISIBLE
-                || !mIsAddedView) {
+        if (//mContext.getResources().getConfiguration().orientation
+            // != Configuration.ORIENTATION_PORTRAIT
+            //|| mControllerPanelLayout.getVisibility() != View.VISIBLE
+            //||
+                !mIsAddedView) {
             Log.i(TAG, "setControllerPanelBackgroundColor() return");
             return;
         }
@@ -806,8 +808,10 @@ public class PlayerWrapper {
             return;
         }
 
-        mControllerPanelLayout.setBackgroundColor(
-                ContextCompat.getColor(mContext, targetColor));
+        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, targetColor));
+        }
         textInfoTV.setTextColor(
                 ContextCompat.getColor(mContext, targetColor));
         if (!IS_WATCH) {
@@ -915,7 +919,8 @@ public class PlayerWrapper {
             }
 
             if (mRepeat == Repeat.Repeat_One
-                    || mLocalAudioContentsMap.size() <= 1) {
+                    || mLocalAudioContentsMap.size() <= 1
+                    || mIsVideo) {
                 startForGetMediaFormat();
                 return true;
             }
@@ -1649,7 +1654,9 @@ public class PlayerWrapper {
             return;
         }
 
-        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        if (!IS_WATCH) {
+            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        }
         mIsPortraitScreen = false;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
@@ -1768,8 +1775,10 @@ public class PlayerWrapper {
             return;
         }
 
-        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
+        if (!IS_WATCH) {
+            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+            mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
+        }
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
@@ -1907,8 +1916,10 @@ public class PlayerWrapper {
             return;
         }
 
-        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
+        if (!IS_WATCH) {
+            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+            mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
+        }
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
