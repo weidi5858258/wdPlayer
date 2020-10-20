@@ -127,8 +127,7 @@ public class PlayerWrapper {
     public static boolean IS_TV = false;
     public static boolean IS_HIKEY970 = false;
 
-    private static final int PLAYBACK_PROGRESS_UPDATED = 200;
-    private static final int MSG_ON_PROGRESS_UPDATED = 10;
+    private static final int MSG_CHANGE_COLOR = 10;
     private static final int MSG_START_PLAYBACK = 11;
     private static final int MSG_SEEK_TO_ADD = 12;
     private static final int MSG_SEEK_TO_SUBTRACT = 13;
@@ -739,12 +738,45 @@ public class PlayerWrapper {
             R.color.powderblue,
             R.color.palegreen,
             R.color.olive,
+
+            R.color.holo_green_light,
+            R.color.holo_red_light,
+            R.color.holo_blue_dark,
+            R.color.holo_green_dark,
+            R.color.holo_red_dark,
+            R.color.holo_orange_light,
+            R.color.holo_orange_dark,
+            R.color.holo_blue_bright,
+            R.color.holo_gray_bright,
+            R.color.group_button_dialog_focused_holo_light,
+            R.color.group_button_dialog_pressed_holo_dark,
+            R.color.highlighted_text_holo_light,
+            R.color.link_text_holo_dark,
+            R.color.material_deep_teal_100,
+            R.color.material_deep_teal_200,
+            R.color.material_deep_teal_300,
+            R.color.material_deep_teal_500,
+            R.color.car_purple_50,
+            R.color.car_purple_100,
+            R.color.car_purple_200,
+            R.color.car_purple_300,
+            R.color.car_purple_400,
+            R.color.car_purple_500,
+            R.color.car_purple_600,
+            R.color.car_purple_700,
+            R.color.car_purple_800,
+            R.color.car_purple_900,
     };
 
     private void setControllerPanelBackgroundColor() {
-        if (mContext.getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT) {
+        Log.i(TAG, "setControllerPanelBackgroundColor()");
+        if (mContext.getResources().getConfiguration().orientation != Configuration.ORIENTATION_PORTRAIT
+                //|| mControllerPanelLayout.getVisibility() != View.VISIBLE
+                || !mIsAddedView) {
+            Log.i(TAG, "setControllerPanelBackgroundColor() return");
             return;
         }
+
         if (mColorsHasUsedList == null)
             mColorsHasUsedList = new ArrayList<>();
         if (mRandom == null)
@@ -776,18 +808,26 @@ public class PlayerWrapper {
 
         mControllerPanelLayout.setBackgroundColor(
                 ContextCompat.getColor(mContext, targetColor));
+        textInfoTV.setTextColor(
+                ContextCompat.getColor(mContext, targetColor));
         if (!IS_WATCH) {
-            ObjectAnimator objectAnimator =
-                    ObjectAnimator.ofFloat(mControllerPanelLayout,
-                            "alpha",
-                            0f, 1f);
+            ObjectAnimator controllerPanelAnimator =
+                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
+            ObjectAnimator textInfoAnimator =
+                    ObjectAnimator.ofFloat(textInfoTV, "alpha", 0f, 1f);
             if (mIsLocal) {
-                objectAnimator.setDuration(5000);
+                controllerPanelAnimator.setDuration(5000);
+                textInfoAnimator.setDuration(5000);
             } else {
-                objectAnimator.setDuration(8000);
+                controllerPanelAnimator.setDuration(8000);
+                textInfoAnimator.setDuration(8000);
             }
-            objectAnimator.start();
+            controllerPanelAnimator.start();
+            textInfoAnimator.start();
         }
+
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
     }
 
     private void getMD5ForPath() {
@@ -1091,6 +1131,9 @@ public class PlayerWrapper {
 
                 clickCounts = 0;
                 break;
+            case MSG_CHANGE_COLOR:
+                setControllerPanelBackgroundColor();
+                break;
             case MSG_START_PLAYBACK:
                 if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                     /*ThreadPool.getFixedThreadPool().execute(new Runnable() {
@@ -1178,9 +1221,6 @@ public class PlayerWrapper {
                     }
                 }
                 subtractStep = 0;
-                break;
-            case PLAYBACK_PROGRESS_UPDATED:
-                mProgressBar.setSecondaryProgress(mDownloadProgress);
                 break;
             default:
                 break;
@@ -1609,8 +1649,8 @@ public class PlayerWrapper {
             return;
         }
 
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
         mIsPortraitScreen = false;
-
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
         mControllerPanelLayout.setBackgroundColor(
@@ -1728,8 +1768,9 @@ public class PlayerWrapper {
             return;
         }
 
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
         mIsPortraitScreen = true;
-
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
 
@@ -1866,8 +1907,9 @@ public class PlayerWrapper {
             return;
         }
 
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
         mIsPortraitScreen = true;
-
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
 
@@ -2146,7 +2188,8 @@ public class PlayerWrapper {
         } else if (mIsAudio) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
-        setControllerPanelBackgroundColor();
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 1000);
         mProgressTimeTV.setText("");
         mDurationTimeTV.setText("");
         mProgressBar.setProgress(0);
@@ -2743,22 +2786,18 @@ public class PlayerWrapper {
             return;
         }
 
-        if (/*whatIsDevice != Configuration.UI_MODE_TYPE_WATCH
-                && */(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                ||
-                // 横屏
-                mContext.getResources().getConfiguration().orientation
-                        == Configuration.ORIENTATION_LANDSCAPE)) {
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE// 横屏
+                || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (mControllerPanelLayout.getVisibility() == View.VISIBLE) {
-                if (mVideoWidth != 0 && mVideoHeight != 0) {
-                    mControllerPanelLayout.setVisibility(View.GONE);
-                    textInfoScrollView.setVisibility(View.GONE);
-                    mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, false).commit();
-                }
+                mControllerPanelLayout.setVisibility(View.GONE);
+                textInfoScrollView.setVisibility(View.GONE);
+                mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, false).commit();
             } else {
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.VISIBLE);
                 mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, true).commit();
+                mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
             }
             return;
         }
@@ -2767,6 +2806,7 @@ public class PlayerWrapper {
             textInfoScrollView.setVisibility(View.GONE);
         } else {
             textInfoScrollView.setVisibility(View.VISIBLE);
+            mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
         }
     }
 
