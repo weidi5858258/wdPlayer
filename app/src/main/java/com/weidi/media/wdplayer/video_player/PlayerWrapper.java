@@ -809,6 +809,7 @@ public class PlayerWrapper {
         }
 
         if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            // 竖屏
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
         }
@@ -1654,9 +1655,6 @@ public class PlayerWrapper {
             return;
         }
 
-        if (!IS_WATCH) {
-            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        }
         mIsPortraitScreen = false;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
@@ -1775,10 +1773,6 @@ public class PlayerWrapper {
             return;
         }
 
-        if (!IS_WATCH) {
-            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-            mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
-        }
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
@@ -1916,10 +1910,6 @@ public class PlayerWrapper {
             return;
         }
 
-        if (!IS_WATCH) {
-            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-            mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 60 * 1000);
-        }
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
