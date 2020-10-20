@@ -813,8 +813,10 @@ public class PlayerWrapper {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
         }
-        textInfoTV.setTextColor(
-                ContextCompat.getColor(mContext, targetColor));
+        if (mIsVideo) {
+            textInfoTV.setTextColor(
+                    ContextCompat.getColor(mContext, targetColor));
+        }
         if (!IS_WATCH) {
             ObjectAnimator controllerPanelAnimator =
                     ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
@@ -2189,8 +2191,7 @@ public class PlayerWrapper {
         } else if (mIsAudio) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
-        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 1000);
+        setControllerPanelBackgroundColor();
         mProgressTimeTV.setText("");
         mDurationTimeTV.setText("");
         mProgressBar.setProgress(0);
