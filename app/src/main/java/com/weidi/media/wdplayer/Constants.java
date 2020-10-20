@@ -6,7 +6,7 @@ public interface Constants {
     String PLAYBACK_ADDRESS = "playback_address";
     String PLAYBACK_POSITION = "playback_position";
     String PLAYBACK_ISLIVE = "playback_islive";
-    // 是否正常结束
+    // 是否正常结束,true表示正常结束
     String PLAYBACK_NORMAL_FINISH = "playback_normal_finish";
     String PLAYBACK_MEDIA_TYPE = "playback_media_type";
     // true表示静音

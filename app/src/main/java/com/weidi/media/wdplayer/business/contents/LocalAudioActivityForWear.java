@@ -1,6 +1,5 @@
 package com.weidi.media.wdplayer.business.contents;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -19,7 +18,6 @@ import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
-import com.weidi.recycler_view.VerticalLayoutManager;
 import com.weidi.utils.MyToast;
 
 import java.util.LinkedHashMap;
@@ -34,7 +32,6 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 public class LocalAudioActivityForWear extends WearableActivity {
 
@@ -121,25 +118,29 @@ public class LocalAudioActivityForWear extends WearableActivity {
             }
         };
 
-        mAddressET = findViewById(R.id.address_et);
         mRecyclerView = findViewById(R.id.contents_rv);
-        findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
+        mRecyclerView.setClickable(true);
+        mRecyclerView.setFocusable(true);
+        mRecyclerView.setFocusableInTouchMode(true);
+        mRecyclerView.requestFocus();
 
+        findViewById(R.id.address_layout).setVisibility(View.GONE);
+        /*mAddressET = findViewById(R.id.address_et);
+        findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
         mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mLocalAudioContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mLocalAudioContentsMap.get(path));
-        }
+        }*/
 
         if (!PlayerWrapper.mLocalAudioContentsMap.isEmpty()) {
             initAdapter();
-            mRecyclerView.requestFocus();
             mRecyclerView.isEdgeItemsCenteringEnabled();
             mRecyclerView.isCircularScrollingGestureEnabled();
             mRecyclerView.setLayoutManager(mLayoutManager);
-            mLayoutManager.setRecyclerView(mRecyclerView);
             mRecyclerView.setAdapter(mAdapter);
             mRecyclerView.addOnScrollListener(OnScrollListener);
+            mLayoutManager.setRecyclerView(mRecyclerView);
             MLog.d(TAG, "initView() PlayerWrapper.mLocalContentsMap.size(): " +
                     PlayerWrapper.mLocalAudioContentsMap.size());
 
@@ -188,7 +189,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                             return;
                         }
 
-                        mAddressET.setText(PlayerWrapper.mLocalAudioContentsMap.get(key));
+                        //mAddressET.setText(PlayerWrapper.mLocalAudioContentsMap.get(key));
 
                         switch (viewId) {
                             case R.id.item_root_layout:

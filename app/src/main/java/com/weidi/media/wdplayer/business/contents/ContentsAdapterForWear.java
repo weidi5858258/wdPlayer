@@ -8,6 +8,7 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.exo.Log;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -41,11 +42,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ContentsAdapterForWear extends RecyclerView.Adapter {
 
+    private static final String TAG = "ContentsAdapterForWear";
     private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
     private final ArrayList<String> mKeys = new ArrayList<String>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
-    //private String mPath;
 
     public ContentsAdapterForWear(Context context) {
         mContentsMap.clear();
@@ -72,7 +73,8 @@ public class ContentsAdapterForWear extends RecyclerView.Adapter {
 
         TitleViewHolder titleViewHolder = (TitleViewHolder) holder;
         /*titleViewHolder.itemView.setClickable(true);
-        titleViewHolder.itemView.setFocusable(true);*/
+        titleViewHolder.itemView.setFocusable(true);
+        titleViewHolder.itemView.setFocusableInTouchMode(true);*/
 
         String key = mKeys.get(position);
         String value = mContentsMap.get(key);
@@ -148,27 +150,17 @@ public class ContentsAdapterForWear extends RecyclerView.Adapter {
         mOnItemClickListener = listener;
     }
 
-    private Button mDownloadBtn;
-
-    public void setProgress(String progress) {
-        if (mDownloadBtn != null) {
-            mDownloadBtn.setText(progress);
-        }
-    }
-
     private class TitleViewHolder extends RecyclerView.ViewHolder {
 
-        private View itemView;
         private TextView title;
         // 保存了mContentsMap的key
         private String key;
 
         public TitleViewHolder(View itemView) {
             super(itemView);
-            this.itemView = itemView;
-            title = itemView.findViewById(R.id.content_title);
             itemView.setClickable(true);
             itemView.setFocusable(true);
+            itemView.setFocusableInTouchMode(true);
             itemView.setOnClickListener(onClickListener);
             /*itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 @Override
@@ -182,27 +174,24 @@ public class ContentsAdapterForWear extends RecyclerView.Adapter {
                     }
                 }
             });*/
-        }
-
-        private void onClick(View view) {
-            if (mOnItemClickListener != null) {
-                int position = mKeys.indexOf(key);
-                switch (view.getId()) {
-                    case R.id.item_root_layout:
-                        mOnItemClickListener.onItemClick(
-                                key, position, R.id.item_root_layout);
-                        break;
-                    default:
-                        break;
-                }
-            }
+            title = itemView.findViewById(R.id.content_title);
         }
 
         private View.OnClickListener onClickListener =
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        ContentsAdapterForWear.TitleViewHolder.this.onClick(view);
+                        if (mOnItemClickListener != null) {
+                            int position = mKeys.indexOf(key);
+                            switch (view.getId()) {
+                                case R.id.item_root_layout:
+                                    mOnItemClickListener.onItemClick(
+                                            key, position, R.id.item_root_layout);
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                     }
                 };
     }

@@ -152,6 +152,7 @@ public class PlayerWrapper {
     // 有些mp3文件含有video,因此播放失败
     private String mType;
     private long mProgress;
+    // 单位秒
     private long mPresentationTime;
     private int mDownloadProgress = -1;
     private long contentLength = -1;
@@ -1007,11 +1008,6 @@ public class PlayerWrapper {
             case Callback.MSG_ON_TRANSACT_AUDIO_CONSUMER:// 消费者
                 mAudioProgressBar.setProgress(((JniObject) msg.obj).valueInt);
                 break;
-            case Callback.MSG_ON_TRANSACT_INIT_VIDEO_MEDIACODEC:
-                /*if (mFfmpegUseMediaCodecDecode != null) {
-                    mFfmpegUseMediaCodecDecode.initVideoMediaCodec(msg);
-                }*/
-                break;
             case Callback.MSG_ON_TRANSACT_READY:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_READY");
                 onReady();
@@ -1022,47 +1018,19 @@ public class PlayerWrapper {
                 break;
             case Callback.MSG_ON_TRANSACT_PLAYED:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_PLAYED");
-                mPlayIB.setVisibility(View.VISIBLE);
-                mPauseIB.setVisibility(View.INVISIBLE);
-                if (!IS_WATCH) {
-                    mLoadingView.setVisibility(View.GONE);
-                } else {
-                    if (mIsVideo) {
-                        MyToast.show("Play");
-                    }
-                }
+                onPlayed();
                 break;
             case Callback.MSG_ON_TRANSACT_PAUSED:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_PAUSED");
-                //mPlayIB.setVisibility(View.INVISIBLE);
-                //mPauseIB.setVisibility(View.VISIBLE);
-                if (!mIsLocal) {
-                    if (!IS_WATCH) {
-                        mLoadingView.setVisibility(View.VISIBLE);
-                    } else {
-                        if (mIsVideo) {
-                            MyToast.show("Pause");
-                        }
-                    }
-                }
+                onPaused();
                 break;
             case Callback.MSG_ON_TRANSACT_FINISHED:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_FINISHED");
                 onFinished();
                 break;
             case Callback.MSG_ON_TRANSACT_INFO:
-                if (msg.obj != null && msg.obj instanceof String) {
-                    String toastInfo = ((String) msg.obj).trim();
-                    //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
-                    if (toastInfo.contains("[")
-                            && toastInfo.contains("]")) {
-                        textInfoTV.setText(toastInfo);
-                    } else if (toastInfo.contains("AVERROR_EOF")) {
-                        mPrePath = null;
-                    } else {
-                        MyToast.show(toastInfo);
-                    }
-                }
+                Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO");
+                inInfo(msg);
                 break;
             case Callback.MSG_ON_TRANSACT_ERROR:
                 Log.d(TAG, "Callback.MSG_ON_TRANSACT_ERROR");
@@ -2184,7 +2152,9 @@ public class PlayerWrapper {
         mProgressBar.setProgress(0);
         mProgressBar.setPadding(0, 0, 0, 0);
         mProgressBar.setThumbOffset(0);
+        // 左边进度值
         mVideoProgressBar.setProgress(0);
+        // 右边进度值
         mVideoProgressBar.setSecondaryProgress(0);
         mAudioProgressBar.setProgress(0);
         mAudioProgressBar.setSecondaryProgress(0);
@@ -2195,10 +2165,9 @@ public class PlayerWrapper {
         textInfoTV.setText("");
         mDownloadTV.setText("");
         // R.color.lightgray
-        /*mDownloadTV.setBackgroundColor(
-                mContext.getResources().getColor(android.R.color.transparent));*/
         mDownloadTV.setBackgroundColor(
                 ContextCompat.getColor(mContext, android.R.color.transparent));
+        // 声音图标
         boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
         if (!isMute) {
             mVolumeNormal.setVisibility(View.VISIBLE);
@@ -2207,28 +2176,23 @@ public class PlayerWrapper {
             mVolumeNormal.setVisibility(View.INVISIBLE);
             mVolumeMute.setVisibility(View.VISIBLE);
         }
-        //setRepeatView();
-        //setShuffleView();
+        // 标题
         String title;
         if (mIsLocal) {
             title = mCurPath.substring(mCurPath.lastIndexOf("/") + 1);
         } else {
             title = mContentsMap.get(mCurPath);
         }
+        mFileNameTV.setText("");
         if (!TextUtils.isEmpty(title)) {
-            if (!IS_WATCH) {
+            if (!IS_WATCH || (IS_WATCH && mIsAudio)) {
                 mFileNameTV.setText(title);
-            } else {
-                if (mIsAudio) {
-                    mFileNameTV.setText(title);
-                }
             }
-        } else {
-            mFileNameTV.setText("");
         }
     }
 
     private void onChangeWindow(Message msg) {
+        // 此时才能得到视频或音频的时间Duration
         // 视频宽高
         mVideoWidth = msg.arg1;
         mVideoHeight = msg.arg2;
@@ -2243,9 +2207,9 @@ public class PlayerWrapper {
                 mMediaDuration);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                   videoWidth: " +
                 mVideoWidth + " videoHeight: " + mVideoHeight);
+
         if (!mIsH264) {
-            String durationTime = DateUtils.formatElapsedTime(mMediaDuration);
-            mDurationTimeTV.setText(durationTime);
+            mDurationTimeTV.setText(DateUtils.formatElapsedTime(mMediaDuration));
         } else {
             mDurationTimeTV.setText(String.valueOf(mMediaDuration));
         }
@@ -2253,18 +2217,18 @@ public class PlayerWrapper {
         if (mIsVideo) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 boolean show = mSP.getBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, true);
-                if (!mIsLocal) {
-                    mProgressBarLayout.setVisibility(View.VISIBLE);
-                    if (show) {
-                        mControllerPanelLayout.setVisibility(View.VISIBLE);
-                    } else {
-                        mControllerPanelLayout.setVisibility(View.INVISIBLE);
-                    }
-                }
                 if (show) {
+                    mControllerPanelLayout.setVisibility(View.VISIBLE);
                     textInfoScrollView.setVisibility(View.VISIBLE);
                 } else {
+                    mControllerPanelLayout.setVisibility(View.INVISIBLE);
                     textInfoScrollView.setVisibility(View.GONE);
+                }
+                if (!mIsLocal) {
+                    mProgressBarLayout.setVisibility(View.VISIBLE);
+                }
+                if (!mCouldPlaybackPathList.contains(mCurPath)) {
+                    mCouldPlaybackPathList.add(mCurPath);
                 }
             }
 
@@ -2272,20 +2236,9 @@ public class PlayerWrapper {
                 setType("audio/");
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.GONE);
-            }
-
-            if (!mCouldPlaybackPathList.contains(mCurPath)) {
-                mCouldPlaybackPathList.add(mCurPath);
+                mProgressBarLayout.setVisibility(View.GONE);
             }
         }
-
-        SharedPreferences.Editor edit = mSP.edit();
-        // 保存播放地址
-        edit.putString(PLAYBACK_ADDRESS, mCurPath);
-        // 开始播放设置为false,表示初始化状态
-        edit.putBoolean(PLAYBACK_NORMAL_FINISH, false);
-        edit.putString(PLAYBACK_MEDIA_TYPE, mType);
-        edit.commit();
 
         if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
                 && IS_PHONE) {
@@ -2296,17 +2249,51 @@ public class PlayerWrapper {
             // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 电视机");
             if (IS_WATCH) {
                 if (mIsVideo) {
+                    // 全屏
                     handleLandscapeScreen(0);
                 } else {
                     handlePortraitScreen();
                 }
             } else {
+                // 手机并且横屏,电视机
                 handleScreenFlag = 1;
                 handlePortraitScreenWithTV();
             }
         }
 
-        //setControllerPanelBackgroundColor();
+        SharedPreferences.Editor edit = mSP.edit();
+        // 保存播放地址
+        edit.putString(PLAYBACK_ADDRESS, mCurPath);
+        edit.putString(PLAYBACK_MEDIA_TYPE, mType);
+        // 开始播放设置为false,表示初始化状态
+        edit.putBoolean(PLAYBACK_NORMAL_FINISH, false);
+        edit.commit();
+    }
+
+    private void onPlayed() {
+        mPlayIB.setVisibility(View.VISIBLE);
+        mPauseIB.setVisibility(View.INVISIBLE);
+        if (!IS_WATCH) {
+            mLoadingView.setVisibility(View.GONE);
+        } else {
+            if (mIsVideo) {
+                MyToast.show("Play");
+            }
+        }
+    }
+
+    private void onPaused() {
+        //mPlayIB.setVisibility(View.INVISIBLE);
+        //mPauseIB.setVisibility(View.VISIBLE);
+        if (!mIsLocal) {
+            if (!IS_WATCH) {
+                mLoadingView.setVisibility(View.VISIBLE);
+            } else {
+                if (mIsVideo) {
+                    MyToast.show("Pause");
+                }
+            }
+        }
     }
 
     private void onFinished() {
@@ -2336,6 +2323,21 @@ public class PlayerWrapper {
         }
 
         mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
+    }
+
+    private void inInfo(Message msg) {
+        if (msg.obj != null && msg.obj instanceof String) {
+            String toastInfo = ((String) msg.obj).trim();
+            //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
+            if (toastInfo.contains("[")
+                    && toastInfo.contains("]")) {
+                textInfoTV.setText(toastInfo);
+            } else if (toastInfo.contains("AVERROR_EOF")) {
+                mPrePath = null;
+            } else {
+                MyToast.show(toastInfo);
+            }
+        }
     }
 
     private void onError(Message msg) {
@@ -2387,27 +2389,22 @@ public class PlayerWrapper {
     }
 
     private void onUpdated(Message msg) {
-        if (msg.obj == null) {
-            return;
-        }
-
         // 秒
         mPresentationTime = (Long) msg.obj;
         if (!mIsH264) {
-            String curElapsedTime = DateUtils.formatElapsedTime(mPresentationTime);
-            mProgressTimeTV.setText(curElapsedTime);
+            mProgressTimeTV.setText(DateUtils.formatElapsedTime(mPresentationTime));
         } else {
             mProgressTimeTV.setText(String.valueOf(mPresentationTime));
         }
 
-        if (mNeedToSyncProgressBar && mMediaDuration > 0) {
-            int currentPosition = (int) (mPresentationTime);
-            float pos = (float) currentPosition / mMediaDuration;
-            int target = Math.round(pos * mProgressBar.getMax());
-            mProgressBar.setProgress(target);
-        }
-
         if (mMediaDuration > 0) {
+            if (mNeedToSyncProgressBar) {
+                int currentPosition = (int) (mPresentationTime);
+                float pos = (float) currentPosition / mMediaDuration;
+                int target = Math.round(pos * mProgressBar.getMax());
+                mProgressBar.setProgress(target);
+            }
+
             if (mPresentationTime < (mMediaDuration - 5)) {
                 mPathTimeMap.put(md5Path, mPresentationTime);
                 if (mIsH264 && (mMediaDuration - mPresentationTime <= 1000000)) {

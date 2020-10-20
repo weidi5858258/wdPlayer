@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.support.v7.widget.RecyclerView;
 import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -17,6 +16,7 @@ import android.widget.EditText;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.recycler_view.VerticalLayoutManager;
@@ -24,6 +24,9 @@ import com.weidi.utils.MyToast;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.wear.widget.WearableRecyclerView;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
@@ -44,7 +47,7 @@ public class LocalVideoActivityForWear extends WearableActivity {
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.contents_layout);
+        setContentView(R.layout.contents_layout_wear);
 
         // Enables Always-on
         setAmbientEnabled();
@@ -97,12 +100,12 @@ public class LocalVideoActivityForWear extends WearableActivity {
     /////////////////////////////////////////////////////////////////////////
 
     private EditText mAddressET;
-    private RecyclerView mRecyclerView;
+    private WearableRecyclerView mRecyclerView;
+    private WearableVerticalLayoutManager mLayoutManager;
+    private ContentsAdapterForWear mAdapter;
 
     private Handler mUiHandler;
     private long contentLength = -1;
-    private VerticalLayoutManager mLayoutManager;
-    private ContentsAdapter mAdapter;
     private SharedPreferences mPreferences;
     private int mContentsCount = 0;
     private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
@@ -111,7 +114,6 @@ public class LocalVideoActivityForWear extends WearableActivity {
     private int mClickCount = 0;
 
     private void internalCreate(Bundle savedInstanceState) {
-        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
@@ -119,23 +121,29 @@ public class LocalVideoActivityForWear extends WearableActivity {
             }
         };
 
-        mAddressET = findViewById(R.id.address_et);
         mRecyclerView = findViewById(R.id.contents_rv);
-        findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
+        mRecyclerView.setClickable(true);
+        mRecyclerView.setFocusable(true);
+        mRecyclerView.setFocusableInTouchMode(true);
+        mRecyclerView.requestFocus();
 
+        findViewById(R.id.address_layout).setVisibility(View.GONE);
+        /*mAddressET = findViewById(R.id.address_et);
+        findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
+        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mLocalVideoContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mLocalVideoContentsMap.get(path));
-        }
-    }
+        }*/
 
-    private void internalResume() {
         if (!PlayerWrapper.mLocalVideoContentsMap.isEmpty()) {
             initAdapter();
+            mRecyclerView.isEdgeItemsCenteringEnabled();
+            mRecyclerView.isCircularScrollingGestureEnabled();
             mRecyclerView.setLayoutManager(mLayoutManager);
-            mLayoutManager.setRecyclerView(mRecyclerView);
             mRecyclerView.setAdapter(mAdapter);
             mRecyclerView.addOnScrollListener(OnScrollListener);
+            mLayoutManager.setRecyclerView(mRecyclerView);
             MLog.d(TAG, "initView() PlayerWrapper.mLocalContentsMap.size(): " +
                     PlayerWrapper.mLocalVideoContentsMap.size());
 
@@ -157,6 +165,10 @@ public class LocalVideoActivityForWear extends WearableActivity {
         }
     }
 
+    private void internalResume() {
+
+    }
+
     private void internalDestroy() {
         mPreferences = null;
         mUiHandler = null;
@@ -167,10 +179,10 @@ public class LocalVideoActivityForWear extends WearableActivity {
     }
 
     private void initAdapter() {
-        mLayoutManager = new VerticalLayoutManager(getApplicationContext());
-        mAdapter = new ContentsAdapter(getApplicationContext());
+        mLayoutManager = new WearableVerticalLayoutManager(getApplicationContext());
+        mAdapter = new ContentsAdapterForWear(getApplicationContext());
         mAdapter.setOnItemClickListener(
-                new ContentsAdapter.OnItemClickListener() {
+                new ContentsAdapterForWear.OnItemClickListener() {
                     @Override
                     public void onItemClick(String key, int position, int viewId) {
                         MLog.d(TAG, "onItemClick() videoPlaybackPath: " + key);
@@ -181,7 +193,7 @@ public class LocalVideoActivityForWear extends WearableActivity {
                             return;
                         }
 
-                        mAddressET.setText(name);
+                        //mAddressET.setText(name);
                         String type = "video/";
                         /*if (name.endsWith(".mp3")
                                 || name.endsWith(".aac")// aac

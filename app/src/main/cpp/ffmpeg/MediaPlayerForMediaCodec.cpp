@@ -4147,9 +4147,9 @@ namespace alexander_media_mediacodec {
                 } else {
                     videoSleepTime = 15;
                 }
-                /*if (isWatch) {
+                if (isWatch) {
                     videoSleepTime = 11;
-                }*/
+                }
                 LOGI("initPlayer() videoSleepTime: %d", videoSleepTime);
             }
         }
