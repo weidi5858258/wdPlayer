@@ -2256,7 +2256,7 @@ namespace alexander_media_mediacodec {
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.000001;
+                        TIME_DIFFERENCE = 0.005000;
                     }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
