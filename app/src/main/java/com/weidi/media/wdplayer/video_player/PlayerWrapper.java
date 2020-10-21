@@ -808,7 +808,8 @@ public class PlayerWrapper {
             return;
         }
 
-        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
+                || mIsAudio) {
             // 竖屏
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
@@ -906,6 +907,7 @@ public class PlayerWrapper {
             if (!mIsAddedView || !mRootView.isShown()) {
                 Log.i(TAG, "needToPlaybackOtherVideo() return false" +
                         " for mRootView isn't showed");
+                mUiHandler.removeMessages(MSG_CHANGE_COLOR);
                 return false;
             }
 

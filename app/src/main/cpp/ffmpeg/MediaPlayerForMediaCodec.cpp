@@ -2247,29 +2247,16 @@ namespace alexander_media_mediacodec {
                 bool needToGetResultAgain = true;
                 if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
                     /***
-                     0.505212 0.517508 0.524924 0.531797 0.543092
+                     0.505212 0.517508 0.524924 0.531797 0.543092 0.575077 0.582683
                      */
                     if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.300000;
+                        TIME_DIFFERENCE = 0.090000;
                     } else {
                         TIME_DIFFERENCE = 0.400000;
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
-                        if (!strcmp(inFilePath,
-                                    "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226292/1.m3u8")
-                            || !strcmp(inFilePath,
-                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8")
-                            || !strcmp(inFilePath,
-                                       "http://112.50.243.8/PLTV/88888888/224/3221225891/1.m3u8")
-                            || !strcmp(inFilePath,
-                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226552/1.m3u8")
-                            || !strcmp(inFilePath,
-                                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u8")) {
-                            TIME_DIFFERENCE = 1.000000;
-                        } else {
-                            TIME_DIFFERENCE = 0.500000;
-                        }
+                        TIME_DIFFERENCE = 0.000001;
                     }
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
@@ -2282,6 +2269,7 @@ namespace alexander_media_mediacodec {
                     if (videoWrapper->father->useMediaCodec) {
                         if (audioWrapper->father->useMediaCodec) {
                             step = -0.105000;
+                            step = -0.115000;
                         }
 
                         if (averageTimeDiff > 0.490000) {
@@ -2324,8 +2312,8 @@ namespace alexander_media_mediacodec {
                     }
                     needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
-                        //TIME_DIFFERENCE = 0.050000;
-                        TIME_DIFFERENCE = 0.300000;// 好
+                        //TIME_DIFFERENCE = 0.300000;
+                        TIME_DIFFERENCE = 0.050000;
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
