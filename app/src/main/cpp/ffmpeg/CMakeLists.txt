@@ -85,31 +85,51 @@ endif (${ANDROID_ABI} STREQUAL "x86_64")
 #             ${CPP_DIR}/ffmpeg_opt.c
 #             ${CPP_DIR}/ffmpeg_cmd.c )
 #################################################################
+# 下面都是添加库,然后引用库
+# 用于各种类型声音、图像编解码
+# 添加库
+#add_library(
+#        # 库名称
+#        ijkffmpeg
+#        # 动态库
+#        SHARED
+#        # 表示该库是引用的不是生成的
+#        IMPORTED)
+## 引用库
+#set_target_properties(
+#        # 库名称
+#        ijkffmpeg
+#        # 库的路径
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libijkffmpeg.so)
+#################################################################
+#add_library(ijkplayer
+#        SHARED
+#        IMPORTED)
+#set_target_properties(ijkplayer
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libijkplayer.so)
+#################################################################
+#add_library(ijksdl
+#        SHARED
+#        IMPORTED)
+#set_target_properties(ijksdl
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
+#################################################################
+add_library(avcodec
+        SHARED
+        IMPORTED)
+set_target_properties(avcodec
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libavcodec.so)
+#################################################################
 add_library(avdevice
         SHARED
         IMPORTED)
 set_target_properties(avdevice
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libavdevice.so)
-#################################################################
-# 下面都是添加库,然后引用库
-# 用于各种类型声音、图像编解码
-# 添加库
-add_library( # 库名称
-        avcodec
-
-        # 动态库
-        SHARED
-
-        # 表示该库是引用的不是生成的
-        IMPORTED)
-# 引用库
-set_target_properties( # 库名称
-        avcodec
-
-        # 库的路径
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavcodec.so)
 #################################################################
 # 用于各种音视频封装格式的生成和解析，读取音视频帧等功能
 add_library(avformat
@@ -151,20 +171,6 @@ set_target_properties(swscale
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libswscale.so)
 #################################################################
-#add_library(crypto
-#        STATIC
-#        IMPORTED)
-#set_target_properties(crypto
-#        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libcrypto.a)
-#################################################################
-#add_library(ssl
-#        STATIC
-#        IMPORTED)
-#set_target_properties(ssl
-#        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libssl.a)
-#################################################################
 add_library(crypto
         SHARED
         IMPORTED)
@@ -185,6 +191,20 @@ add_library(yuv
 set_target_properties(yuv
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libyuv.so)
+#################################################################
+#add_library(crypto
+#        STATIC
+#        IMPORTED)
+#set_target_properties(crypto
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libcrypto.a)
+#################################################################
+#add_library(ssl
+#        STATIC
+#        IMPORTED)
+#set_target_properties(ssl
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libssl.a)
 #################################################################
 # 引用头文件(所有头文件放在include这个目录)
 include_directories(../include/)
@@ -226,6 +246,10 @@ target_link_libraries(
         ${utils-lib}]]
 
         # 编译当前库时需要引用的第三方库
+#        ijkffmpeg
+#        ijkplayer
+#        ijksdl
+
         avdevice
         avformat
         avcodec
