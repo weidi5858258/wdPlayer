@@ -29,10 +29,7 @@ http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u
 http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226551/1.m3u8@@@@@@@@@@北京IPTV淘娱乐
 http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226554/1.m3u8@@@@@@@@@@北京IPTV淘BABY
 http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226555/1.m3u8@@@@@@@@@@北京IPTV萌宠TV
-https://zb3.qhqsnedu.com/live/zhouxingxinga/playlist.m3u8@@@@@@@@@@周星驰系列电影
 http://tx.hls.huya.com/huyalive/94525224-2460685313-10568562945082523648-2789274524-10057-A-0-1.m3u8@@@@@@@@@@周星驰系列电影
-https://zb3.qhqsnedu.com/live/jiesen/playlist.m3u8@@@@@@@@@@斯坦森系列电影
-https://zb3.qhqsnedu.com/live/suduyujiqingxilie/playlist.m3u8@@@@@@@@@@速度与激情系列电影
 http://101.71.255.229:6610/zjhs/2/10037/z.m3u8?ZTEUPSTREAM=1&IASHttpSessionId=SLB4328320190321203540013412&m3u8_level=2&ztecid=10037&virtualDomain=zjhs.live_hls.zte.com&ispcode=3&tid=Q894B3E8EEZ3T19UG09L8B03GSWB&ts=1553493266@@@@@@@@@@歐美影院
 http://101.71.255.229:6610/zjhs/2/10052/z.m3u8?ZTEUPSTREAM=1&IASHttpSessionId=SLB4328320190321203540013412&m3u8_level=2&ztecid=10052&virtualDomain=zjhs.live_hls.zte.com&ispcode=3&tid=C3V7K4ET1VFDUJY6C1IASRV55G66&ts=1553493153@@@@@@@@@@亞洲影院
 
@@ -314,8 +311,8 @@ http://221.179.217.9/PLTV/88888888/224/3221226245/1.m3u8@@@@@@@@@@深圳卫视�
 http://223.110.245.145/ott.js.chinamobile.com/PLTV/3/224/3221227410/index.m3u8@@@@@@@@@@辽宁卫视高清
 http://112.17.40.12/PLTV/88888888/224/3221226557/index.m3u8@@@@@@@@@@江西卫视高清
 http://221.179.217.9/PLTV/88888888/224/3221226243/1.m3u8@@@@@@@@@@江西卫视高清
-http://112.17.40.12/PLTV/88888888/224/3221226555/index.m3u8@@@@@@@@@@黑龙江卫视高清
-http://221.179.217.9/PLTV/88888888/224/3221226239/1.m3u8@@@@@@@@@@黑龙江卫视高清
+http://112.17.40.12/PLTV/88888888/224/3221226555/index.m3u8@@@@@@@@@@黑龙江卫视高清*
+http://221.179.217.9/PLTV/88888888/224/3221226239/1.m3u8@@@@@@@@@@黑龙江卫视高清*
 
 http://ivi.bupt.edu.cn/hls/cetv1hd.m3u8@@@@@@@@@@CETV-1高清
 http://ivi.bupt.edu.cn/hls/cetv1.m3u8@@@@@@@@@@CETV-1中国教育电视台

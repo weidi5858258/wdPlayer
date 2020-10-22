@@ -258,6 +258,7 @@ namespace alexander_media_mediacodec {
 
     static int runCounts = 0;
     static double averageTimeDiff = 0;
+    static int averageTimeDiffCount = 0;
     static double timeDiff[RUN_COUNTS];
 
     // 单位: 秒
@@ -509,6 +510,7 @@ namespace alexander_media_mediacodec {
         preVideoPts = 0.0;
         runCounts = 0;
         averageTimeDiff = 0.0;
+        averageTimeDiffCount = 0;
         memset(timeDiff, '0', sizeof(timeDiff));
         startReadTime = -1;
         endReadTime = -1;
@@ -2245,19 +2247,19 @@ namespace alexander_media_mediacodec {
 
             if (isGoodResult) {
                 bool needToGetResultAgain = true;
-                if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
+                if (averageTimeDiff > 0.600000) {
+                    averageTimeDiffCount++;
+                } else if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
                     /***
                      0.505212 0.517508 0.524924 0.531797 0.543092 0.575077 0.582683
                      */
-                    if (videoWrapper->father->useMediaCodec) {
+                    /*if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.090000;
                     } else {
                         TIME_DIFFERENCE = 0.400000;
-                    }
-                    needToGetResultAgain = false;
-                    if (audioWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.005000;
-                    }
+                    }*/
+                    //TIME_DIFFERENCE = 0.400000;
+                    averageTimeDiffCount++;
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
 
@@ -2380,7 +2382,10 @@ namespace alexander_media_mediacodec {
                 if (needToGetResultAgain) {
                     runCounts = 0;
                     averageTimeDiff = 0;
-                    TIME_DIFFERENCE = 0.500000;
+                    TIME_DIFFERENCE = 0.500000 - averageTimeDiffCount * 0.100000;
+                    if (TIME_DIFFERENCE < 0) {
+                        TIME_DIFFERENCE = 0.100000;
+                    }
                 }
             } else {
                 TIME_DIFFERENCE = averageTimeDiff + 0.100000;
