@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import androidx.core.content.ContextCompat;
+
 /***
  Created by root on 19-4-15.
 
@@ -43,7 +45,6 @@ public class ContentsAdapter extends RecyclerView.Adapter {
     private final ArrayList<String> mKeys = new ArrayList<String>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
-    //private String mPath;
 
     public ContentsAdapter(Context context) {
         mContentsMap.clear();
@@ -153,7 +154,6 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
     private class TitleViewHolder extends RecyclerView.ViewHolder {
 
-        private View itemView;
         private TextView title;
         private Button downloadBtn;
         // 保存了mContentsMap的key
@@ -161,37 +161,47 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
         public TitleViewHolder(View itemView) {
             super(itemView);
-            this.itemView = itemView;
+            itemView.setClickable(true);
+            itemView.setFocusable(true);
+            itemView.setFocusableInTouchMode(true);
             title = itemView.findViewById(R.id.content_title);
             downloadBtn = itemView.findViewById(R.id.item_download_btn);
             itemView.setOnClickListener(onClickListener);
             downloadBtn.setOnClickListener(onClickListener);
-        }
-
-        private void onClick(View view) {
-            if (mOnItemClickListener != null) {
-                int position = mKeys.indexOf(key);
-                switch (view.getId()) {
-                    case R.id.item_root_layout:
-                        mOnItemClickListener.onItemClick(
-                                key, position, R.id.item_root_layout);
-                        break;
-                    case R.id.item_download_btn:
-                        mOnItemClickListener.onItemClick(
-                                key, position, R.id.item_download_btn);
-                        mDownloadBtn = downloadBtn;
-                        break;
-                    default:
-                        break;
+            itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                @Override
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (hasFocus) {
+                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
+                                R.drawable.item_selector_focused));
+                    } else {
+                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
+                                R.drawable.item_selector_normal));
+                    }
                 }
-            }
+            });
         }
 
         private View.OnClickListener onClickListener =
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        ContentsAdapter.TitleViewHolder.this.onClick(view);
+                        if (mOnItemClickListener != null) {
+                            int position = mKeys.indexOf(key);
+                            switch (view.getId()) {
+                                case R.id.item_root_layout:
+                                    mOnItemClickListener.onItemClick(
+                                            key, position, R.id.item_root_layout);
+                                    break;
+                                case R.id.item_download_btn:
+                                    mOnItemClickListener.onItemClick(
+                                            key, position, R.id.item_download_btn);
+                                    mDownloadBtn = downloadBtn;
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                     }
                 };
     }

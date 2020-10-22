@@ -3123,6 +3123,14 @@ public class PlayerWrapper {
     }
 
     private boolean copyFile(File targetFile) {
+        if (!targetFile.exists()) {
+            try {
+                targetFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
         try {
             // 遍历该目录下的文件和文件夹
             String[] listFiles = mContext.getAssets().list("");
@@ -3141,22 +3149,19 @@ public class PlayerWrapper {
                 // /hw_pc_white_apps.xml
                 // /wifipro_regexlist.xml
                 Log.i(TAG, "getAssets               : " + filePath);
-                if (file.isFile()) {
-                    if (file.getAbsolutePath().contains("contents.")) {
-                        InputStream is = mContext.getAssets().open(filePath);
-                        FileOutputStream fos = new FileOutputStream(targetFile);
-                        byte[] buffer = new byte[2048];
-                        int byteCount = 0;
-                        while ((byteCount = is.read(buffer)) != -1) {
-                            fos.write(buffer, 0, byteCount);
-                        }
-                        fos.flush();
-                        is.close();
-                        fos.close();
-                        isSuccess = true;
-                        break;
+                if (file.getAbsolutePath().contains("contents.")) {
+                    InputStream is = mContext.getAssets().open(filePath);
+                    FileOutputStream fos = new FileOutputStream(targetFile);
+                    byte[] buffer = new byte[2048];
+                    int byteCount = 0;
+                    while ((byteCount = is.read(buffer)) != -1) {
+                        fos.write(buffer, 0, byteCount);
                     }
-                } else if (file.isDirectory()) {
+                    fos.flush();
+                    is.close();
+                    fos.close();
+                    isSuccess = true;
+                    break;
                 }
             }
             if (isSuccess) {

@@ -41,7 +41,7 @@ public class WearMainActivity extends WearableActivity {
         super.onCreate(savedInstanceState);
         Log.i(TAG, "onCreate()");
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main_wear);
 
         // Enables Always-on
         setAmbientEnabled();

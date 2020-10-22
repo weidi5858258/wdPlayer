@@ -1,47 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/item_root_layout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@color/timetimepicker_default_text_color"
+    android:layout_height="@dimen/dimen_50_dp"
+    android:background="@drawable/item_selector_normal"
+    android:clickable="true"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:gravity="center_vertical"
     android:padding="@dimen/box_inset_layout_padding"
-    tools:context=".WearMainActivity"
-    tools:deviceIds="wear">
+    app:boxedEdges="all">
 
-    <!--android:descendantFocusability="blocksDescendants"-->
-    <!--android:layout_height="@dimen/dimen_30_dp"-->
-    <RelativeLayout
+    <TextView
+        android:id="@+id/content_title"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dimen_50_dp"
-        android:background="@drawable/item_selector"
+        android:layout_height="match_parent"
         android:gravity="center_vertical"
-        app:boxedEdges="all">
+        android:maxLines="1"
+        android:textColor="@color/white"
+        android:textSize="18sp" />
 
-        <!--@dimen/dimen_203_dp-->
-        <!--<SurfaceView
-            android:id="@+id/small_surfaceview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>-->
-
-        <!--android:layout_marginStart="@dimen/dimen_16_dp"-->
-        <!--android:textDirection="locale"-->
-        <TextView
-            android:id="@+id/content_title"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_vertical"
-            android:maxLines="1"
-            android:textColor="@color/white"
-            android:textSize="18sp"/>
-
-        <Button
-            android:id="@+id/item_download_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="@dimen/dimen_116_dp"
-            android:visibility="gone"
-            android:layout_alignParentRight="true"/>
-    </RelativeLayout>
-</androidx.wear.widget.BoxInsetLayout>
+    <Button
+        android:id="@+id/item_download_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="@dimen/dimen_116_dp"
+        android:visibility="gone" />
+</RelativeLayout>

@@ -124,7 +124,6 @@ public class LiveActivity extends Activity {
     private int mClickCount = 0;
 
     private void internalCreate(Bundle savedInstanceState) {
-        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
@@ -132,10 +131,16 @@ public class LiveActivity extends Activity {
             }
         };
 
+        findViewById(R.id.address_layout).setVisibility(View.GONE);
         mAddressET = findViewById(R.id.address_et);
         mRecyclerView = findViewById(R.id.contents_rv);
+        mRecyclerView.setClickable(true);
+        mRecyclerView.setFocusable(true);
+        mRecyclerView.setFocusableInTouchMode(true);
+        mRecyclerView.requestFocus();
         findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
 
+        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
@@ -150,7 +155,7 @@ public class LiveActivity extends Activity {
             MLog.d(TAG, "initView() PlayerWrapper.mContentsMap.size(): " +
                     PlayerWrapper.mContentsMap.size());
 
-            if (PlayerWrapper.mContentsMap.size() > 100) {
+            if (PlayerWrapper.mContentsMap.size() > 500) {
                 // 太多的先加载20个
                 mContentsMap.clear();
                 for (Map.Entry<String, String> tempMap : PlayerWrapper.mContentsMap.entrySet()) {
