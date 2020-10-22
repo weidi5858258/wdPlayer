@@ -2247,18 +2247,7 @@ namespace alexander_media_mediacodec {
 
             if (isGoodResult) {
                 bool needToGetResultAgain = true;
-                if (averageTimeDiff > 0.600000) {
-                    averageTimeDiffCount++;
-                } else if (averageTimeDiff > 0.500000 && averageTimeDiff < 0.600000) {
-                    /***
-                     0.505212 0.517508 0.524924 0.531797 0.543092 0.575077 0.582683
-                     */
-                    /*if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.090000;
-                    } else {
-                        TIME_DIFFERENCE = 0.400000;
-                    }*/
-                    //TIME_DIFFERENCE = 0.400000;
+                if (averageTimeDiff > 0.500000) {
                     averageTimeDiffCount++;
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
