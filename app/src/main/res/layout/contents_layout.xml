@@ -46,7 +46,6 @@
         android:id="@+id/contents_rv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/address_layout"
-        android:background="@color/gold" />
+        android:layout_below="@+id/address_layout" />
 
 </RelativeLayout>

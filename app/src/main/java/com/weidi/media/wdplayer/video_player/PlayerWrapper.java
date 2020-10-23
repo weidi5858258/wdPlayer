@@ -1939,7 +1939,7 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                 mScreenWidth: " +
                 mScreenWidth + " mScreenHeight: " + mScreenHeight);
 
-        mScreenWidth = mScreenWidth / 3;
+        mScreenWidth = mScreenWidth / 3 + 180;
 
         // 控制面板高度
         mControllerPanelLayoutHeight = mControllerPanelLayout.getHeight();

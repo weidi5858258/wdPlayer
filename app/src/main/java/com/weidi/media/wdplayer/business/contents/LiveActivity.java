@@ -133,24 +133,25 @@ public class LiveActivity extends Activity {
             }
         };
 
-        UiModeManager uiModeManager =
-                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        int whatIsDevice = uiModeManager.getCurrentModeType();
-        if (whatIsDevice == Configuration.UI_MODE_TYPE_TELEVISION) {
-            findViewById(R.id.address_layout).setVisibility(View.GONE);
-        }
-        mAddressET = findViewById(R.id.address_et);
-        mRecyclerView = findViewById(R.id.contents_rv);
-        mRecyclerView.setClickable(true);
-        mRecyclerView.setFocusable(true);
-        mRecyclerView.setFocusableInTouchMode(true);
-        mRecyclerView.requestFocus();
         findViewById(R.id.playback_btn).setOnClickListener(OnClickListener);
+        mRecyclerView = findViewById(R.id.contents_rv);
+        mAddressET = findViewById(R.id.address_et);
 
         mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
         if (!TextUtils.isEmpty(path) && PlayerWrapper.mContentsMap.containsKey(path)) {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
+        }
+
+        UiModeManager uiModeManager =
+                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        int whatIsDevice = uiModeManager.getCurrentModeType();
+        if (whatIsDevice != Configuration.UI_MODE_TYPE_NORMAL) {
+            findViewById(R.id.address_layout).setVisibility(View.GONE);
+            mRecyclerView.setClickable(true);
+            mRecyclerView.setFocusable(true);
+            mRecyclerView.setFocusableInTouchMode(true);
+            mRecyclerView.requestFocus();
         }
 
         if (!PlayerWrapper.mContentsMap.isEmpty()) {

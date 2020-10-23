@@ -1,6 +1,8 @@
 package com.weidi.media.wdplayer.business.contents;
 
+import android.app.UiModeManager;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.widget.RecyclerView;
@@ -49,12 +51,17 @@ public class ContentsAdapter extends RecyclerView.Adapter {
     private final ArrayList<String> mKeys = new ArrayList<String>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
+    private int whatIsDevice;
 
     public ContentsAdapter(Context context) {
         mContentsMap.clear();
         mKeys.clear();
         mContext = context;
         mLayoutInflater = LayoutInflater.from(mContext);
+
+        UiModeManager uiModeManager =
+                (UiModeManager) mContext.getSystemService(Context.UI_MODE_SERVICE);
+        whatIsDevice = uiModeManager.getCurrentModeType();
     }
 
     @Override
@@ -165,36 +172,39 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
         public TitleViewHolder(View itemView) {
             super(itemView);
-            itemView.setClickable(true);
-            itemView.setFocusable(true);
-            itemView.setFocusableInTouchMode(true);
             itemView.setOnClickListener(onClickListener);
-            itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View view, boolean hasFocus) {
-                    //Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
-                    if (hasFocus) {
-                        view.setBackground(ContextCompat.getDrawable(view.getContext(),
-                                R.drawable.item_selector_focused));
-                    } else {
-                        view.setBackground(ContextCompat.getDrawable(view.getContext(),
-                                R.drawable.item_selector_normal));
+            // 不是移动设备时
+            if (whatIsDevice != Configuration.UI_MODE_TYPE_NORMAL) {
+                // 如果移动设备设置下面值时,第一次点击得到焦点,第二次点击才触发事件
+                itemView.setClickable(true);
+                itemView.setFocusable(true);
+                itemView.setFocusableInTouchMode(true);
+                itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                    @Override
+                    public void onFocusChange(View view, boolean hasFocus) {
+                        //Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
+                        if (hasFocus) {
+                            view.setBackground(ContextCompat.getDrawable(view.getContext(),
+                                    R.drawable.item_selector_focused));
+                        } else {
+                            view.setBackground(ContextCompat.getDrawable(view.getContext(),
+                                    R.drawable.item_selector_normal));
+                        }
                     }
-
-                    /*if (hasFocus) {
-                        mUiHandler.removeMessages(0);
-                        Message msg = mUiHandler.obtainMessage(0);
-                        msg.obj = v;
-                        mUiHandler.sendMessageDelayed(msg, 100);
-                    } else {
-                        mUiHandler.removeMessages(1);
-                        Message msg = mUiHandler.obtainMessage(1);
-                        msg.obj = v;
-                        //mUiHandler.sendMessageDelayed(msg, 200);
-                        mUiHandler.sendMessage(msg);
-                    }*/
-                }
-            });
+                });
+            }
+            /*if (hasFocus) {
+                mUiHandler.removeMessages(0);
+                Message msg = mUiHandler.obtainMessage(0);
+                msg.obj = v;
+                mUiHandler.sendMessageDelayed(msg, 100);
+            } else {
+                mUiHandler.removeMessages(1);
+                Message msg = mUiHandler.obtainMessage(1);
+                msg.obj = v;
+                //mUiHandler.sendMessageDelayed(msg, 200);
+                mUiHandler.sendMessage(msg);
+            }*/
 
             title = itemView.findViewById(R.id.content_title);
             downloadBtn = itemView.findViewById(R.id.item_download_btn);

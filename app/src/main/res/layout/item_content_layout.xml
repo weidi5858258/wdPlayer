@@ -6,11 +6,9 @@
     android:layout_width="match_parent"
     android:layout_height="@dimen/dimen_50_dp"
     android:background="@drawable/item_selector_normal"
-    android:clickable="true"
-    android:focusable="true"
-    android:focusableInTouchMode="true"
     android:gravity="center_vertical"
     android:padding="@dimen/box_inset_layout_padding"
+    android:paddingStart="@dimen/dimen_8_dp"
     app:boxedEdges="all">
 
     <TextView
