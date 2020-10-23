@@ -1,9 +1,11 @@
 package com.weidi.media.wdplayer.business.contents;
 
 import android.app.Activity;
+import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -131,7 +133,12 @@ public class LiveActivity extends Activity {
             }
         };
 
-        findViewById(R.id.address_layout).setVisibility(View.GONE);
+        UiModeManager uiModeManager =
+                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        int whatIsDevice = uiModeManager.getCurrentModeType();
+        if (whatIsDevice == Configuration.UI_MODE_TYPE_TELEVISION) {
+            findViewById(R.id.address_layout).setVisibility(View.GONE);
+        }
         mAddressET = findViewById(R.id.address_et);
         mRecyclerView = findViewById(R.id.contents_rv);
         mRecyclerView.setClickable(true);
@@ -155,7 +162,7 @@ public class LiveActivity extends Activity {
             MLog.d(TAG, "initView() PlayerWrapper.mContentsMap.size(): " +
                     PlayerWrapper.mContentsMap.size());
 
-            if (PlayerWrapper.mContentsMap.size() > 500) {
+            if (PlayerWrapper.mContentsMap.size() > 100) {
                 // 太多的先加载20个
                 mContentsMap.clear();
                 for (Map.Entry<String, String> tempMap : PlayerWrapper.mContentsMap.entrySet()) {

@@ -3144,13 +3144,14 @@ public class PlayerWrapper {
                     continue;
                 }
                 File file = new File(path);
-                String filePath = file.getAbsolutePath();
+                String fileName = file.getName();
                 // /contents.txt
                 // /hw_pc_white_apps.xml
                 // /wifipro_regexlist.xml
-                Log.i(TAG, "getAssets               : " + filePath);
-                if (file.getAbsolutePath().contains("contents.")) {
-                    InputStream is = mContext.getAssets().open(filePath);
+                Log.i(TAG, "getAssets               : " + fileName);
+                //if (file.getAbsolutePath().contains("contents.")) {
+                if (fileName.contains("contents.")) {
+                    InputStream is = mContext.getAssets().open(fileName);
                     FileOutputStream fos = new FileOutputStream(targetFile);
                     byte[] buffer = new byte[2048];
                     int byteCount = 0;
@@ -3161,6 +3162,7 @@ public class PlayerWrapper {
                     is.close();
                     fos.close();
                     isSuccess = true;
+                    Log.i(TAG, "copyFile() success!!!");
                     break;
                 }
             }
