@@ -1,12 +1,7 @@
 package com.weidi.media.wdplayer.business.contents;
 
-import android.app.UiModeManager;
 import android.content.Context;
-import android.content.res.Configuration;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,12 +9,12 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 /***
@@ -51,17 +46,12 @@ public class ContentsAdapter extends RecyclerView.Adapter {
     private final ArrayList<String> mKeys = new ArrayList<String>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
-    private int whatIsDevice;
 
     public ContentsAdapter(Context context) {
         mContentsMap.clear();
         mKeys.clear();
         mContext = context;
         mLayoutInflater = LayoutInflater.from(mContext);
-
-        UiModeManager uiModeManager =
-                (UiModeManager) mContext.getSystemService(Context.UI_MODE_SERVICE);
-        whatIsDevice = uiModeManager.getCurrentModeType();
     }
 
     @Override
@@ -174,7 +164,7 @@ public class ContentsAdapter extends RecyclerView.Adapter {
             super(itemView);
             itemView.setOnClickListener(onClickListener);
             // 不是移动设备时
-            if (whatIsDevice != Configuration.UI_MODE_TYPE_NORMAL) {
+            if (!PlayerWrapper.IS_PHONE) {
                 // 如果移动设备设置下面值时,第一次点击得到焦点,第二次点击才触发事件
                 itemView.setClickable(true);
                 itemView.setFocusable(true);

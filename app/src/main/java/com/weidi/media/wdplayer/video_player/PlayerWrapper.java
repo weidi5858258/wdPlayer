@@ -246,8 +246,7 @@ public class PlayerWrapper {
      Configuration.UI_MODE_TYPE_WATCH      手表
      Configuration.UI_MODE_TYPE_TELEVISION 电视机
      */
-    private int whatIsDevice;
-    private boolean mIsPhoneDevice;
+    private int whatIsDevice = -1;
     // 是否是竖屏 true为竖屏
     private boolean mIsPortraitScreen;
 
@@ -280,6 +279,7 @@ public class PlayerWrapper {
     // 必须首先被调用
     public void setService(Service service) {
         mService = null;
+        whatIsDevice = -1;
         if (!(service instanceof PlayerService)) {
             throw new IllegalArgumentException("!(service instanceof PlayerService)");
         }
@@ -480,7 +480,6 @@ public class PlayerWrapper {
         mContentsMap.clear();
         mCouldPlaybackPathList.clear();
 
-        mIsPhoneDevice = isPhoneDevice();
         if (mFFMPEGPlayer == null) {
             mFFMPEGPlayer = FFMPEG.getDefault();
         }
@@ -687,6 +686,8 @@ public class PlayerWrapper {
         if (mIsAddedView) {
             mIsAddedView = false;
             onPause();
+            // addView() ---> removeView(...) ---> onRelease() ---> onFinished() --->
+            // needToPlaybackOtherVideo() ---> addView()
             mWindowManager.removeView(mRootView);
             return;
         }
@@ -2993,18 +2994,6 @@ public class PlayerWrapper {
         }
 
         onRelease();
-    }
-
-    private boolean isPhoneDevice() {
-        boolean isPhoneDevice = true;
-        UiModeManager uiModeManager =
-                (UiModeManager) mContext.getSystemService(Context.UI_MODE_SERVICE);
-        if (uiModeManager.getCurrentModeType() != Configuration.UI_MODE_TYPE_TELEVISION) {
-            isPhoneDevice = true;
-        } else {
-            isPhoneDevice = false;
-        }
-        return isPhoneDevice;
     }
 
     private void sendEmptyMessage(int code) {

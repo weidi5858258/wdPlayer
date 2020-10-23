@@ -13,10 +13,11 @@
         android:layout_width="match_parent"
         android:layout_height="@dimen/dimen_35_dp"
         android:layout_alignParentTop="true"
-        android:orientation="horizontal"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:padding="0dp">
+        android:orientation="horizontal"
+        android:padding="0dp"
+        android:paddingEnd="@dimen/dimen_5_dp">
 
         <EditText
             android:id="@+id/address_et"
@@ -33,8 +34,8 @@
             android:id="@+id/playback_btn"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="3"
-            android:background="@drawable/button_selector"
+            android:layout_weight="1"
+            android:background="@drawable/click_selector"
             android:maxLines="1"
             android:padding="0dp"
             android:text="GO"
@@ -46,6 +47,7 @@
         android:id="@+id/contents_rv"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/address_layout" />
+        android:layout_below="@+id/address_layout"
+        android:layout_marginTop="@dimen/dimen_5_dp" />
 
 </RelativeLayout>

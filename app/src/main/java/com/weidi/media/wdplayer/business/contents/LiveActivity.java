@@ -1,11 +1,9 @@
 package com.weidi.media.wdplayer.business.contents;
 
 import android.app.Activity;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -143,10 +141,7 @@ public class LiveActivity extends Activity {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
         }
 
-        UiModeManager uiModeManager =
-                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        int whatIsDevice = uiModeManager.getCurrentModeType();
-        if (whatIsDevice != Configuration.UI_MODE_TYPE_NORMAL) {
+        if (!PlayerWrapper.IS_PHONE) {
             findViewById(R.id.address_layout).setVisibility(View.GONE);
             mRecyclerView.setClickable(true);
             mRecyclerView.setFocusable(true);
