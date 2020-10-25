@@ -2,6 +2,8 @@ package com.weidi.media.wdplayer.business.contents;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -10,6 +12,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 
 import com.weidi.eventbus.EventBusUtils;
@@ -35,7 +38,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 
 public class LiveActivityForWear extends WearableActivity {
 
-    private static final String TAG = "ContentsActivity";
+    private static final String TAG = "LiveActivityForWear";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -94,6 +97,62 @@ public class LiveActivityForWear extends WearableActivity {
                 " data: " + data);
     }
 
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Log.d(TAG, "onSaveInstanceState()" +
+                " outState: " + outState);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        Log.d(TAG, "onRestoreInstanceState()" +
+                " savedInstanceState: " + savedInstanceState);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged()" +
+                " newConfig: " + newConfig.toString());
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                    new Object[]{0});
+        } else {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                    null);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        Log.d(TAG, "onWindowFocusChanged()" +
+                " hasFocus: " + hasFocus);
+
+        /*if (hasFocus) {
+            if (getResources().getConfiguration().orientation ==
+                    Configuration.ORIENTATION_LANDSCAPE) {
+                // 需要无状态栏的横屏
+                EventBusUtils.post(
+                        PlayerService.class,
+                        PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                        new Object[]{0});
+            } else {
+                EventBusUtils.post(
+                        PlayerService.class,
+                        PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                        null);
+            }
+        }*/
+    }
+
     /////////////////////////////////////////////////////////////////////////
 
     private EditText mAddressET;
@@ -119,6 +178,7 @@ public class LiveActivityForWear extends WearableActivity {
         };
 
         mRecyclerView = findViewById(R.id.contents_rv);
+        // 如果没有下面的代码,那么手表的滚轮滚动时,item不会移动.而item就不需要这样设置.
         mRecyclerView.setClickable(true);
         mRecyclerView.setFocusable(true);
         mRecyclerView.setFocusableInTouchMode(true);

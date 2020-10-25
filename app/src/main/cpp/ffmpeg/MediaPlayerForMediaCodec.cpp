@@ -418,12 +418,14 @@ namespace alexander_media_mediacodec {
 
     int read_thread_interrupt_cb(void *opaque) {
         if (isInterrupted) {
+            LOGE("read_thread_interrupt_cb() 1 退出\n");
             return 1;
         }
         if (audioWrapper == nullptr
             || audioWrapper->father == nullptr
             || videoWrapper == nullptr
             || videoWrapper->father == nullptr) {
+            LOGE("read_thread_interrupt_cb() 2 退出\n");
             return 0;
         }
         // 必须通过传参方式进行判断,不能用全局变量判断
@@ -431,7 +433,7 @@ namespace alexander_media_mediacodec {
         endReadTime = av_gettime_relative();
         if (audioWrapper->father->streamIndex != -1
             && !audioWrapper->father->isReading) {
-            LOGE("read_thread_interrupt_cb() 退出\n");
+            LOGE("read_thread_interrupt_cb() 3 退出\n");
             isInterrupted = true;
             return 1;
         } else if (
@@ -4129,6 +4131,7 @@ namespace alexander_media_mediacodec {
                 } else {
                     videoSleepTime = 15;
                 }
+                LOGI("initPlayer() videoSleepTime: %d", videoSleepTime);
                 if (isWatch) {
                     videoSleepTime = 11;
                 }
@@ -4285,6 +4288,7 @@ namespace alexander_media_mediacodec {
 
     int stop() {
         LOGI("stop() start\n");
+        isInterrupted = true;
         if (audioWrapper != nullptr
             && audioWrapper->father != nullptr) {
             LOGI("stop() audio\n");

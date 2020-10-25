@@ -6,9 +6,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/item_selector_normal"
-    android:clickable="true"
-    android:focusable="true"
-    android:focusableInTouchMode="true"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context=".WearMainActivity"
     tools:deviceIds="wear">

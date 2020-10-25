@@ -185,7 +185,7 @@ public class JniPlayerActivity extends Activity {
             Log.d(TAG, "onWindowFocusChanged()" +
                     " hasFocus: " + hasFocus);
 
-        if (hasFocus) {
+        /*if (hasFocus) {
             if (getResources().getConfiguration().orientation ==
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要无状态栏的横屏
@@ -199,7 +199,7 @@ public class JniPlayerActivity extends Activity {
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
-        }
+        }*/
     }
 
     ///////////////////////////////////////////////////////////////////////

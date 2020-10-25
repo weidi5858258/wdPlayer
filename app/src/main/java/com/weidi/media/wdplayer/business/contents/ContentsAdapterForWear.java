@@ -72,9 +72,6 @@ public class ContentsAdapterForWear extends RecyclerView.Adapter {
         }
 
         TitleViewHolder titleViewHolder = (TitleViewHolder) holder;
-        /*titleViewHolder.itemView.setClickable(true);
-        titleViewHolder.itemView.setFocusable(true);
-        titleViewHolder.itemView.setFocusableInTouchMode(true);*/
 
         String key = mKeys.get(position);
         String value = mContentsMap.get(key);
@@ -158,22 +155,7 @@ public class ContentsAdapterForWear extends RecyclerView.Adapter {
 
         public TitleViewHolder(View itemView) {
             super(itemView);
-            itemView.setClickable(true);
-            itemView.setFocusable(true);
-            itemView.setFocusableInTouchMode(true);
             itemView.setOnClickListener(onClickListener);
-            /*itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-                @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    if (hasFocus) {
-                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
-                                R.drawable.item_selector_focused_wear));
-                    } else {
-                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
-                                R.drawable.item_selector_wear));
-                    }
-                }
-            });*/
             title = itemView.findViewById(R.id.content_title);
         }
 

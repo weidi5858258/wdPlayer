@@ -2288,25 +2288,26 @@ public class PlayerWrapper {
             }
         }
 
-        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
-                && IS_PHONE) {
-            // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 手机");
-            // 手机并且竖屏
-            handlePortraitScreen();
-        } else {
-            // Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW 电视机");
-            if (IS_WATCH) {
-                if (mIsVideo) {
-                    // 全屏
-                    handleLandscapeScreen(0);
+        int orientation = mContext.getResources().getConfiguration().orientation;
+        switch (orientation) {
+            case Configuration.ORIENTATION_LANDSCAPE:
+                // 横屏
+                if (IS_WATCH) {
+                    if (mIsVideo) {
+                        handleLandscapeScreen(0);
+                    } else {
+                        handlePortraitScreen();
+                    }
                 } else {
-                    handlePortraitScreen();
+                    handleScreenFlag = 1;
+                    handlePortraitScreenWithTV();
                 }
-            } else {
-                // 手机并且横屏,电视机
-                handleScreenFlag = 1;
-                handlePortraitScreenWithTV();
-            }
+                break;
+            case Configuration.ORIENTATION_PORTRAIT:
+            default:
+                // 竖屏
+                handlePortraitScreen();
+                break;
         }
 
         SharedPreferences.Editor edit = mSP.edit();

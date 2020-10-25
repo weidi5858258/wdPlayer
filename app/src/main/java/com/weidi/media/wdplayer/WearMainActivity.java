@@ -175,6 +175,7 @@ public class WearMainActivity extends WearableActivity {
                 uiHandler.sendEmptyMessageDelayed(1, 1000);
             }
         });*/
+        findViewById(R.id.text).requestFocus();
         findViewById(R.id.text).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
