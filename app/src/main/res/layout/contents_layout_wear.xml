@@ -51,6 +51,7 @@
             android:id="@+id/contents_rv"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginTop="@dimen/dimen_5_dp"
             android:layout_below="@+id/address_layout" />
     </RelativeLayout>
 </androidx.wear.widget.BoxInsetLayout>

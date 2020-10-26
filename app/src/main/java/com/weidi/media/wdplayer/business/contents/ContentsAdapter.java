@@ -2,6 +2,8 @@ package com.weidi.media.wdplayer.business.contents;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,9 +12,11 @@ import android.widget.TextView;
 
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
+import com.weidi.recycler_view.VerticalLayoutManager;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import androidx.core.content.ContextCompat;
@@ -37,15 +41,22 @@ import androidx.core.content.ContextCompat;
  }
  mAdapter.addData(mContentsMap);
 
-
+ 关于RecyclerView你知道的不知道的都在这了（上）
+ https://www.cnblogs.com/dasusu/p/9159904.html
+ 关于RecyclerView你知道的不知道的都在这了（下）
+ https://www.cnblogs.com/dasusu/p/9255335.html
  */
 
 public class ContentsAdapter extends RecyclerView.Adapter {
+
+    private static final String TAG = "ContentsAdapter";
 
     private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
     private final ArrayList<String> mKeys = new ArrayList<String>();
     private Context mContext;
     private LayoutInflater mLayoutInflater;
+    private RecyclerView mRecyclerView;
+    private VerticalLayoutManager mLayoutManager;
 
     public ContentsAdapter(Context context) {
         mContentsMap.clear();
@@ -78,13 +89,49 @@ public class ContentsAdapter extends RecyclerView.Adapter {
     }
 
     @Override
+    public void onViewAttachedToWindow(RecyclerView.ViewHolder holder) {
+        // itemView可见时
+        if (PlayerWrapper.IS_PHONE) {
+            TitleViewHolder titleViewHolder = (TitleViewHolder) holder;
+            if (prePosition != -1 && TextUtils.equals(
+                    titleViewHolder.title.getText().toString(),
+                    mContentsMap.get(mKeys.get(prePosition)))) {
+                titleViewHolder.itemView.setBackground(ContextCompat.getDrawable(
+                        mContext, R.drawable.item_selector_focused));
+            }
+        }
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(RecyclerView.ViewHolder holder) {
+        // itemView不可见时
+        if (PlayerWrapper.IS_PHONE) {
+            holder.itemView.setBackground(ContextCompat.getDrawable(
+                    mContext, R.drawable.item_selector_normal));
+        }
+    }
+
+    @Override
     public int getItemCount() {
         return mContentsMap.size();
     }
 
     @Override
-    final public int getItemViewType(int position) {
+    public int getItemViewType(int position) {
         return 0;
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    public void setRecyclerView(RecyclerView recyclerView) {
+        mRecyclerView = recyclerView;
+    }
+
+    public void setLayoutManager(VerticalLayoutManager layoutManager) {
+        mLayoutManager = layoutManager;
     }
 
     // map的key已经是唯一了
@@ -153,6 +200,9 @@ public class ContentsAdapter extends RecyclerView.Adapter {
         }
     }
 
+    private int prePosition = -1;
+    private int curPosition = -1;
+
     private class TitleViewHolder extends RecyclerView.ViewHolder {
 
         private TextView title;
@@ -209,6 +259,27 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                             int position = mKeys.indexOf(key);
                             switch (view.getId()) {
                                 case R.id.item_root_layout:
+                                    //mRecyclerView.findViewHolderForLayoutPosition(prePosition);
+                                    if (PlayerWrapper.IS_PHONE) {
+                                        // 这样是不行的
+                                        // View v = mRecyclerView.getChildAt(prePosition);
+
+                                        if (mRecyclerView != null && prePosition != -1) {
+                                            RecyclerView.ViewHolder holder =
+                                                    mRecyclerView.findViewHolderForAdapterPosition(prePosition);
+                                            if (holder != null && holder.itemView != null) {
+                                                holder.itemView.setBackground(ContextCompat.getDrawable(
+                                                        view.getContext(),
+                                                        R.drawable.item_selector_normal));
+                                            }
+                                        }
+
+                                        view.setBackground(ContextCompat.getDrawable(
+                                                view.getContext(),
+                                                R.drawable.item_selector_focused));
+                                        prePosition = position;
+                                    }
+
                                     mOnItemClickListener.onItemClick(
                                             key, position, R.id.item_root_layout);
                                     break;

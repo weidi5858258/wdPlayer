@@ -141,6 +141,12 @@ public class LiveActivity extends Activity {
             mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
         }
 
+        // item高度固定,进行这样的设置以提高性能
+        mRecyclerView.setHasFixedSize(true);
+        // 下面三句代码作用:用空间换时间,来提高滚动的流畅性
+        mRecyclerView.setItemViewCacheSize(20);
+        mRecyclerView.setDrawingCacheEnabled(true);
+        mRecyclerView.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
         if (!PlayerWrapper.IS_PHONE) {
             findViewById(R.id.address_layout).setVisibility(View.GONE);
             mRecyclerView.setClickable(true);
@@ -195,6 +201,8 @@ public class LiveActivity extends Activity {
     private void initAdapter() {
         mLayoutManager = new VerticalLayoutManager(getApplicationContext());
         mAdapter = new ContentsAdapter(getApplicationContext());
+        mAdapter.setRecyclerView(mRecyclerView);
+        mAdapter.setLayoutManager(mLayoutManager);
         mAdapter.setOnItemClickListener(
                 new ContentsAdapter.OnItemClickListener() {
                     @Override
