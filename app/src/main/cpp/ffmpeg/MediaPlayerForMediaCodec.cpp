@@ -2248,9 +2248,15 @@ namespace alexander_media_mediacodec {
             }
 
             if (isGoodResult) {
+                // region
+
                 bool needToGetResultAgain = true;
-                if (averageTimeDiff > 0.500000) {
+                if (averageTimeDiff > 0.600000) {
                     averageTimeDiffCount++;
+                } else if (averageTimeDiff >= 0.500000 && averageTimeDiff < 0.600000) {
+                    //needToGetResultAgain = false;
+                    //TIME_DIFFERENCE = 1.050000;
+                    averageTimeDiffCount = 4;
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 走进这里算是得到一个比较好的结果
 
@@ -2360,6 +2366,8 @@ namespace alexander_media_mediacodec {
                         needToGetResultAgain = true;
                     }*/
                 }
+
+                // endregion
 
                 // 对4K视频特殊处理
                 if (!needToGetResultAgain
