@@ -14,8 +14,8 @@ http://ivi.bupt.edu.cn/hls/cctv12.m3u8@@@@@@@@@@CCTV-12社会与法
 http://39.134.157.205/PLTV/88888888/224/3221225597/index.m3u8@@@@@@@@@@CCTV-13新闻高清
 http://39.134.157.205/PLTV/88888888/224/3221225505/index.m3u8@@@@@@@@@@CCTV-13新闻高清
 http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226316/1.m3u8@@@@@@@@@@CCTV-13新闻高清
-http://ivi.bupt.edu.cn/hls/cctv13.m3u8@@@@@@@@@@CCTV-13新闻
 http://223.110.241.130:6610/gitv/live1/G_CCTV-13-HQ/.m3u8@@@@@@@@@@CCTV-13新闻
+http://ivi.bupt.edu.cn/hls/cctv13.m3u8@@@@@@@@@@CCTV-13新闻
 http://ivi.bupt.edu.cn/hls/cctv14.m3u8@@@@@@@@@@CCTV-14少儿
 http://ivi.bupt.edu.cn/hls/cctv15.m3u8@@@@@@@@@@CCTV-15音乐
 http://ivi.bupt.edu.cn/hls/cctv16.m3u8@@@@@@@@@@CGTN
