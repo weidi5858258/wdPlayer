@@ -47,15 +47,15 @@ set(CPP_DIR ${CMAKE_SOURCE_DIR}/src/main/cpp)
 set(LIBS_DIR ${CMAKE_SOURCE_DIR}/src/main/nativeLibs)
 
 # 设置CPU目录
-# armeabi
-if (${ANDROID_ABI} STREQUAL "armeabi")
-    set(CPU_DIR armeabi)
-endif (${ANDROID_ABI} STREQUAL "armeabi")
-
 # armeabi-v7a
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
     set(CPU_DIR armeabi-v7a)
 endif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+
+# armeabi
+if (${ANDROID_ABI} STREQUAL "armeabi")
+    set(CPU_DIR armeabi)
+endif (${ANDROID_ABI} STREQUAL "armeabi")
 
 # arm64-v8a
 if (${ANDROID_ABI} STREQUAL "arm64-v8a")
@@ -124,12 +124,13 @@ set_target_properties(avcodec
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libavcodec.so)
 #################################################################
-add_library(avdevice
+# 提供了各种音视频过滤器
+add_library(avfilter
         SHARED
         IMPORTED)
-set_target_properties(avdevice
+set_target_properties(avfilter
         PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavdevice.so)
+        ${LIBS_DIR}/${CPU_DIR}/libavfilter.so)
 #################################################################
 # 用于各种音视频封装格式的生成和解析，读取音视频帧等功能
 add_library(avformat
@@ -146,14 +147,6 @@ add_library(avutil
 set_target_properties(avutil
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libavutil.so)
-#################################################################
-# 提供了各种音视频过滤器
-add_library(avfilter
-        SHARED
-        IMPORTED)
-set_target_properties(avfilter
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavfilter.so)
 #################################################################
 # 用于音频重采样，采样格式转换和混合
 add_library(swresample
@@ -184,13 +177,6 @@ add_library(ssl
 set_target_properties(ssl
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libssl.so)
-#################################################################
-add_library(yuv
-        SHARED
-        IMPORTED)
-set_target_properties(yuv
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libyuv.so)
 #################################################################
 #add_library(crypto
 #        STATIC
@@ -250,15 +236,13 @@ target_link_libraries(
 #        ijkplayer
 #        ijksdl
 
-        avdevice
-        avformat
         avcodec
-        avutil
         avfilter
+        avformat
+        avutil
         swresample
         swscale
         crypto
         ssl
-        yuv
 )
 #################################################################

@@ -468,7 +468,7 @@ namespace alexander_media_mediacodec {
         // 用于从网络接收数据,如果不是网络接收数据,可不用（如本例可不用）
         avcodec_register_all();
 
-        avdevice_register_all();
+        //avdevice_register_all();
 
         // 注册设备的函数,如用获取摄像头数据或音频等,需要此函数先注册
         // avdevice_register_all();
