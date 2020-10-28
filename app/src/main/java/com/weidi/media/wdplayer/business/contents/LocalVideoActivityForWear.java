@@ -3,6 +3,7 @@ package com.weidi.media.wdplayer.business.contents;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -95,6 +96,25 @@ public class LocalVideoActivityForWear extends WearableActivity {
         Log.d(TAG, "onActivityResult() requestCode: " + requestCode +
                 " resultCode: " + resultCode +
                 " data: " + data);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged()" +
+                " newConfig: " + newConfig.toString());
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                    new Object[]{0});
+        } else {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                    null);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////

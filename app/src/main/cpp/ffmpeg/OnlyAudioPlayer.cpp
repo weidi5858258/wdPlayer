@@ -832,7 +832,6 @@ namespace alexander_only_audio {
                 }
                 notifyToHandleWait(wrapper);
                 if (!wrapper->isHandling) {
-                    // for (;;) end
                     break;
                 }
                 if (wrapper->isPausedForUser || wrapper->isPausedForSeek) {
@@ -912,12 +911,11 @@ namespace alexander_only_audio {
                 notifyToHandleWait(audioWrapper->father);
                 audioWrapper->father->isPausedForCache = false;
                 LOGE("handleData() wait() Cache audio end\n");
+                if (!wrapper->isHandling) {
+                    break;
+                }
                 if (wrapper->isPausedForSeek) {
                     continue;
-                }
-                if (!wrapper->isHandling) {
-                    // for (;;) end
-                    break;
                 }
 
                 onPlayed();
