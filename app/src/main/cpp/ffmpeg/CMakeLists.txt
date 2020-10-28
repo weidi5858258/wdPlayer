@@ -14,6 +14,10 @@ add_definitions(-std=c++11)
 # 哪些cpp文件生成什么样的动态库
 # 一个CMakeLists.txt只能生成一个动态库
 
+#################################################################
+# 引用头文件(所有头文件放在include这个目录)
+include_directories(../include/)
+#################################################################
 # 找到所有cpp文件
 # file(GLOB SOURCE src/main/cpp/*.cpp)
 add_library(ffmpeg
@@ -37,8 +41,50 @@ add_library(ffmpeg
         # 把所有cpp文件编译到ffmpeg这个动态库中
         # ${SOURCE}
         )
-
 ################################FFMPEG################################
+
+# 这个一般是找系统库,放在这个命令里面的不会被打包到我们的apk里面
+find_library( # Sets the name of the path variable.
+        log-lib
+
+        # Specifies the name of the NDK library that
+        # you want CMake to locate.
+        log)
+find_library(android-lib
+        android)
+
+#[[find_library(audioclient-lib
+        audioclient)
+find_library(binder-lib
+        binder)
+find_library(cutils-lib
+        cutils)
+find_library(utils-lib
+        utils)]]
+
+#################################################################
+# 关联库 # ffmpeg
+# 好像只能出现一个target_link_libraries(...)
+target_link_libraries(
+        # Specifies the target library.
+        ffmpeg
+
+        # Links the target library to the log library
+        # included in the NDK.
+        ${log-lib}
+        ${android-lib}
+
+        #[[${audioclient-lib}
+        ${binder-lib}
+        ${cutils-lib}
+        ${utils-lib}]]
+
+        # 编译当前库时需要引用的第三方库
+        ijkffmpeg
+        ijkplayer
+        ijksdl
+)
+#################################################################
 
 # 设置cpp目录路径
 set(CPP_DIR ${CMAKE_SOURCE_DIR}/src/main/cpp)
@@ -119,7 +165,6 @@ set_target_properties(ijksdl
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
 #################################################################
-
 #add_library(avcodec
 #        SHARED
 #        IMPORTED)
@@ -196,59 +241,4 @@ set_target_properties(ijksdl
 #set_target_properties(ssl
 #        PROPERTIES IMPORTED_LOCATION
 #        ${LIBS_DIR}/${CPU_DIR}/libssl.a)
-#################################################################
-
-# 引用头文件(所有头文件放在include这个目录)
-include_directories(../include/)
-#################################################################
-# 这个一般是找系统库,放在这个命令里面的不会被打包到我们的apk里面
-find_library( # Sets the name of the path variable.
-        log-lib
-
-        # Specifies the name of the NDK library that
-        # you want CMake to locate.
-        log)
-find_library(android-lib
-        android)
-
-#[[find_library(audioclient-lib
-        audioclient)
-find_library(binder-lib
-        binder)
-find_library(cutils-lib
-        cutils)
-find_library(utils-lib
-        utils)]]
-
-#################################################################
-# 关联库 # ffmpeg
-# 好像只能出现一个target_link_libraries(...)
-target_link_libraries(
-        # Specifies the target library.
-        ffmpeg
-
-        # Links the target library to the log library
-        # included in the NDK.
-        ${log-lib}
-        ${android-lib}
-
-        #[[${audioclient-lib}
-        ${binder-lib}
-        ${cutils-lib}
-        ${utils-lib}]]
-
-        # 编译当前库时需要引用的第三方库
-        ijkffmpeg
-        ijkplayer
-        ijksdl
-
-        #        avcodec
-        #        avfilter
-        #        avformat
-        #        avutil
-        #        swresample
-        #        swscale
-        #        crypto
-        #        ssl
-)
 #################################################################
