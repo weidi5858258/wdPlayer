@@ -34,7 +34,7 @@ public class FFMPEG {
     public native String onTransact(int code, JniObject jniObject);
 
     static {
-        try {
+        /*try {
             System.loadLibrary("crypto");
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "卧槽, crypto库加载失败了!!!");
@@ -45,7 +45,7 @@ public class FFMPEG {
         } catch (UnsatisfiedLinkError error) {
             Log.e(TAG, "卧槽, ssl库加载失败了!!!");
             error.printStackTrace();
-        }
+        }*/
         try {
             System.loadLibrary("ffmpeg");
         } catch (UnsatisfiedLinkError error) {

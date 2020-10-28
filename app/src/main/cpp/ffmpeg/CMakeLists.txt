@@ -85,99 +85,104 @@ endif (${ANDROID_ABI} STREQUAL "x86_64")
 #             ${CPP_DIR}/ffmpeg_opt.c
 #             ${CPP_DIR}/ffmpeg_cmd.c )
 #################################################################
+# 动态库
 # 下面都是添加库,然后引用库
 # 用于各种类型声音、图像编解码
+
 # 添加库
-#add_library(
-#        # 库名称
-#        ijkffmpeg
-#        # 动态库
+add_library(
+        # 库名称
+        ijkffmpeg
+        # 动态库
+        SHARED
+        # 表示该库是引用的不是生成的
+        IMPORTED)
+# 引用库
+set_target_properties(
+        # 库名称
+        ijkffmpeg
+        # 库的路径
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libijkffmpeg.so)
+#################################################################
+add_library(ijkplayer
+        SHARED
+        IMPORTED)
+set_target_properties(ijkplayer
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libijkplayer.so)
+#################################################################
+add_library(ijksdl
+        SHARED
+        IMPORTED)
+set_target_properties(ijksdl
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
+#################################################################
+
+#add_library(avcodec
 #        SHARED
-#        # 表示该库是引用的不是生成的
 #        IMPORTED)
-## 引用库
-#set_target_properties(
-#        # 库名称
-#        ijkffmpeg
-#        # 库的路径
+#set_target_properties(avcodec
 #        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libijkffmpeg.so)
-#################################################################
-#add_library(ijkplayer
+#        ${LIBS_DIR}/${CPU_DIR}/libavcodec.so)
+##################################################################
+## 提供了各种音视频过滤器
+#add_library(avfilter
 #        SHARED
 #        IMPORTED)
-#set_target_properties(ijkplayer
+#set_target_properties(avfilter
 #        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libijkplayer.so)
-#################################################################
-#add_library(ijksdl
+#        ${LIBS_DIR}/${CPU_DIR}/libavfilter.so)
+##################################################################
+## 用于各种音视频封装格式的生成和解析，读取音视频帧等功能
+#add_library(avformat
 #        SHARED
 #        IMPORTED)
-#set_target_properties(ijksdl
+#set_target_properties(avformat
 #        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
-#################################################################
-add_library(avcodec
-        SHARED
-        IMPORTED)
-set_target_properties(avcodec
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavcodec.so)
-#################################################################
-# 提供了各种音视频过滤器
-add_library(avfilter
-        SHARED
-        IMPORTED)
-set_target_properties(avfilter
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavfilter.so)
-#################################################################
-# 用于各种音视频封装格式的生成和解析，读取音视频帧等功能
-add_library(avformat
-        SHARED
-        IMPORTED)
-set_target_properties(avformat
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavformat.so)
-#################################################################
-# 包含一些公共的工具函数
-add_library(avutil
-        SHARED
-        IMPORTED)
-set_target_properties(avutil
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libavutil.so)
-#################################################################
-# 用于音频重采样，采样格式转换和混合
-add_library(swresample
-        SHARED
-        IMPORTED)
-set_target_properties(swresample
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libswresample.so)
-#################################################################
-# 用于视频场景比例缩放、色彩映射转换
-add_library(swscale
-        SHARED
-        IMPORTED)
-set_target_properties(swscale
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libswscale.so)
-#################################################################
-add_library(crypto
-        SHARED
-        IMPORTED)
-set_target_properties(crypto
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libcrypto.so)
-#################################################################
-add_library(ssl
-        SHARED
-        IMPORTED)
-set_target_properties(ssl
-        PROPERTIES IMPORTED_LOCATION
-        ${LIBS_DIR}/${CPU_DIR}/libssl.so)
-#################################################################
+#        ${LIBS_DIR}/${CPU_DIR}/libavformat.so)
+##################################################################
+## 包含一些公共的工具函数
+#add_library(avutil
+#        SHARED
+#        IMPORTED)
+#set_target_properties(avutil
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libavutil.so)
+##################################################################
+## 用于音频重采样，采样格式转换和混合
+#add_library(swresample
+#        SHARED
+#        IMPORTED)
+#set_target_properties(swresample
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libswresample.so)
+##################################################################
+## 用于视频场景比例缩放、色彩映射转换
+#add_library(swscale
+#        SHARED
+#        IMPORTED)
+#set_target_properties(swscale
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libswscale.so)
+##################################################################
+#add_library(crypto
+#        SHARED
+#        IMPORTED)
+#set_target_properties(crypto
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libcrypto.so)
+##################################################################
+#add_library(ssl
+#        SHARED
+#        IMPORTED)
+#set_target_properties(ssl
+#        PROPERTIES IMPORTED_LOCATION
+#        ${LIBS_DIR}/${CPU_DIR}/libssl.so)
+##################################################################
+
+# 静态库
 #add_library(crypto
 #        STATIC
 #        IMPORTED)
@@ -192,6 +197,7 @@ set_target_properties(ssl
 #        PROPERTIES IMPORTED_LOCATION
 #        ${LIBS_DIR}/${CPU_DIR}/libssl.a)
 #################################################################
+
 # 引用头文件(所有头文件放在include这个目录)
 include_directories(../include/)
 #################################################################
@@ -232,17 +238,17 @@ target_link_libraries(
         ${utils-lib}]]
 
         # 编译当前库时需要引用的第三方库
-#        ijkffmpeg
-#        ijkplayer
-#        ijksdl
+        ijkffmpeg
+        ijkplayer
+        ijksdl
 
-        avcodec
-        avfilter
-        avformat
-        avutil
-        swresample
-        swscale
-        crypto
-        ssl
+        #        avcodec
+        #        avfilter
+        #        avformat
+        #        avutil
+        #        swresample
+        #        swscale
+        #        crypto
+        #        ssl
 )
 #################################################################
