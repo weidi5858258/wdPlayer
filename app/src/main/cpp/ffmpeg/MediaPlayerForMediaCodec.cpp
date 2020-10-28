@@ -243,6 +243,7 @@ double videoPts = 0.0;
 // 上一个时间戳
 double preAudioPts = 0.0;
 double preVideoPts = 0.0;
+double preVideoPtsTemp = 0.0;
 bool isWatch = false;
 bool isWatchForCloseVideo = false;
 bool isWatchForCloseAudio = false;
@@ -260,6 +261,7 @@ namespace alexander_media_mediacodec {
     static double averageTimeDiff = 0;
     static int averageTimeDiffCount = 0;
     static double timeDiff[RUN_COUNTS];
+    static bool needToResetVideoPts = false;
 
     // 单位: 秒
     static long long mediaDuration = -1;
@@ -510,6 +512,7 @@ namespace alexander_media_mediacodec {
         videoPts = 0.0;
         preAudioPts = 0.0;
         preVideoPts = 0.0;
+        preVideoPtsTemp = 0.0;
         runCounts = 0;
         averageTimeDiff = 0.0;
         averageTimeDiffCount = 0;
@@ -522,6 +525,7 @@ namespace alexander_media_mediacodec {
         bit_rate_video = 0;
         bit_rate_audio = 0;
 
+        needToResetVideoPts = false;
         isReading = false;
         isReadWaited = false;
         isVideoHandling = false;
@@ -2253,12 +2257,18 @@ namespace alexander_media_mediacodec {
                 bool needToGetResultAgain = true;
                 if (averageTimeDiff > 0.600000) {
                     averageTimeDiffCount++;
+                    needToResetVideoPts = true;
                 } else if (averageTimeDiff >= 0.500000 && averageTimeDiff < 0.600000) {
                     //needToGetResultAgain = false;
+                    //TIME_DIFFERENCE = 0;
+                    //TIME_DIFFERENCE = 0.00000000001;
                     //TIME_DIFFERENCE = 1.050000;
-                    averageTimeDiffCount = 4;
+
+                    //averageTimeDiffCount = 4;
+                    averageTimeDiffCount++;
+                    needToResetVideoPts = true;
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
-                    // region 走进这里算是得到一个比较好的结果
+                    // region 第一次就走进这里的话,算是得到一个比较好的结果了
 
                     /***
                      0.405114 0.418364 0.429602 0.439030 0.449823
@@ -2944,10 +2954,12 @@ namespace alexander_media_mediacodec {
         }
 
         if (videoPts > 0 && audioPts > 0) {
-            //LOGW("handleVideoDataImpl()    videoPts: %lf\n", videoPts);
-            //LOGD("handleVideoDataImpl()    audioPts: %lf\n", audioPts);
-            //LOGW("handleVideoDataImpl() tempTimeDifference: %llf\n", tempTimeDifference);
             double tempTimeDifference = videoPts - audioPts;
+            //LOGI("handleVideoOutputBuffer() preVideoPts: %lf\n", preVideoPts);
+            //LOGW("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
+            //LOGD("handleVideoOutputBuffer()    audioPts: %lf\n", audioPts);
+            //LOGW("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+
             if (tempTimeDifference <= 0) {
                 // 正常情况下videoTimeDifference比audioTimeDifference大一些
                 // 如果发现小了,说明视频播放慢了,应丢弃这些帧
@@ -3536,9 +3548,31 @@ namespace alexander_media_mediacodec {
                 }
             } else {
                 if (wrapper->useMediaCodec) {
-                    videoPts = copyAVPacket->pts * av_q2d(stream->time_base);
+                    /***
+                     887.124044
+                     887.124044
+                     887.124044
+                     887.244044
+                     887.244044
+                     887.404044
+                     887.404044
+                     887.764044
+                     888.004044
+                     888.004044
+                     888.244044
+                     */
+                    preVideoPtsTemp = videoPts = copyAVPacket->pts * av_q2d(stream->time_base);
                     if (mediaDuration < 0 && preVideoPts > videoPts) {
                         continue;
+                    }
+
+                    if (needToResetVideoPts && mediaDuration < 0) {
+                        long long prePts = (long long) (preVideoPts * 1000000);
+                        long long curPts = (long long) (videoPts * 1000000);
+                        if (prePts != curPts) {
+                            //videoPts = preVideoPts + 0.04;
+                            videoPts = videoPts - 0.12;
+                        }
                     }
 
                     if (isFrameByFrameMode) {
@@ -3558,7 +3592,7 @@ namespace alexander_media_mediacodec {
                             copyAVPacket->size,
                             (long long) copyAVPacket->pts);
                     av_packet_unref(copyAVPacket);
-                    preVideoPts = videoPts;
+                    preVideoPts = preVideoPtsTemp;
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
                         LOGE("handleData() video feedInputBufferAndDrainOutputBuffer failure\n");

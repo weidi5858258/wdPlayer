@@ -770,7 +770,7 @@ public class PlayerWrapper {
     };
 
     private void setControllerPanelBackgroundColor() {
-        Log.i(TAG, "setControllerPanelBackgroundColor()");
+        //Log.i(TAG, "setControllerPanelBackgroundColor()");
         if (//mContext.getResources().getConfiguration().orientation
             // != Configuration.ORIENTATION_PORTRAIT
             //|| mControllerPanelLayout.getVisibility() != View.VISIBLE
