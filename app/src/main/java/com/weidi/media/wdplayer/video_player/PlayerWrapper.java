@@ -164,6 +164,7 @@ public class PlayerWrapper {
     private boolean mIsH264 = false;
     private boolean mIsVideo = false;
     private boolean mIsAudio = false;
+    private boolean mIsFinished = true;
     private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private WindowManager mWindowManager;
@@ -1388,11 +1389,15 @@ public class PlayerWrapper {
 
     private void startPlayback() {
         Log.d(TAG, "startPlayback() start");
-        if (!mIsAddedView || !mRootView.isShown() || TextUtils.isEmpty(mCurPath)) {
+        if (!mIsAddedView
+                || !mRootView.isShown()
+                || TextUtils.isEmpty(mCurPath)
+                || !mIsFinished) {
             Log.e(TAG, "startPlayback() The condition is not satisfied");
             return;
         }
 
+        mIsFinished = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             /***
              AUDIOFOCUS_LOSS：当本程序正在播放音频时有另一播放器请求获得音频焦点播放音频，那么就会回调该方法并传入此参数
@@ -2346,6 +2351,7 @@ public class PlayerWrapper {
     }
 
     private void onFinished() {
+        mIsFinished = true;
         if (mFfmpegUseMediaCodecDecode != null)
             mFfmpegUseMediaCodecDecode.releaseMediaCodec();
 
@@ -2390,6 +2396,7 @@ public class PlayerWrapper {
     }
 
     private void onError(Message msg) {
+        mIsFinished = true;
         mHasError = false;
         String errorInfo = null;
         if (msg.obj != null) {

@@ -2264,7 +2264,6 @@ namespace alexander_media_mediacodec {
                     //TIME_DIFFERENCE = 0.00000000001;
                     //TIME_DIFFERENCE = 1.050000;
 
-                    //averageTimeDiffCount = 4;
                     averageTimeDiffCount++;
                     needToResetVideoPts = true;
                 } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
@@ -2329,7 +2328,7 @@ namespace alexander_media_mediacodec {
                      0.204199 0.245688 0.263926 0.271427 0.284538
                      */
                     if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.080000;
+                        TIME_DIFFERENCE = 0.050000;
                     } else {
                         TIME_DIFFERENCE = 0.100000;
                     }
@@ -2344,6 +2343,7 @@ namespace alexander_media_mediacodec {
                      */
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = averageTimeDiff - 0.100000;
+                        TIME_DIFFERENCE = 0.010000;
                     } else {
                         TIME_DIFFERENCE = averageTimeDiff;
                     }
@@ -2395,6 +2395,7 @@ namespace alexander_media_mediacodec {
                     if (TIME_DIFFERENCE < 0) {
                         TIME_DIFFERENCE = 0.100000;
                     }
+                    TIME_DIFFERENCE = 0.000800;
                 }
             } else {
                 TIME_DIFFERENCE = averageTimeDiff + 0.100000;
@@ -2866,7 +2867,7 @@ namespace alexander_media_mediacodec {
             return 0;
         }
 
-        if (videoWrapper->father->useMediaCodec) {
+        if (videoWrapper->father->useMediaCodec && !isWatch) {
             // 为了达到音视频同步,只能牺牲点音频了.让音频慢下来.(个别视频会这样)
             while (audioPts - videoPts > 0
                    && !videoWrapper->father->isSleeping) {
@@ -2958,7 +2959,20 @@ namespace alexander_media_mediacodec {
             //LOGI("handleVideoOutputBuffer() preVideoPts: %lf\n", preVideoPts);
             //LOGW("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
             //LOGD("handleVideoOutputBuffer()    audioPts: %lf\n", audioPts);
-            //LOGW("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+            //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+
+            /*if (needToResetVideoPts && mediaDuration < 0) {
+                if (tempTimeDifference < 0.1 && tempTimeDifference > 0) {
+                    videoPts = audioPts + 0.13;
+                    tempTimeDifference = videoPts - audioPts;
+                } else if (tempTimeDifference > 0.4) {
+                    videoPts = audioPts + 0.23;
+                    tempTimeDifference = videoPts - audioPts;
+                }
+                //LOGW("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
+                //LOGD("handleVideoOutputBuffer()    audioPts: %lf\n", audioPts);
+                //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+            }*/
 
             if (tempTimeDifference <= 0) {
                 // 正常情况下videoTimeDifference比audioTimeDifference大一些
@@ -2997,6 +3011,14 @@ namespace alexander_media_mediacodec {
             if (tempTimeDifference > 2.000000) {
                 videoPts = audioPts + averageTimeDiff;
             }
+            /*double temp_time_difference = 0;
+            if (needToResetVideoPts
+                && mediaDuration < 0
+                && tempTimeDifference > 0.3) {
+                temp_time_difference = TIME_DIFFERENCE;
+                TIME_DIFFERENCE = 0.25;
+                LOGI("handleVideoOutputBuffer()    timeDiff1: %lf\n", (videoPts - audioPts));
+            }*/
             // 如果videoTimeDifference比audioTimeDifference大出了一定的范围
             // 那么说明视频播放快了,应等待音频
             while (videoPts - audioPts > TIME_DIFFERENCE
@@ -3011,13 +3033,21 @@ namespace alexander_media_mediacodec {
                 {
                     LOGW("handleVideoOutputBuffer() TIME_DIFFERENCE return\n");
                     videoWrapper->father->isSleeping = false;
+                    /*if (needToResetVideoPts
+                        && mediaDuration < 0) {
+                        TIME_DIFFERENCE = temp_time_difference;
+                    }*/
                     return 0;
                 }
                 videoWrapper->father->isSleeping = true;
                 av_usleep(1000);
             }
             videoWrapper->father->isSleeping = false;
-
+            /*if (needToResetVideoPts
+                && mediaDuration < 0) {
+                TIME_DIFFERENCE = temp_time_difference;
+                LOGW("handleVideoOutputBuffer()    timeDiff2: %lf\n", (videoPts - audioPts));
+            }*/
             // endregion
         }
 
@@ -3566,14 +3596,14 @@ namespace alexander_media_mediacodec {
                         continue;
                     }
 
-                    if (needToResetVideoPts && mediaDuration < 0) {
+                    /*if (needToResetVideoPts && mediaDuration < 0) {
                         long long prePts = (long long) (preVideoPts * 1000000);
                         long long curPts = (long long) (videoPts * 1000000);
                         if (prePts != curPts) {
                             //videoPts = preVideoPts + 0.04;
                             videoPts = videoPts - 0.12;
                         }
-                    }
+                    }*/
 
                     if (isFrameByFrameMode) {
                         long long prePts = (long long) (preVideoPts * 1000000);
@@ -4150,6 +4180,16 @@ namespace alexander_media_mediacodec {
             TIME_DIFFERENCE = 0.500000;
         }*/
         TIME_DIFFERENCE = 0.500000;
+        /*if (!strcmp(inFilePath, "http://39.134.157.205/PLTV/88888888/224/3221225562/index.m3u8")
+            || !strcmp(inFilePath, "http://39.134.157.205/PLTV/88888888/224/3221225664/index.m3u8")
+            || !strcmp(inFilePath,
+                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226551/1.m3u8")
+            || !strcmp(inFilePath,
+                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226552/1.m3u8")
+            || !strcmp(inFilePath,
+                       "http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226553/1.m3u8")){
+            TIME_DIFFERENCE = 0.000600;
+        }*/
 
         if (audioWrapper->father->streamIndex != -1
             && videoWrapper->father->streamIndex == -1) {

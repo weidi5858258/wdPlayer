@@ -1,7 +1,10 @@
 package com.weidi.media.wdplayer;
 
 import android.app.Activity;
+import android.app.UiModeManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaFormat;
 import android.net.Uri;
@@ -101,7 +104,11 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        UiModeManager uiModeManager =
+                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        int whatIsDevice = uiModeManager.getCurrentModeType();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && whatIsDevice == Configuration.UI_MODE_TYPE_NORMAL) {
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
             boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
             // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
