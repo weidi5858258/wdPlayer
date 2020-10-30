@@ -9,5 +9,7 @@ build
 captures
 app/.cxx
 app/build
+ijkplayer-java/build
+ijkplayer-java/buildout
 weidi_library
 local.properties

@@ -81,8 +81,8 @@ target_link_libraries(
 
         # 编译当前库时需要引用的第三方库
         ijkffmpeg
-        #ijkplayer
-        #ijksdl
+        ijkplayer
+        ijksdl
 )
 #################################################################
 
@@ -151,19 +151,19 @@ set_target_properties(
         PROPERTIES IMPORTED_LOCATION
         ${LIBS_DIR}/${CPU_DIR}/libijkffmpeg.so)
 #################################################################
-#add_library(ijkplayer
-#        SHARED
-#        IMPORTED)
-#set_target_properties(ijkplayer
-#        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libijkplayer.so)
+add_library(ijkplayer
+        SHARED
+        IMPORTED)
+set_target_properties(ijkplayer
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libijkplayer.so)
 #################################################################
-#add_library(ijksdl
-#        SHARED
-#        IMPORTED)
-#set_target_properties(ijksdl
-#        PROPERTIES IMPORTED_LOCATION
-#        ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
+add_library(ijksdl
+        SHARED
+        IMPORTED)
+set_target_properties(ijksdl
+        PROPERTIES IMPORTED_LOCATION
+        ${LIBS_DIR}/${CPU_DIR}/libijksdl.so)
 #################################################################
 #add_library(avcodec
 #        SHARED

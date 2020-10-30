@@ -34,18 +34,26 @@ public class FFMPEG {
     public native String onTransact(int code, JniObject jniObject);
 
     static {
+        // 需要在CMakeLists.txt文件中的target_link_libraries(...)中加上下面3个库才能加载成功
         /*try {
-            System.loadLibrary("crypto");
+            System.loadLibrary("ijkffmpeg");
         } catch (UnsatisfiedLinkError error) {
-            Log.e(TAG, "卧槽, crypto库加载失败了!!!");
+            Log.e(TAG, "卧槽, ijkffmpeg库加载失败了!!!");
             error.printStackTrace();
         }
         try {
-            System.loadLibrary("ssl");
+            System.loadLibrary("ijkplayer");
         } catch (UnsatisfiedLinkError error) {
-            Log.e(TAG, "卧槽, ssl库加载失败了!!!");
+            Log.e(TAG, "卧槽, ijkplayer库加载失败了!!!");
+            error.printStackTrace();
+        }
+        try {
+            System.loadLibrary("ijksdl");
+        } catch (UnsatisfiedLinkError error) {
+            Log.e(TAG, "卧槽, ijksdl库加载失败了!!!");
             error.printStackTrace();
         }*/
+
         try {
             System.loadLibrary("ffmpeg");
         } catch (UnsatisfiedLinkError error) {

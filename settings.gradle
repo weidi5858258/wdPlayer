@@ -1,3 +1,4 @@
 include ':app'
+include ':ijkplayer-java'
 include ':weidi_library'
 rootProject.name = "wdPlayer"

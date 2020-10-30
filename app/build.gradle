@@ -28,6 +28,8 @@ android {
             }
         }
         signingConfig signingConfigs.debug
+
+        flavorDimensions "wdPlayer"
     }
     externalNativeBuild {
         cmake {
@@ -73,6 +75,19 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    /*productFlavors {
+        all32 { minSdkVersion 23 }// 14
+        all64 { minSdkVersion 23 }// 21
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'armeabi-v7a', 'armeabi', 'x86', 'x86_64', 'arm64-v8a'
+            universalApk false
+        }
+    }*/
 }
 
 dependencies {
@@ -81,6 +96,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.2'
+    implementation project(':ijkplayer-java')
     implementation project(":weidi_library")
 
     // 手表

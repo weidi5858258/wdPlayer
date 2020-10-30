@@ -31,6 +31,7 @@ import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
