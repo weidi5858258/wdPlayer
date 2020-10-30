@@ -3020,8 +3020,6 @@ namespace alexander_media_mediacodec {
                 TIME_DIFFERENCE = 0.25;
                 LOGI("handleVideoOutputBuffer()    timeDiff1: %lf\n", (videoPts - audioPts));
             }*/
-            // 如果videoTimeDifference比audioTimeDifference大出了一定的范围
-            // 那么说明视频播放快了,应等待音频
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
                 if (isFrameByFrameMode
@@ -3029,9 +3027,7 @@ namespace alexander_media_mediacodec {
                     || videoWrapper->father->isPausedForCache
                     || videoWrapper->father->isPausedForSeek
                     || !videoWrapper->father->isHandling
-                    || !audioWrapper->father->isHandling
-                        ) //
-                {
+                    || !audioWrapper->father->isHandling) {
                     LOGW("handleVideoOutputBuffer() TIME_DIFFERENCE return\n");
                     videoWrapper->father->isSleeping = false;
                     /*if (needToResetVideoPts
@@ -3049,6 +3045,7 @@ namespace alexander_media_mediacodec {
                 TIME_DIFFERENCE = temp_time_difference;
                 LOGW("handleVideoOutputBuffer()    timeDiff2: %lf\n", (videoPts - audioPts));
             }*/
+
             // endregion
         }
 
