@@ -262,6 +262,7 @@ namespace alexander_media_mediacodec {
     static int averageTimeDiffCount = 0;
     static double timeDiff[RUN_COUNTS];
     static bool needToResetVideoPts = false;
+    static long long testTimeDifferenceCount = 0;
 
     // 单位: 秒
     static long long mediaDuration = -1;
@@ -517,6 +518,7 @@ namespace alexander_media_mediacodec {
         runCounts = 0;
         averageTimeDiff = 0.0;
         averageTimeDiffCount = 0;
+        testTimeDifferenceCount = 0;
         memset(timeDiff, '0', sizeof(timeDiff));
         startReadTime = -1;
         endReadTime = -1;
@@ -2274,6 +2276,7 @@ namespace alexander_media_mediacodec {
                      0.405114 0.418364 0.429602 0.439030 0.449823
                      0.457614 0.461167 0.472319 0.486549 0.494847
                      */
+                    needToGetResultAgain = false;
                     double step = -0.000500;
                     if (videoWrapper->father->useMediaCodec) {
                         if (audioWrapper->father->useMediaCodec) {
@@ -2307,33 +2310,38 @@ namespace alexander_media_mediacodec {
                     } else {
                         TIME_DIFFERENCE = 0.300000;
                     }
-                    needToGetResultAgain = false;
 
                     // endregion
                 } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
                     /***
                      0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
                      */
+                    needToGetResultAgain = false;
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.100000;
                     } else {
                         TIME_DIFFERENCE = 0.200000;
                     }
-                    needToGetResultAgain = false;
                     if (audioWrapper->father->useMediaCodec) {
                         //TIME_DIFFERENCE = 0.300000;
                         TIME_DIFFERENCE = 0.050000;
+                    }
+                    if (needToResetVideoPts) {
+                        TIME_DIFFERENCE = 0.350000;
                     }
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
                      0.204199 0.245688 0.263926 0.271427 0.284538
                      */
+                    needToGetResultAgain = false;
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = 0.050000;
                     } else {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    needToGetResultAgain = false;
+                    if (needToResetVideoPts) {
+                        TIME_DIFFERENCE = 0.350000;
+                    }
                     /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
@@ -2342,13 +2350,16 @@ namespace alexander_media_mediacodec {
                     /***
                      0.100523 0.127849 0.168335
                      */
+                    needToGetResultAgain = false;
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = averageTimeDiff - 0.100000;
                         TIME_DIFFERENCE = 0.010000;
                     } else {
                         TIME_DIFFERENCE = averageTimeDiff;
                     }
-                    needToGetResultAgain = false;
+                    if (needToResetVideoPts) {
+                        TIME_DIFFERENCE = 0.250000;
+                    }
                     /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
@@ -2367,11 +2378,11 @@ namespace alexander_media_mediacodec {
                      0.088914
                      0.099370
                      */
+                    needToGetResultAgain = false;
                     TIME_DIFFERENCE = averageTimeDiff + 0.050000;
                     if (TIME_DIFFERENCE < 0.100000) {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    needToGetResultAgain = false;
                     /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
@@ -3012,14 +3023,18 @@ namespace alexander_media_mediacodec {
             if (tempTimeDifference > 2.000000) {
                 videoPts = audioPts + averageTimeDiff;
             }
-            /*double temp_time_difference = 0;
-            if (needToResetVideoPts
+            testTimeDifferenceCount++;
+            double temp_time_difference = 0;
+            //LOGW("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - audioPts));
+            if (videoWrapper->father->useMediaCodec
+                && needToResetVideoPts
                 && mediaDuration < 0
-                && tempTimeDifference > 0.3) {
+                //&& tempTimeDifference > 0.15
+                && testTimeDifferenceCount % 2 == 0) {
                 temp_time_difference = TIME_DIFFERENCE;
-                TIME_DIFFERENCE = 0.25;
-                LOGI("handleVideoOutputBuffer()    timeDiff1: %lf\n", (videoPts - audioPts));
-            }*/
+                TIME_DIFFERENCE = 0.4;
+                //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - audioPts));
+            }
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
                 if (isFrameByFrameMode
@@ -3030,21 +3045,22 @@ namespace alexander_media_mediacodec {
                     || !audioWrapper->father->isHandling) {
                     LOGW("handleVideoOutputBuffer() TIME_DIFFERENCE return\n");
                     videoWrapper->father->isSleeping = false;
-                    /*if (needToResetVideoPts
+                    if (videoWrapper->father->useMediaCodec
+                        && needToResetVideoPts
                         && mediaDuration < 0) {
                         TIME_DIFFERENCE = temp_time_difference;
-                    }*/
+                    }
                     return 0;
                 }
                 videoWrapper->father->isSleeping = true;
                 av_usleep(1000);
             }
             videoWrapper->father->isSleeping = false;
-            /*if (needToResetVideoPts
+            if (videoWrapper->father->useMediaCodec
+                && needToResetVideoPts
                 && mediaDuration < 0) {
                 TIME_DIFFERENCE = temp_time_difference;
-                LOGW("handleVideoOutputBuffer()    timeDiff2: %lf\n", (videoPts - audioPts));
-            }*/
+            }
 
             // endregion
         }
