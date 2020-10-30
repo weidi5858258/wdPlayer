@@ -23,7 +23,8 @@ public interface Constants {
     String PLAYBACK_USE_EXOPLAYER_OR_FFMPEG = "playback_use_exoplayer_or_ffmpeg";
 
     String PLAYBACK_USE_PLAYER = "playback_use_player";
+    String PLAYER_IJKPLAYER = "player_ijkplayer";
     String PLAYER_FFMPEG = "player_ffmpeg";
-    String PLAYER_MEDIACODEC = "player_mediacodec";
     String PLAYER_FFMPEG_MEDIACODEC = "player_ffmpeg_mediacodec";
+    String PLAYER_MEDIACODEC = "player_mediacodec";
 }

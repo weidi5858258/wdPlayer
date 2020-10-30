@@ -31,6 +31,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPE
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
@@ -369,6 +370,10 @@ public class LiveActivity extends Activity {
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_MEDIACODEC).commit();
             mAddressET.setText("");
             MyToast.show(PLAYER_MEDIACODEC);
+        } else if (text.startsWith("player_ijk")) {// player_ijkplayer
+            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
+            mAddressET.setText("");
+            MyToast.show(PLAYER_IJKPLAYER);
         } else if (text.startsWith("use_exo")) {// use_exoplayer
             mPreferences.edit().putString(PLAYBACK_USE_EXOPLAYER_OR_FFMPEG, "use_exoplayer").commit();
             mAddressET.setText("");
