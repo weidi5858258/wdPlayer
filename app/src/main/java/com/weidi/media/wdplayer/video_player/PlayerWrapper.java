@@ -455,7 +455,6 @@ public class PlayerWrapper {
 
         mCurPath = path;
         mPrePath = path;
-        Log.i(TAG, "setDataSource() mPrePath:\n" + mPrePath);
         Log.i(TAG, "setDataSource() mCurPath:\n" + mCurPath);
 
         addView();

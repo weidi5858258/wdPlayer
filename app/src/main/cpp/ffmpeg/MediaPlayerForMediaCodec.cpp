@@ -322,7 +322,8 @@ namespace alexander_media_mediacodec {
         if (len1 < len2 || len1 == 0 || len2 == 0) {
             return false;
         }
-        char temp[len2];
+        char temp[len2 + 1];
+        memset(temp, '\0', sizeof(temp));
         strncpy(temp, str1, len2);
         int ret = strcmp(temp, str2);
         if (!ret) {
@@ -341,7 +342,7 @@ namespace alexander_media_mediacodec {
         if (len1 < len2 || len1 == 0 || len2 == 0) {
             return false;
         }
-        char temp[len2];
+        char temp[len2 + 1];
         strncpy(temp, str1 + (len1 - len2), len2);
         int ret = strcmp(temp, str2);
         if (!ret) {

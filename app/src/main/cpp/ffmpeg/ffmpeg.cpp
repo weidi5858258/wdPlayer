@@ -1486,7 +1486,7 @@ static jint onTransact_closeJni(JNIEnv *env, jobject thiz,
 /////////////////////////////////////////////////////////////////////////
 
 char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
-    char info[50];
+    char info[100];
     memset(info, '\0', sizeof(info));
     switch (code) {
         case DO_SOMETHING_CODE_init:
