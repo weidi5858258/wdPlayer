@@ -2326,9 +2326,9 @@ namespace alexander_media_mediacodec {
                         //TIME_DIFFERENCE = 0.300000;
                         TIME_DIFFERENCE = 0.050000;
                     }
-                    if (needToResetVideoPts) {
+                    /*if (needToResetVideoPts) {
                         TIME_DIFFERENCE = 0.350000;
-                    }
+                    }*/
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
                      0.204199 0.245688 0.263926 0.271427 0.284538
@@ -2339,9 +2339,9 @@ namespace alexander_media_mediacodec {
                     } else {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    if (needToResetVideoPts) {
+                    /*if (needToResetVideoPts) {
                         TIME_DIFFERENCE = 0.350000;
-                    }
+                    }*/
                     /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
@@ -2353,13 +2353,12 @@ namespace alexander_media_mediacodec {
                     needToGetResultAgain = false;
                     if (videoWrapper->father->useMediaCodec) {
                         TIME_DIFFERENCE = averageTimeDiff - 0.100000;
-                        TIME_DIFFERENCE = 0.010000;
                     } else {
                         TIME_DIFFERENCE = averageTimeDiff;
                     }
-                    if (needToResetVideoPts) {
+                    /*if (needToResetVideoPts) {
                         TIME_DIFFERENCE = 0.250000;
-                    }
+                    }*/
                     /*if (audioWrapper->father->useMediaCodec) {
                         audioWrapper->father->useMediaCodec = false;
                         needToGetResultAgain = true;
@@ -2391,15 +2390,6 @@ namespace alexander_media_mediacodec {
 
                 // endregion
 
-                // 对4K视频特殊处理
-                if (!needToGetResultAgain
-                    && frameRate >= 45
-                    && videoWrapper->srcWidth >= 3840
-                    && videoWrapper->srcHeight >= 2160) {
-                    // 增大TIME_DIFFERENCE值让视频加快
-                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
-                }
-
                 if (needToGetResultAgain) {
                     runCounts = 0;
                     averageTimeDiff = 0;
@@ -2407,7 +2397,15 @@ namespace alexander_media_mediacodec {
                     if (TIME_DIFFERENCE < 0) {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    TIME_DIFFERENCE = 0.000800;
+                    //TIME_DIFFERENCE = 0.000800;
+                } else {
+                    // 对4K视频特殊处理
+                    if (frameRate >= 45
+                        && videoWrapper->srcWidth >= 3840
+                        && videoWrapper->srcHeight >= 2160) {
+                        // 增大TIME_DIFFERENCE值让视频加快
+                        TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                    }
                 }
             } else {
                 TIME_DIFFERENCE = averageTimeDiff + 0.100000;
@@ -3023,7 +3021,7 @@ namespace alexander_media_mediacodec {
             if (tempTimeDifference > 2.000000) {
                 videoPts = audioPts + averageTimeDiff;
             }
-            testTimeDifferenceCount++;
+            /*testTimeDifferenceCount++;
             double temp_time_difference = 0;
             //LOGW("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - audioPts));
             if (videoWrapper->father->useMediaCodec
@@ -3032,9 +3030,13 @@ namespace alexander_media_mediacodec {
                 //&& tempTimeDifference > 0.15
                 && testTimeDifferenceCount % 2 == 0) {
                 temp_time_difference = TIME_DIFFERENCE;
-                TIME_DIFFERENCE = 0.4;
+                TIME_DIFFERENCE = 1.0;
                 //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - audioPts));
             }
+            videoSleepTime = 1000;
+            if (needToResetVideoPts) {
+                videoSleepTime = 1;
+            }*/
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
                 if (isFrameByFrameMode
@@ -3045,22 +3047,22 @@ namespace alexander_media_mediacodec {
                     || !audioWrapper->father->isHandling) {
                     LOGW("handleVideoOutputBuffer() TIME_DIFFERENCE return\n");
                     videoWrapper->father->isSleeping = false;
-                    if (videoWrapper->father->useMediaCodec
+                    /*if (videoWrapper->father->useMediaCodec
                         && needToResetVideoPts
                         && mediaDuration < 0) {
                         TIME_DIFFERENCE = temp_time_difference;
-                    }
+                    }*/
                     return 0;
                 }
                 videoWrapper->father->isSleeping = true;
                 av_usleep(1000);
             }
             videoWrapper->father->isSleeping = false;
-            if (videoWrapper->father->useMediaCodec
+            /*if (videoWrapper->father->useMediaCodec
                 && needToResetVideoPts
                 && mediaDuration < 0) {
                 TIME_DIFFERENCE = temp_time_difference;
-            }
+            }*/
 
             // endregion
         }

@@ -2,6 +2,7 @@ package com.weidi.media.wdplayer.video_player;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -10,6 +11,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
+import android.view.View;
 
 import com.weidi.media.wdplayer.util.Callback;
 
@@ -18,6 +20,44 @@ import java.io.IOException;
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+
+/***
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);//关闭mediacodec硬解，使用软解
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);//开启mediacodec硬解
+
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 5);   //丢帧
+ 是在视频帧处理不过来的时候丢弃一些帧达到同步的效果
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 0);
+ //设置是否开启环路过滤: 0开启，画面质量高，解码开销大，48关闭，画面质量差点，解码开销小
+ //播放延时的解决方案
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "analyzeduration", 1);//设置播放前的探测时间
+ 1,达到首屏秒开效果
+ //如果是rtsp协议，可以优先用tcp(默认是用udp)
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "rtsp_transport", "tcp");
+ ijkMediaPlayer.setOption(1, "analyzemaxduration", 100L);
+ ijkMediaPlayer.setOption(1, "flush_packets", 1L);
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
+ //需要准备好后自动播放
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "fast", 1);//不额外优化
+ ijkMediaPlayer.setOption(4, "packet-buffering",  0);  //是否开启预缓冲，一般直播项目会开启，达到秒开的效果，不过带来了播放丢帧卡顿的体验
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 0);  //自动旋屏
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,
+ "mediacodec-handle-resolution-change", 0);   //处理分辨率变化
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "max-buffer-size", 0);//最大缓冲大小,单位kb
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "min-frames", 2);   //默认最小帧数2
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,  "max_cached_duration", 3);   //最大缓存时长
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,  "infbuf", 1);   //是否限制输入缓存数
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "nobuffer");
+ ijkMediaPlayer.setOption(1, "probesize", 200);  //播放前的探测Size，默认是1M, 改小一点会出画面更快
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER,"reconnect",5);  //播放重连次数
+
+
+ ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+ //因为项目中多次调用播放器，有网络视频，resp，本地视频，还有wifi上http视频，所以得清空DNS才能播放WIFI上的视频
+ 如果项目无法播放远程视频,可以试试这句话 Server returned 4XX Client Error, but not one of 40{0,1,3,4}报这个错误也可以试试
+ */
 public class IjkPlayer {
 
     private static final String TAG = "player_alexander";
@@ -40,6 +80,7 @@ public class IjkPlayer {
     private Callback mCallback = null;
     private Surface mSurface = null;
     private long mPositionMs;
+    public boolean mIsLocal = true;
 
     //    private IMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener;
     //    private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener;
@@ -133,6 +174,7 @@ public class IjkPlayer {
     }
 
     public void stop() {
+        mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
         if (mIjkMediaPlayer == null) {
             if (mCallback != null) {
                 mCallback.onFinished();
@@ -215,6 +257,9 @@ public class IjkPlayer {
         } finally {
 
         }
+
+        mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
+        mUiHandler.sendEmptyMessage(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
     }
 
     private void createPlayer() {
@@ -238,16 +283,43 @@ public class IjkPlayer {
                 IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1);
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
+
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);
+        // 跳帧处理,放CPU处理较慢时，进行跳帧处理，保证播放流程，画面和声音同步
         mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 1);
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 5);// 原来为1
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 0);
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http-detect-range-support", 0);
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_CODEC, "skip_loop_filter", 48);
+        // 某些视频在SeekTo的时候，会跳回到拖动前的位置，这是因为视频的关键帧的问题，
+        // 通俗一点就是FFMPEG不兼容，视频压缩过于厉害，seek只支持关键帧，
+        // 出现这个情况就是原始的视频文件中i 帧比较少
+        mIjkMediaPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "enable-accurate-seek", 1);
+        // 设置seekTo能够快速seek到指定位置并播放
+        mIjkMediaPlayer.setOption(
+                IjkMediaPlayer.OPT_CATEGORY_FORMAT, "fflags", "fastseek");
+
+        if (mIsLocal) {
+            // 设置播放前的探测时间 1,达到首屏秒开效果
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_FORMAT, "analyzeduration", 1);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "min-frames", 100);
+        } else {
+            // 清空DNS,有时因为在APP里面要播放多种类型的视频(如:MP4,直播,直播平台保存的视频,和其他http视频),
+            // 有时会造成因为DNS的问题而报10000问题
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+            // 重连模式，如果中途服务器断开了连接，让它重新连接,
+            // 参考 https://github.com/Bilibili/ijkplayer/issues/445
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
+        }
     }
 
     private boolean isInPlaybackState() {
@@ -266,7 +338,9 @@ public class IjkPlayer {
             case Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED:
                 if (mCallback != null && mIjkMediaPlayer != null) {
                     long position = mIjkMediaPlayer.getCurrentPosition();
-                    mCallback.onProgressUpdated(position / 1000);
+                    if (position > 0) {
+                        mCallback.onProgressUpdated(position / 1000);
+                    }
                     mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
                     mUiHandler.sendEmptyMessageDelayed(
                             Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED, 1000);
@@ -297,8 +371,17 @@ public class IjkPlayer {
                     }
 
                     start();
-                    mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
-                    mUiHandler.sendEmptyMessage(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
+
+                    if (mContext != null) {
+                        SharedPreferences sp = mContext.getSharedPreferences(
+                                PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        boolean isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                        if (!isMute) {
+                            setVolume(FFMPEG.VOLUME_NORMAL);
+                        } else {
+                            setVolume(FFMPEG.VOLUME_MUTE);
+                        }
+                    }
                 }
             };
     private final IMediaPlayer.OnVideoSizeChangedListener mSizeChangedListener =

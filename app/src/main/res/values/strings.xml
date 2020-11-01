@@ -8,6 +8,11 @@
     <string name="hello_world">Hello Square World!</string>
     <string name="hello_world_wdPlayer">欢迎使用wdPlayer</string>
     <string name="handle_info">
+        播放器选择:\n
+        player_ff  -> player_ffmpeg\n
+        player_fm  -> player_ffmpeg_mediacodec(自主设计)\n
+        player_ijk -> player_ijkplayer\n
+        player_mc  -> player_mediacodec(测试使用)\n
         敲击播放界面的次数操作:\n
         1次.O系统以上(包括O系统)或横屏,显示或隐藏有关信息和控制面板\n
         2次.播放或暂停\n
@@ -22,66 +27,6 @@
     </string>
     <string name="test">
         Hello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
-        \nHello Square World!
         \nHello Square World!
     </string>
 </resources>

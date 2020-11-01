@@ -27,9 +27,10 @@
     <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
     <!--网络-->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--需要注释的地方: 1-->
-    <!--<uses-feature android:name="android.hardware.type.watch" />-->
+    <uses-feature android:name="android.hardware.type.watch" />
 
     <!--android:icon="@mipmap/ic_launcher"-->
     <application
@@ -43,7 +44,7 @@
         android:usesCleartextTraffic="true">
 
         <!--需要注释的地方: 2-->
-        <!--<uses-library
+        <uses-library
             android:name="com.google.android.wearable"
             android:required="true" />
         <meta-data
@@ -52,7 +53,7 @@
         <activity
             android:name=".WearMainActivity"
             android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
-            android:screenOrientation="sensor">&lt;!&ndash;landscape&ndash;&gt;
+            android:screenOrientation="sensor"><!--landscape-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -60,8 +61,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_GALLERY" />
             </intent-filter>
-        </activity>-->
-        <activity
+        </activity>
+        <!--<activity
             android:name=".MainActivity"
             android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
@@ -72,7 +73,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.APP_GALLERY" />
             </intent-filter>
-        </activity>
+        </activity>-->
 
         <activity
             android:name="com.weidi.media.wdplayer.business.contents.LiveActivity"

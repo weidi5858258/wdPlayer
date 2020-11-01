@@ -52,6 +52,7 @@ import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
+import com.weidi.media.wdplayer.util.NetworkUtils;
 import com.weidi.threadpool.ThreadPool;
 import com.weidi.utils.MyToast;
 
@@ -681,7 +682,6 @@ public class PlayerWrapper {
 
     private void onRelease() {
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-            mPrePath = null;
             if (mIjkPlayer != null) {
                 mIjkPlayer.stop();
             }
@@ -915,6 +915,10 @@ public class PlayerWrapper {
     }
 
     private boolean needToPlaybackOtherVideo() {
+        if (!mIsLocal && !NetworkUtils.isConnected(mContext)) {
+            Log.i(TAG, "needToPlaybackOtherVideo() return false for network doesn't connect");
+            return false;
+        }
         if (mPrePath != null) {
             addView();
             Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
@@ -1269,7 +1273,11 @@ public class PlayerWrapper {
 
         switch (msg.what) {
             case MSG_PREPARE:
-                whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+                if (IS_WATCH) {
+                    whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER);
+                } else {
+                    whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+                }
                 /*if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)
                         && !mPath.endsWith(".m4s")
                         && !mPath.endsWith(".h264")
@@ -1501,12 +1509,13 @@ public class PlayerWrapper {
             }
         } else {
             // 音视频存在于同一个文件
+            long position = 0;
             if (mPathTimeMap.containsKey(md5Path)) {
                 // seekTo
-                long position = mPathTimeMap.get(md5Path);
+                position = mPathTimeMap.get(md5Path);
                 Log.d(TAG, "startPlayback()               position: " + position);
                 if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                    mIjkPlayer.seekTo(position * 1000);
+
                 } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                     //mSimpleVideoPlayer.setProgressUs(position * 1000000);
                 } else {
@@ -1516,6 +1525,8 @@ public class PlayerWrapper {
             }
 
             if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                mIjkPlayer.mIsLocal = mIsLocal;
+                mIjkPlayer.seekTo(position * 1000);
                 mIjkPlayer.setContext(mContext);
                 mIjkPlayer.setHandler(mUiHandler);
                 mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
@@ -2231,8 +2242,8 @@ public class PlayerWrapper {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
         setControllerPanelBackgroundColor();
-        mProgressTimeTV.setText("");
-        mDurationTimeTV.setText("");
+        mProgressTimeTV.setText("00:00:00");
+        mDurationTimeTV.setText("00:00:00");
         mProgressBar.setProgress(0);
         mProgressBar.setPadding(0, 0, 0, 0);
         mProgressBar.setThumbOffset(0);
@@ -2836,18 +2847,6 @@ public class PlayerWrapper {
     };
 
     private void clickOne() {
-        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-        } else {
-            if (mFFMPEGPlayer == null) {
-                return;
-            }
-            if (!Boolean.parseBoolean(
-                    mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isRunning, null))) {
-                return;
-            }
-        }
-
         mUiHandler.removeMessages(MSG_CHANGE_COLOR);
         if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE// 横屏
                 || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -3395,7 +3394,11 @@ public class PlayerWrapper {
     }
 
     public void playPlayerWithTelephonyCall() {
-        whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+        if (IS_WATCH) {
+            whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER);
+        } else {
+            whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+        }
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
             if (mIjkPlayer != null && !mIjkPlayer.isPlaying()) {
                 boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
@@ -3441,7 +3444,11 @@ public class PlayerWrapper {
     }
 
     public void pausePlayerWithTelephonyCall() {
-        whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+        if (IS_WATCH) {
+            whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER);
+        } else {
+            whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+        }
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
             if (mIjkPlayer != null && mIjkPlayer.isPlaying()) {
                 mPlayIB.setVisibility(View.INVISIBLE);
