@@ -258,10 +258,11 @@ namespace alexander_media_mediacodec {
 
     static int runCounts = 0;
     static double averageTimeDiff = 0;
-    static int averageTimeDiffCount = 0;
     static double timeDiff[RUN_COUNTS];
+    static int averageTimeDiffCount = 0;
     static bool needToGetResultAgain = true;
     static bool needToResetVideoPts = false;
+    static bool needToResetVideoPts2 = false;
 
     // 单位: 秒
     static long long mediaDuration = -1;
@@ -525,8 +526,8 @@ namespace alexander_media_mediacodec {
         bit_rate_video = 0;
         bit_rate_audio = 0;
 
-        needToGetResultAgain = true;
         needToResetVideoPts = false;
+        needToResetVideoPts2 = false;
         isReading = false;
         isReadWaited = false;
         isVideoHandling = false;
@@ -2259,15 +2260,7 @@ namespace alexander_media_mediacodec {
                 if (averageTimeDiff > 0.500000) {
                     averageTimeDiffCount++;
                     needToResetVideoPts = true;
-                }/* else if (averageTimeDiff >= 0.500000 && averageTimeDiff < 0.600000) {
-                    //needToGetResultAgain = false;
-                    //TIME_DIFFERENCE = 0;
-                    //TIME_DIFFERENCE = 0.00000000001;
-                    //TIME_DIFFERENCE = 1.050000;
-
-                    averageTimeDiffCount++;
-                    needToResetVideoPts = true;
-                } */else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
+                } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
                     // region 第一次就走进这里的话,算是得到一个比较好的结果了
 
                     /***
@@ -2324,9 +2317,6 @@ namespace alexander_media_mediacodec {
                         //TIME_DIFFERENCE = 0.300000;
                         TIME_DIFFERENCE = 0.050000;
                     }
-                    /*if (needToResetVideoPts) {
-                        TIME_DIFFERENCE = 0.350000;
-                    }*/
                 } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                     /***
                      0.204199 0.245688 0.263926 0.271427 0.284538
@@ -2337,13 +2327,6 @@ namespace alexander_media_mediacodec {
                     } else {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    /*if (needToResetVideoPts) {
-                        TIME_DIFFERENCE = 0.350000;
-                    }*/
-                    /*if (audioWrapper->father->useMediaCodec) {
-                        audioWrapper->father->useMediaCodec = false;
-                        needToGetResultAgain = true;
-                    }*/
                 } else if (averageTimeDiff > 0.100000 && averageTimeDiff < 0.200000) {
                     /***
                      0.100523 0.127849 0.168335
@@ -2354,13 +2337,8 @@ namespace alexander_media_mediacodec {
                     } else {
                         TIME_DIFFERENCE = averageTimeDiff;
                     }
-                    /*if (needToResetVideoPts) {
-                        TIME_DIFFERENCE = 0.250000;
-                    }*/
-                    /*if (audioWrapper->father->useMediaCodec) {
-                        audioWrapper->father->useMediaCodec = false;
-                        needToGetResultAgain = true;
-                    }*/
+                    TIME_DIFFERENCE = averageTimeDiff;
+                    needToResetVideoPts2 = true;
                 } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
                     /***
                      之前frameRate <= 23时,会走这里.
@@ -2380,10 +2358,7 @@ namespace alexander_media_mediacodec {
                     if (TIME_DIFFERENCE < 0.100000) {
                         TIME_DIFFERENCE = 0.100000;
                     }
-                    /*if (audioWrapper->father->useMediaCodec) {
-                        audioWrapper->father->useMediaCodec = false;
-                        needToGetResultAgain = true;
-                    }*/
+                    needToResetVideoPts2 = true;
                 }
 
                 // endregion
@@ -2391,11 +2366,13 @@ namespace alexander_media_mediacodec {
                 if (needToGetResultAgain) {
                     runCounts = 0;
                     averageTimeDiff = 0;
-                    TIME_DIFFERENCE = 0.500000 - averageTimeDiffCount * 0.100000;
-                    if (TIME_DIFFERENCE < 0) {
-                        TIME_DIFFERENCE = 0.100000;
+                    if (needToResetVideoPts) {
+                        TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
+                        if (TIME_DIFFERENCE < 0) {
+                            TIME_DIFFERENCE = 0.100000;
+                        }
+                        //TIME_DIFFERENCE = 0.000800;
                     }
-                    //TIME_DIFFERENCE = 0.000800;
                 } else {
                     // 对4K视频特殊处理
                     if (frameRate >= 45
@@ -2974,18 +2951,45 @@ namespace alexander_media_mediacodec {
             if (needToResetVideoPts
                 && !needToGetResultAgain
                 && mediaDuration < 0) {
-                //LOGI("handleVideoOutputBuffer() preVideoPts: %lf\n", preVideoPts);
-                //LOGW("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
-                //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - audioPts));
                 long long prePts = (long long) (preVideoPts * 1000000);
                 long long curPts = (long long) (videoPts * 1000000);
                 if (prePts != curPts) {
-                    /*videoPts = preVideoPts - 0.10;
-                    tempTimeDifference = videoPts - audioPts;*/
                     //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                     if (tempTimeDifference > 0) {
+                        int cycleNumber = 0;
                         while (true) {
-                            if (tempTimeDifference < 0) {
+                            if (isFrameByFrameMode
+                                || videoWrapper->father->isPausedForUser
+                                || videoWrapper->father->isPausedForCache
+                                || videoWrapper->father->isPausedForSeek
+                                || !videoWrapper->father->isHandling
+                                || !audioWrapper->father->isHandling) {
+                                LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
+                                return 0;
+                            }
+                            if (tempTimeDifference > 0.14) {
+                                videoPts = preVideoPts - (0.01 * (++cycleNumber));
+                            } else if (tempTimeDifference < 0.10) {
+                                videoPts = preVideoPts + (0.01 * (++cycleNumber));
+                            } else {
+                                break;
+                            }
+                            tempTimeDifference = videoPts - audioPts;
+                        }
+                    }
+                    //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+                }
+            }
+            /* else if (needToResetVideoPts2
+                       && !needToGetResultAgain) {
+                long long prePts = (long long) (preVideoPts * 1000000);
+                long long curPts = (long long) (videoPts * 1000000);
+                if (prePts != curPts) {
+                    //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+                    if (tempTimeDifference < 0) {
+                        int cycleNumber = 0;
+                        while (true) {
+                            if (tempTimeDifference > 0) {
                                 break;
                             }
                             if (isFrameByFrameMode
@@ -2997,20 +3001,13 @@ namespace alexander_media_mediacodec {
                                 LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
                                 return 0;
                             }
-                            if (tempTimeDifference > 0.18) {
-                                videoPts = preVideoPts - 0.01;
-                            } else if (tempTimeDifference < 0.10) {
-                                videoPts = preVideoPts + 0.01;
-                            } else {
-                                break;
-                            }
+                            videoPts = preVideoPts + (0.01 * (++cycleNumber));
                             tempTimeDifference = videoPts - audioPts;
                         }
                     }
                     //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                 }
-                //LOGD("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
-            }
+            }*/
 
             // endregion
 
