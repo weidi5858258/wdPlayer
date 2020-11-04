@@ -419,10 +419,6 @@ public class PlayerWrapper {
                 MyToast.show(String.valueOf(curVolume));
                 mVolumeSeekBar.setProgress(curVolume);
                 mVolumeLayout.setVisibility(View.VISIBLE);
-                /*mAudioManager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        curVolume,
-                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);*/
                 return true;
             }
         });
@@ -434,10 +430,6 @@ public class PlayerWrapper {
                 MyToast.show(String.valueOf(curVolume));
                 mVolumeSeekBar.setProgress(curVolume);
                 mVolumeLayout.setVisibility(View.VISIBLE);
-                /*mAudioManager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        curVolume,
-                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);*/
                 return true;
             }
         });
@@ -1272,14 +1264,6 @@ public class PlayerWrapper {
                 }
                 break;
             case MSG_SEEK_TO_ADD:
-                /*if (IS_WATCH) {
-                    mAudioManager.setStreamVolume(
-                            AudioManager.STREAM_MUSIC,
-                            (int) addStep,
-                            AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                    addStep = 0;
-                    break;
-                }*/
                 if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
                     if (mIjkPlayer != null) {
                         mIjkPlayer.seekTo((mPresentationTime + addStep) * 1000);
@@ -1297,14 +1281,6 @@ public class PlayerWrapper {
                 addStep = 0;
                 break;
             case MSG_SEEK_TO_SUBTRACT:
-                /*if (IS_WATCH) {
-                    mAudioManager.setStreamVolume(
-                            AudioManager.STREAM_MUSIC,
-                            (int) subtractStep,
-                            AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                    subtractStep = 0;
-                    break;
-                }*/
                 if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
                     if (mIjkPlayer != null) {
                         mIjkPlayer.seekTo((mPresentationTime - subtractStep) * 1000);
@@ -2332,6 +2308,7 @@ public class PlayerWrapper {
         mProgressBarLayout.setVisibility(View.GONE);
         mPlayIB.setVisibility(View.VISIBLE);
         mPauseIB.setVisibility(View.INVISIBLE);
+        mVolumeLayout.setVisibility(View.INVISIBLE);
         textInfoScrollView.setVisibility(View.GONE);
         textInfoTV.setText("");
         mDownloadTV.setText("");
@@ -2687,22 +2664,6 @@ public class PlayerWrapper {
             switch (v.getId()) {
                 case R.id.button_fr:
                     if (!isFrameByFrameMode) {
-                        /*if (IS_WATCH) {
-                            if (subtractStep == 0) {
-                                int curVolume =
-                                        mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                subtractStep = curVolume - 1;
-                            } else {
-                                subtractStep -= 1;
-                            }
-                            if (subtractStep < minVolume) {
-                                subtractStep = minVolume;
-                            }
-                            MyToast.show(String.valueOf(subtractStep));
-                            mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
-                            return;
-                        }*/
                         if (!mIsH264) {
                             if (mMediaDuration > 300) {
                                 subtractStep += 30;
@@ -2727,22 +2688,6 @@ public class PlayerWrapper {
                     break;
                 case R.id.button_ff:
                     if (!isFrameByFrameMode) {
-                        /*if (IS_WATCH) {
-                            if (addStep == 0) {
-                                int curVolume =
-                                        mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                                addStep = curVolume + 1;
-                            } else {
-                                addStep += 1;
-                            }
-                            if (addStep > maxVolume) {
-                                addStep = maxVolume;
-                            }
-                            MyToast.show(String.valueOf(addStep));
-                            mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
-                            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
-                            return;
-                        }*/
                         if (!mIsH264) {
                             if (mMediaDuration > 300) {
                                 addStep += 30;
