@@ -2913,7 +2913,8 @@ namespace alexander_media_mediacodec {
             }
         }*/
 
-        // 为了达到音视频同步,只能牺牲点音频了.让音频慢下来.(个别视频会这样)
+        // region 为了达到音视频同步,只能牺牲点音频了.让音频慢下来.(个别视频会这样)
+
         while (audioPts - videoPts > 0
                && !videoWrapper->father->isSleeping) {
             if (audioWrapper->father->isPausedForUser
@@ -2929,6 +2930,8 @@ namespace alexander_media_mediacodec {
             av_usleep(1000);
         }
         audioWrapper->father->isSleeping = false;
+
+        // endregion
 
         return 0;
     }
