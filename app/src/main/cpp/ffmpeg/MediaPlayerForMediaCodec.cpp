@@ -2337,7 +2337,7 @@ namespace alexander_media_mediacodec {
                     } else {
                         TIME_DIFFERENCE = averageTimeDiff;
                     }
-                    TIME_DIFFERENCE = averageTimeDiff;
+                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
                     needToResetVideoPts2 = true;
                 } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
                     /***
@@ -2358,6 +2358,7 @@ namespace alexander_media_mediacodec {
                     if (TIME_DIFFERENCE < 0.100000) {
                         TIME_DIFFERENCE = 0.100000;
                     }
+                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
                     needToResetVideoPts2 = true;
                 }
 
@@ -2567,6 +2568,36 @@ namespace alexander_media_mediacodec {
         }
 
         if (videoWrapper->father->useMediaCodec) {
+            /*if (needToResetVideoPts2
+                && !needToGetResultAgain) {
+                long long prePts = (long long) (preAudioPts * 1000000);
+                long long curPts = (long long) (audioPts * 1000000);
+                if (prePts != curPts) {
+                    double tempTimeDifference = videoPts - audioPts;
+                    //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+                    if (tempTimeDifference < 0) {
+                        int cycleNumber = 0;
+                        while (true) {
+                            if (tempTimeDifference > 0.0001) {
+                                break;
+                            }
+                            if (isFrameByFrameMode
+                                || videoWrapper->father->isPausedForUser
+                                || videoWrapper->father->isPausedForCache
+                                || videoWrapper->father->isPausedForSeek
+                                || !videoWrapper->father->isHandling
+                                || !audioWrapper->father->isHandling) {
+                                LOGD("handleAudioOutputBuffer() tempTimeDifference return\n");
+                                return 0;
+                            }
+                            audioPts = preAudioPts - (0.01 * (++cycleNumber));
+                            tempTimeDifference = videoPts - audioPts;
+                        }
+                    }
+                    //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+                }
+            }*/
+
             // 为了达到音视频同步,只能牺牲音频了.让音频慢下来.(个别视频会这样)
             while (audioPts - videoPts > 0
                    && !videoWrapper->father->isSleeping) {
@@ -2852,26 +2883,52 @@ namespace alexander_media_mediacodec {
             return 0;
         }
 
-        if (videoWrapper->father->useMediaCodec && !isWatch) {
-            // 为了达到音视频同步,只能牺牲点音频了.让音频慢下来.(个别视频会这样)
-            while (audioPts - videoPts > 0
-                   && !videoWrapper->father->isSleeping) {
-                if (audioWrapper->father->isPausedForUser
-                    || audioWrapper->father->isPausedForCache
-                    || audioWrapper->father->isPausedForSeek
-                    || !audioWrapper->father->isHandling
-                    || !videoWrapper->father->isHandling
-                        ) //
-                {
-                    LOGD("handleAudioOutputBuffer() TIME_DIFFERENCE return\n");
-                    audioWrapper->father->isSleeping = false;
-                    return 0;
+        /*if (needToResetVideoPts2
+            && !needToGetResultAgain) {
+            long long prePts = (long long) (preAudioPts * 1000000);
+            long long curPts = (long long) (audioPts * 1000000);
+            if (prePts != curPts) {
+                double tempTimeDifference = videoPts - audioPts;
+                //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+                if (tempTimeDifference < 0) {
+                    int cycleNumber = 0;
+                    while (true) {
+                        if (tempTimeDifference > 0.0001) {
+                            break;
+                        }
+                        if (isFrameByFrameMode
+                            || videoWrapper->father->isPausedForUser
+                            || videoWrapper->father->isPausedForCache
+                            || videoWrapper->father->isPausedForSeek
+                            || !videoWrapper->father->isHandling
+                            || !audioWrapper->father->isHandling) {
+                            LOGD("handleAudioOutputBuffer() tempTimeDifference return\n");
+                            return 0;
+                        }
+                        audioPts = preAudioPts - (0.01 * (++cycleNumber));
+                        tempTimeDifference = videoPts - audioPts;
+                    }
                 }
-                audioWrapper->father->isSleeping = true;
-                av_usleep(1000);
+                //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
             }
-            audioWrapper->father->isSleeping = false;
+        }*/
+
+        // 为了达到音视频同步,只能牺牲点音频了.让音频慢下来.(个别视频会这样)
+        while (audioPts - videoPts > 0
+               && !videoWrapper->father->isSleeping) {
+            if (audioWrapper->father->isPausedForUser
+                || audioWrapper->father->isPausedForCache
+                || audioWrapper->father->isPausedForSeek
+                || !audioWrapper->father->isHandling
+                || !videoWrapper->father->isHandling) {
+                LOGD("handleAudioOutputBuffer() TIME_DIFFERENCE return\n");
+                audioWrapper->father->isSleeping = false;
+                return 0;
+            }
+            audioWrapper->father->isSleeping = true;
+            av_usleep(1000);
         }
+        audioWrapper->father->isSleeping = false;
 
         return 0;
     }
@@ -2980,16 +3037,16 @@ namespace alexander_media_mediacodec {
                     //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                 }
             }
-            /* else if (needToResetVideoPts2
+            /*else if (needToResetVideoPts2
                        && !needToGetResultAgain) {
                 long long prePts = (long long) (preVideoPts * 1000000);
                 long long curPts = (long long) (videoPts * 1000000);
                 if (prePts != curPts) {
                     //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
-                    if (tempTimeDifference < 0) {
+                    if (tempTimeDifference > 0.000001) {
                         int cycleNumber = 0;
                         while (true) {
-                            if (tempTimeDifference > 0) {
+                            if (tempTimeDifference < 0.000001) {
                                 break;
                             }
                             if (isFrameByFrameMode
@@ -3001,7 +3058,7 @@ namespace alexander_media_mediacodec {
                                 LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
                                 return 0;
                             }
-                            videoPts = preVideoPts + (0.01 * (++cycleNumber));
+                            videoPts = preVideoPts - (0.01 * (++cycleNumber));
                             tempTimeDifference = videoPts - audioPts;
                         }
                     }
@@ -3022,23 +3079,25 @@ namespace alexander_media_mediacodec {
 
             // region 希望得到一个好结果(关键值:TIME_DIFFERENCE)
 
-            if (runCounts < RUN_COUNTS) {
-                timeDiff[runCounts++] = tempTimeDifference;
-            } else if (runCounts == RUN_COUNTS) {
-                runCounts++;
-                double totleTimeDiff = 0;
-                for (int i = 0; i < RUN_COUNTS; i++) {
-                    if ((audioWrapper->father->streamIndex != -1
-                         && !audioWrapper->father->isHandling)
-                        || !videoWrapper->father->isHandling) {
-                        LOGW("handleVideoOutputBuffer() RUN_COUNTS return\n");
-                        return 0;
+            if (runCounts <= RUN_COUNTS) {
+                if (runCounts < RUN_COUNTS) {
+                    timeDiff[runCounts++] = tempTimeDifference;
+                } else /*if (runCounts == RUN_COUNTS)*/ {
+                    runCounts++;
+                    double totleTimeDiff = 0;
+                    for (int i = 0; i < RUN_COUNTS; i++) {
+                        if ((audioWrapper->father->streamIndex != -1
+                             && !audioWrapper->father->isHandling)
+                            || !videoWrapper->father->isHandling) {
+                            LOGW("handleVideoOutputBuffer() RUN_COUNTS return\n");
+                            return 0;
+                        }
+                        totleTimeDiff += timeDiff[i];
                     }
-                    totleTimeDiff += timeDiff[i];
+                    averageTimeDiff = totleTimeDiff / RUN_COUNTS;
+                    // 希望得到一个好的TIME_DIFFERENCE值
+                    hope_to_get_a_good_result();
                 }
-                averageTimeDiff = totleTimeDiff / RUN_COUNTS;
-                // 希望得到一个好的TIME_DIFFERENCE值
-                hope_to_get_a_good_result();
             }
 
             // endregion
@@ -3095,9 +3154,9 @@ namespace alexander_media_mediacodec {
             LOGD("handleDataClose() audio                   list2: %d\n",
                  audioWrapper->father->list2->size());
             LOGW("handleDataClose() video                   list1: %d\n",
-                 wrapper->list1->size());
+                 videoWrapper->father->list1->size());
             LOGW("handleDataClose() video                   list2: %d\n",
-                 wrapper->list2->size());
+                 videoWrapper->father->list2->size());
 
             /*int64_t startTime = av_gettime_relative();
             int64_t endTime = -1;*/
@@ -3560,7 +3619,6 @@ namespace alexander_media_mediacodec {
                     if (mediaDuration < 0 && preAudioPts > audioPts) {
                         continue;
                     }
-                    preAudioPts = audioPts;
 
                     feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                             0x0001,
@@ -3568,6 +3626,7 @@ namespace alexander_media_mediacodec {
                             copyAVPacket->size,
                             (long long) copyAVPacket->pts);
                     av_packet_unref(copyAVPacket);
+                    preAudioPts = audioPts;
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
                         LOGE("handleData() audio feedInputBufferAndDrainOutputBuffer failure\n");

@@ -134,8 +134,10 @@ public class PlayerWrapper {
     private static final int MSG_START_PLAYBACK = 12;
     private static final int MSG_SEEK_TO_ADD = 13;
     private static final int MSG_SEEK_TO_SUBTRACT = 14;
-    private static final int MSG_DOWNLOAD = 15;
-    private static final int MSG_LOAD_CONTENTS = 16;
+    private static final int MSG_VOLUME_SEEK_TO_ADD = 15;
+    private static final int MSG_VOLUME_SEEK_TO_SUBTRACT = 16;
+    private static final int MSG_DOWNLOAD = 17;
+    private static final int MSG_LOAD_CONTENTS = 18;
 
     private HashMap<String, Long> mPathTimeMap = new HashMap<>();
     private ArrayList<String> mCouldPlaybackPathList = new ArrayList<>();
@@ -177,8 +179,8 @@ public class PlayerWrapper {
 
     private AudioManager mAudioManager;
     private AudioFocusRequest mAudioFocusRequest;
-    private int minVolume;
-    private int maxVolume;
+    private int minVolume = 0;
+    private int maxVolume = 15;
 
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
@@ -207,6 +209,12 @@ public class PlayerWrapper {
     private ImageButton mRepeatOne;
     private ImageButton mShuffleOff;
     private ImageButton mShuffleOn;
+    // 声音控制条
+    private View mVolumeLayout;
+    private ImageButton mVolumeMin;
+    private ImageButton mVolumeMax;
+    private SeekBar mVolumeSeekBar;
+    private int mVolumeProgress;
     // 下载
     private TextView mDownloadTV;
     private boolean mIsDownloading = false;
@@ -373,6 +381,11 @@ public class PlayerWrapper {
         mShuffleOn = mRootView.findViewById(R.id.button_shuffle_on);
         mDownloadTV = mRootView.findViewById(R.id.download_tv);
 
+        mVolumeLayout = mRootView.findViewById(R.id.volume_layout);
+        mVolumeMin = mRootView.findViewById(R.id.button_volume_min);
+        mVolumeMax = mRootView.findViewById(R.id.button_volume_max);
+        mVolumeSeekBar = mRootView.findViewById(R.id.volume_progress_bar);
+
         mProgressBarLayout = mRootView.findViewById(R.id.progress_bar_layout);
         mVideoProgressBar = mRootView.findViewById(R.id.video_progress_bar);
         mAudioProgressBar = mRootView.findViewById(R.id.audio_progress_bar);
@@ -396,15 +409,20 @@ public class PlayerWrapper {
         mRepeatOne.setOnClickListener(mOnClickListener);
         mShuffleOff.setOnClickListener(mOnClickListener);
         mShuffleOn.setOnClickListener(mOnClickListener);
+        mVolumeMin.setOnClickListener(mOnClickListener);
+        mVolumeMax.setOnClickListener(mOnClickListener);
 
         mPlayIB.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
                 int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                mAudioManager.setStreamVolume(
+                MyToast.show(String.valueOf(curVolume));
+                mVolumeSeekBar.setProgress(curVolume);
+                mVolumeLayout.setVisibility(View.VISIBLE);
+                /*mAudioManager.setStreamVolume(
                         AudioManager.STREAM_MUSIC,
                         curVolume,
-                        AudioManager.FLAG_SHOW_UI);
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);*/
                 return true;
             }
         });
@@ -413,10 +431,13 @@ public class PlayerWrapper {
             @Override
             public boolean onLongClick(View v) {
                 int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                mAudioManager.setStreamVolume(
+                MyToast.show(String.valueOf(curVolume));
+                mVolumeSeekBar.setProgress(curVolume);
+                mVolumeLayout.setVisibility(View.VISIBLE);
+                /*mAudioManager.setStreamVolume(
                         AudioManager.STREAM_MUSIC,
                         curVolume,
-                        AudioManager.FLAG_SHOW_UI);
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);*/
                 return true;
             }
         });
@@ -593,6 +614,45 @@ public class PlayerWrapper {
                                         JniObject.obtain().writeLong(mProgress));
                             }
                         }
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
+
+        mVolumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromTouch) {
+                if (fromTouch) {
+                    mVolumeProgress = progress;
+                    MyToast.show(String.valueOf(progress));
+                }
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        mVolumeSeekBar.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        mAudioManager.setStreamVolume(
+                                AudioManager.STREAM_MUSIC,
+                                mVolumeProgress,
+                                AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                        mVolumeLayout.setVisibility(View.INVISIBLE);
                         break;
                     case MotionEvent.ACTION_MOVE:
                         break;
@@ -1212,14 +1272,14 @@ public class PlayerWrapper {
                 }
                 break;
             case MSG_SEEK_TO_ADD:
-                if (IS_WATCH) {
+                /*if (IS_WATCH) {
                     mAudioManager.setStreamVolume(
                             AudioManager.STREAM_MUSIC,
                             (int) addStep,
                             AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
                     addStep = 0;
                     break;
-                }
+                }*/
                 if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
                     if (mIjkPlayer != null) {
                         mIjkPlayer.seekTo((mPresentationTime + addStep) * 1000);
@@ -1237,14 +1297,14 @@ public class PlayerWrapper {
                 addStep = 0;
                 break;
             case MSG_SEEK_TO_SUBTRACT:
-                if (IS_WATCH) {
+                /*if (IS_WATCH) {
                     mAudioManager.setStreamVolume(
                             AudioManager.STREAM_MUSIC,
                             (int) subtractStep,
                             AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
                     subtractStep = 0;
                     break;
-                }
+                }*/
                 if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
                     if (mIjkPlayer != null) {
                         mIjkPlayer.seekTo((mPresentationTime - subtractStep) * 1000);
@@ -1260,6 +1320,22 @@ public class PlayerWrapper {
                     }
                 }
                 subtractStep = 0;
+                break;
+            case MSG_VOLUME_SEEK_TO_ADD:
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        (int) addStep,
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                addStep = 0;
+                mVolumeLayout.setVisibility(View.INVISIBLE);
+                break;
+            case MSG_VOLUME_SEEK_TO_SUBTRACT:
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        (int) subtractStep,
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                subtractStep = 0;
+                mVolumeLayout.setVisibility(View.INVISIBLE);
                 break;
             default:
                 break;
@@ -2418,10 +2494,10 @@ public class PlayerWrapper {
                     mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
                 }
                 System.gc();
+
+                mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
             }
         }
-
-        mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
     }
 
     private void inInfo(Message msg) {
@@ -2456,32 +2532,32 @@ public class PlayerWrapper {
                 break;
             case Callback.ERROR_FFMPEG_INIT:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                if (mIsVideo) {
+                /*if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
-                        // startPlayback();
                         startForGetMediaFormat();
                         break;
                     } else {
                         String path = mSP.getString(PLAYBACK_ADDRESS, null);
                         if (TextUtils.equals(path, mCurPath)
                                 && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
-                            // startPlayback();
                             startForGetMediaFormat();
                             break;
                         }
                     }
-                }
+                }*/
 
                 MyToast.show("音视频初始化失败");
-                // 不需要重新播放
-                /*Log.i(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT " +
-                        "mService.removeView()");*/
+
                 removeView();
                 if (mSurfaceHolder != null) {
                     mSurfaceHolder.removeCallback(mSurfaceCallback);
                     mSurfaceHolder = null;
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
+                }
+                System.gc();
                 break;
             default:
                 break;
@@ -2611,7 +2687,7 @@ public class PlayerWrapper {
             switch (v.getId()) {
                 case R.id.button_fr:
                     if (!isFrameByFrameMode) {
-                        if (IS_WATCH) {
+                        /*if (IS_WATCH) {
                             if (subtractStep == 0) {
                                 int curVolume =
                                         mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -2626,7 +2702,7 @@ public class PlayerWrapper {
                             mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
                             mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
                             return;
-                        }
+                        }*/
                         if (!mIsH264) {
                             if (mMediaDuration > 300) {
                                 subtractStep += 30;
@@ -2651,7 +2727,7 @@ public class PlayerWrapper {
                     break;
                 case R.id.button_ff:
                     if (!isFrameByFrameMode) {
-                        if (IS_WATCH) {
+                        /*if (IS_WATCH) {
                             if (addStep == 0) {
                                 int curVolume =
                                         mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -2666,7 +2742,7 @@ public class PlayerWrapper {
                             mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
                             mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
                             return;
-                        }
+                        }*/
                         if (!mIsH264) {
                             if (mMediaDuration > 300) {
                                 addStep += 30;
@@ -2839,6 +2915,36 @@ public class PlayerWrapper {
                     mDownloadClickCounts++;
                     mThreadHandler.removeMessages(MSG_DOWNLOAD);
                     mThreadHandler.sendEmptyMessageDelayed(MSG_DOWNLOAD, 1000);
+                    break;
+                case R.id.button_volume_min:
+                    if (subtractStep == 0) {
+                        int curVolume =
+                                mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        subtractStep = curVolume - 1;
+                    } else {
+                        subtractStep -= 1;
+                    }
+                    if (subtractStep < minVolume) {
+                        subtractStep = minVolume;
+                    }
+                    MyToast.show(String.valueOf(subtractStep));
+                    mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_SUBTRACT);
+                    mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_SUBTRACT, 1000);
+                    break;
+                case R.id.button_volume_max:
+                    if (addStep == 0) {
+                        int curVolume =
+                                mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        addStep = curVolume + 1;
+                    } else {
+                        addStep += 1;
+                    }
+                    if (addStep > maxVolume) {
+                        addStep = maxVolume;
+                    }
+                    MyToast.show(String.valueOf(addStep));
+                    mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_ADD);
+                    mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_ADD, 1000);
                     break;
                 default:
                     break;
