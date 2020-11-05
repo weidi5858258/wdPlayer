@@ -1,12 +1,14 @@
 package com.weidi.media.wdplayer.video_player;
 
 import android.app.Service;
+import android.app.UiModeManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
@@ -25,6 +27,7 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.weidi.eventbus.EventBusUtils;
+import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.WearMainActivity;
 
@@ -152,8 +155,15 @@ public class PlayerService extends Service {
                 String type = sp.getString(PLAYBACK_MEDIA_TYPE, null);
                 if (TextUtils.isEmpty(type)
                         || type.startsWith("video/")) {
+                    UiModeManager uiModeManager =
+                            (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+                    int whatIsDevice = uiModeManager.getCurrentModeType();
                     intent = new Intent();
-                    intent.setClass(getApplicationContext(), WearMainActivity.class);
+                    if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                        intent.setClass(getApplicationContext(), MainActivity.class);
+                    } else {
+                        intent.setClass(getApplicationContext(), WearMainActivity.class);
+                    }
                     startActivity(intent);
 
                     if (mPlayerWrapper != null) {

@@ -412,24 +412,44 @@ public class PlayerWrapper {
         mVolumeMin.setOnClickListener(mOnClickListener);
         mVolumeMax.setOnClickListener(mOnClickListener);
 
-        mPlayIB.setOnLongClickListener(new View.OnLongClickListener() {
+        mVolumeNormal.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                MyToast.show(String.valueOf(curVolume));
-                mVolumeSeekBar.setProgress(curVolume);
-                mVolumeLayout.setVisibility(View.VISIBLE);
+                if (isFrameByFrameMode) {
+                    return true;
+                }
+                mVolumeNormal.setVisibility(View.INVISIBLE);
+                mVolumeMute.setVisibility(View.VISIBLE);
+                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                    mIjkPlayer.setVolume(VOLUME_MUTE);
+                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                    mSimpleVideoPlayer.setVolume(VOLUME_MUTE);
+                } else {
+                    mFFMPEGPlayer.setVolume(VOLUME_MUTE);
+                    mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
+                }
+                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
                 return true;
             }
         });
 
-        mPauseIB.setOnLongClickListener(new View.OnLongClickListener() {
+        mVolumeMute.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                MyToast.show(String.valueOf(curVolume));
-                mVolumeSeekBar.setProgress(curVolume);
-                mVolumeLayout.setVisibility(View.VISIBLE);
+                if (isFrameByFrameMode) {
+                    return true;
+                }
+                mVolumeNormal.setVisibility(View.VISIBLE);
+                mVolumeMute.setVisibility(View.INVISIBLE);
+                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                    mIjkPlayer.setVolume(VOLUME_NORMAL);
+                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                    mSimpleVideoPlayer.setVolume(VOLUME_NORMAL);
+                } else {
+                    mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
+                    mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
+                }
+                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
                 return true;
             }
         });
@@ -438,6 +458,9 @@ public class PlayerWrapper {
             mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
+                    if (isFrameByFrameMode) {
+                        return true;
+                    }
                     int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                     mAudioManager.setStreamVolume(
                             AudioManager.STREAM_MUSIC,
@@ -2797,33 +2820,19 @@ public class PlayerWrapper {
                     removeView();
                     break;
                 case R.id.volume_normal:
-                    mVolumeNormal.setVisibility(View.INVISIBLE);
-                    mVolumeMute.setVisibility(View.VISIBLE);
-                    if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                        mIjkPlayer.setVolume(VOLUME_MUTE);
-                    } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        mSimpleVideoPlayer.setVolume(VOLUME_MUTE);
-                    } else {
-                        mFFMPEGPlayer.setVolume(VOLUME_MUTE);
-                        mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
-                    }
-                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+                    int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    MyToast.show(String.valueOf(curVolume));
+                    mVolumeSeekBar.setProgress(curVolume);
+                    mVolumeLayout.setVisibility(View.VISIBLE);
                     break;
                 case R.id.volume_mute:
                     if (isFrameByFrameMode) {
                         return;
                     }
-                    mVolumeNormal.setVisibility(View.VISIBLE);
-                    mVolumeMute.setVisibility(View.INVISIBLE);
-                    if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                        mIjkPlayer.setVolume(VOLUME_NORMAL);
-                    } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        mSimpleVideoPlayer.setVolume(VOLUME_NORMAL);
-                    } else {
-                        mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
-                        mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                    }
-                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    MyToast.show(String.valueOf(curVolume));
+                    mVolumeSeekBar.setProgress(curVolume);
+                    mVolumeLayout.setVisibility(View.VISIBLE);
                     break;
                 case R.id.button_repeat_off:
                     MyToast.show("Repeat All");
@@ -2863,8 +2872,7 @@ public class PlayerWrapper {
                     break;
                 case R.id.button_volume_min:
                     if (subtractStep == 0) {
-                        int curVolume =
-                                mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                         subtractStep = curVolume - 1;
                     } else {
                         subtractStep -= 1;
@@ -2878,8 +2886,7 @@ public class PlayerWrapper {
                     break;
                 case R.id.button_volume_max:
                     if (addStep == 0) {
-                        int curVolume =
-                                mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                        curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                         addStep = curVolume + 1;
                     } else {
                         addStep += 1;
