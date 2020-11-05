@@ -1327,13 +1327,6 @@ public class PlayerWrapper {
                 subtractStep = 0;
                 break;
             case MSG_VOLUME_SEEK_TO_ADD:
-                mAudioManager.setStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        volumeStep,
-                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                volumeStep = 0;
-                mVolumeLayout.setVisibility(View.INVISIBLE);
-                break;
             case MSG_VOLUME_SEEK_TO_SUBTRACT:
                 mAudioManager.setStreamVolume(
                         AudioManager.STREAM_MUSIC,
@@ -1633,16 +1626,11 @@ public class PlayerWrapper {
                 removeView();
                 break;
             case R.id.volume_normal:
-                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                MyToast.show(String.valueOf(curVolume));
-                mVolumeSeekBar.setProgress(curVolume);
-                mVolumeLayout.setVisibility(View.VISIBLE);
-                break;
             case R.id.volume_mute:
                 if (isFrameByFrameMode) {
                     return;
                 }
-                curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                 MyToast.show(String.valueOf(curVolume));
                 mVolumeSeekBar.setProgress(curVolume);
                 mVolumeLayout.setVisibility(View.VISIBLE);
