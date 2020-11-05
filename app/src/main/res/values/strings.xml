@@ -8,11 +8,13 @@
     <string name="hello_world">Hello Square World!</string>
     <string name="hello_world_wdPlayer">欢迎使用wdPlayer</string>
     <string name="handle_info">
+        \n
         播放器选择:\n
-        player_fm  -> player_ffmpeg_mediacodec(自主研发)\n
-        player_ijk -> player_ijkplayer\n
-        player_ff  -> player_ffmpeg\n
-        player_mc  -> player_mediacodec(测试使用)\n
+        player_fm&#160;&#160;-> player_ffmpeg_mediacodec(自主研发)\n
+        player_ijk&#160;&#160;&#160;-> player_ijkplayer\n
+        player_ff&#160;&#160;&#160;&#160;-> player_ffmpeg\n
+        player_mc&#160;-> player_mediacodec(测试使用)\n
+        \n
         敲击播放界面的次数操作:\n
         1次.O系统以上(包括O系统)或横屏,显示或隐藏有关信息和控制面板\n
         2次.播放或暂停\n
@@ -24,6 +26,7 @@
         8次.关闭音频,播放视频\n
         9次.关闭视频,播放音频\n
         10次.退出播放
+        \n
     </string>
     <string name="test">
         Hello Square World!

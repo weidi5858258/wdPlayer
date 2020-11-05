@@ -16,8 +16,12 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
@@ -33,6 +37,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 public class MainActivity extends AppCompatActivity {
@@ -60,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume()");
+        internalResume();
     }
 
     @Override
@@ -105,9 +115,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        UiModeManager uiModeManager =
-                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        int whatIsDevice = uiModeManager.getCurrentModeType();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                 && whatIsDevice == Configuration.UI_MODE_TYPE_NORMAL) {
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
@@ -124,9 +131,23 @@ public class MainActivity extends AppCompatActivity {
 
     /////////////////////////////////////////////////////////////////////////
 
+    private int whatIsDevice = -1;
     private int clickCounts = 0;
+    private boolean IS_TV = false;
 
     private void internalCreate(Bundle savedInstanceState) {
+        UiModeManager uiModeManager =
+                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        whatIsDevice = uiModeManager.getCurrentModeType();
+        IS_TV = false;
+        switch (whatIsDevice) {
+            case Configuration.UI_MODE_TYPE_TELEVISION:
+                IS_TV = true;
+                break;
+            default:
+                break;
+        }
+
         Handler uiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(@NonNull Message msg) {
@@ -162,15 +183,7 @@ public class MainActivity extends AppCompatActivity {
                 clickCounts = 0;
             }
         };
-        /*findViewById(R.id.root_layout).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clickCounts++;
-                MyToast.show(String.valueOf(clickCounts));
-                uiHandler.removeMessages(1);
-                uiHandler.sendEmptyMessageDelayed(1, 1000);
-            }
-        });*/
+
         View view = findViewById(R.id.text);
         view.setClickable(true);
         view.setFocusable(true);
@@ -186,6 +199,10 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        if (IS_TV) {
+            setTvView();
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 申请浮窗权限
             if (!isRunService(this, PLAYERSERVICE)) {
@@ -200,6 +217,138 @@ public class MainActivity extends AppCompatActivity {
             }
 
             test2();
+        }
+    }
+
+    private void internalResume() {
+        boolean isPlaying = true;
+        if (IS_TV && isPlaying) {
+            findViewById(R.id.controller_panel_layout).setVisibility(View.VISIBLE);
+        } else {
+            findViewById(R.id.controller_panel_layout).setVisibility(View.GONE);
+        }
+    }
+
+    private void setTvView() {
+        SeekBar mProgressBar = findViewById(R.id.progress_bar);
+        TextView mFileNameTV = findViewById(R.id.file_name_tv);
+        TextView mProgressTimeTV = findViewById(R.id.progress_time_tv);
+        TextView mSeekTimeTV = findViewById(R.id.seek_time_tv);
+        TextView mDurationTimeTV = findViewById(R.id.duration_time_tv);
+
+        ImageButton mFrIB = findViewById(R.id.button_fr);
+        ImageButton mFfIB = findViewById(R.id.button_ff);
+        ImageButton mPrevIB = findViewById(R.id.button_prev);
+        ImageButton mNextIB = findViewById(R.id.button_next);
+        ImageButton mPlayIB = findViewById(R.id.button_play);
+        ImageButton mPauseIB = findViewById(R.id.button_pause);
+        ImageButton mExitIB = findViewById(R.id.button_exit);
+        ImageButton mVolumeNormal = findViewById(R.id.volume_normal);
+        ImageButton mVolumeMute = findViewById(R.id.volume_mute);
+        ImageButton mRepeatOff = findViewById(R.id.button_repeat_off);
+        ImageButton mRepeatAll = findViewById(R.id.button_repeat_all);
+        ImageButton mRepeatOne = findViewById(R.id.button_repeat_one);
+        ImageButton mShuffleOff = findViewById(R.id.button_shuffle_off);
+        ImageButton mShuffleOn = findViewById(R.id.button_shuffle_on);
+
+        mFrIB.setOnClickListener(mOnClickListener);
+        mFfIB.setOnClickListener(mOnClickListener);
+        mPrevIB.setOnClickListener(mOnClickListener);
+        mNextIB.setOnClickListener(mOnClickListener);
+        mPlayIB.setOnClickListener(mOnClickListener);
+        mPauseIB.setOnClickListener(mOnClickListener);
+        mExitIB.setOnClickListener(mOnClickListener);
+        mVolumeNormal.setOnClickListener(mOnClickListener);
+        mVolumeMute.setOnClickListener(mOnClickListener);
+        mRepeatOff.setOnClickListener(mOnClickListener);
+        mRepeatAll.setOnClickListener(mOnClickListener);
+        mRepeatOne.setOnClickListener(mOnClickListener);
+        mShuffleOff.setOnClickListener(mOnClickListener);
+        mShuffleOn.setOnClickListener(mOnClickListener);
+
+        mFrIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mFfIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mPrevIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mNextIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mPlayIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mPauseIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mExitIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        mVolumeNormal.setOnFocusChangeListener(mOnFocusChangeListener);
+        mVolumeMute.setOnFocusChangeListener(mOnFocusChangeListener);
+        mRepeatOff.setOnFocusChangeListener(mOnFocusChangeListener);
+        mRepeatAll.setOnFocusChangeListener(mOnFocusChangeListener);
+        mRepeatOne.setOnFocusChangeListener(mOnFocusChangeListener);
+        mShuffleOff.setOnFocusChangeListener(mOnFocusChangeListener);
+        mShuffleOn.setOnFocusChangeListener(mOnFocusChangeListener);
+    }
+
+    private void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.button_fr:
+                break;
+            case R.id.button_ff:
+                break;
+            case R.id.button_prev:
+                break;
+            case R.id.button_next:
+                break;
+            case R.id.button_play:
+                break;
+            case R.id.button_pause:
+                break;
+            case R.id.button_exit:
+                break;
+            case R.id.volume_normal:
+                break;
+            case R.id.volume_mute:
+                break;
+            case R.id.button_repeat_off:
+                break;
+            case R.id.button_repeat_all:
+                break;
+            case R.id.button_repeat_one:
+                break;
+            case R.id.button_shuffle_off:
+                break;
+            case R.id.button_shuffle_on:
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void onFocusChange(View v, boolean hasFocus) {
+        switch (v.getId()) {
+            case R.id.button_fr:
+                break;
+            case R.id.button_ff:
+                break;
+            case R.id.button_prev:
+                break;
+            case R.id.button_next:
+                break;
+            case R.id.button_play:
+                break;
+            case R.id.button_pause:
+                break;
+            case R.id.button_exit:
+                break;
+            case R.id.volume_normal:
+                break;
+            case R.id.volume_mute:
+                break;
+            case R.id.button_repeat_off:
+                break;
+            case R.id.button_repeat_all:
+                break;
+            case R.id.button_repeat_one:
+                break;
+            case R.id.button_shuffle_off:
+                break;
+            case R.id.button_shuffle_on:
+                break;
+            default:
+                break;
         }
     }
 
@@ -307,4 +456,19 @@ public class MainActivity extends AppCompatActivity {
         MediaUtils.findAllDecodersByMime("audio/mpeg-L2");
         MediaUtils.findAllDecodersByMime("audio/x-ms-wma");
     }
+
+    private View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            MainActivity.this.onClick(v);
+        }
+    };
+
+    private View.OnFocusChangeListener mOnFocusChangeListener = new View.OnFocusChangeListener() {
+        @Override
+        public void onFocusChange(View v, boolean hasFocus) {
+            MainActivity.this.onFocusChange(v, hasFocus);
+        }
+    };
+
 }

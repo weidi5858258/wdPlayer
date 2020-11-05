@@ -225,7 +225,7 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                 itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                     @Override
                     public void onFocusChange(View view, boolean hasFocus) {
-                        Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
+                        //Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
 
                         if (hasFocus) {
                             focusedView = view;
@@ -304,9 +304,12 @@ public class ContentsAdapter extends RecyclerView.Adapter {
             switch (msg.what) {
                 case 0:
                     if (focusedView != null) {
-                        focusedView.setBackground(ContextCompat.getDrawable(
+                        // 应该调用requestFocus()方法,而不是调用setBackground(...)
+                        // 调用setBackground(...)存在短板
+                        focusedView.requestFocus();
+                        /*focusedView.setBackground(ContextCompat.getDrawable(
                                 focusedView.getContext(),
-                                R.drawable.item_selector_focused));
+                                R.drawable.item_selector_focused));*/
                     }
                     break;
                 case 1:

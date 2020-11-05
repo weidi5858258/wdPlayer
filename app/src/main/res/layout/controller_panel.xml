@@ -208,7 +208,7 @@
             android:layout_height="@dimen/dimen_40_dp"
             android:layout_centerHorizontal="true"
             android:background="@color/timetimepicker_default_text_color"
-            android:visibility="visible">
+            android:visibility="invisible">
             <ImageButton
                 android:id="@+id/button_volume_min"
                 style="@style/StyleImageButton"
