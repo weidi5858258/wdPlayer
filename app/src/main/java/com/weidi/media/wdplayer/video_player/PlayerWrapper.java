@@ -911,6 +911,9 @@ public class PlayerWrapper {
                 || mIsAudio) {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
+        } else {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.transparent));
         }
         if (mIsVideo) {
             textInfoTV.setTextColor(
@@ -1999,6 +2002,12 @@ public class PlayerWrapper {
             return;
         }
 
+        if (statusBarHeight == 0) {
+            handleScreenFlag = 2;
+        } else if (statusBarHeight == 1) {
+            handleScreenFlag = 3;
+        }
+
         mIsPortraitScreen = false;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
@@ -2253,6 +2262,8 @@ public class PlayerWrapper {
         if (mVideoWidth == 0 || mVideoHeight == 0 || !mIsAddedView) {
             return;
         }
+
+        handleScreenFlag = 1;
 
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
@@ -2641,7 +2652,6 @@ public class PlayerWrapper {
                         handlePortraitScreen();
                     }
                 } else {
-                    handleScreenFlag = 1;
                     handlePortraitScreenWithTV();
                 }
                 break;
@@ -3034,15 +3044,12 @@ public class PlayerWrapper {
             Log.d(TAG, "onKeyDown() 4 横屏");
             switch (handleScreenFlag) {
                 case 1:
-                    handleScreenFlag = 2;
                     handleLandscapeScreen(0);
                     break;
                 case 2:
-                    handleScreenFlag = 3;
                     handleLandscapeScreen(1);
                     break;
                 case 3:
-                    handleScreenFlag = 1;
                     handlePortraitScreenWithTV();
                     break;
                 default:
