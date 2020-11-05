@@ -905,9 +905,10 @@ public class PlayerWrapper {
             return;
         }
 
-        if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT
+        int orientation = mContext.getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_PORTRAIT
+                || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1)
                 || mIsAudio) {
-            // 竖屏
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
         }

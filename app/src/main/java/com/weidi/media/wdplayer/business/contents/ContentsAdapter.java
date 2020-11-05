@@ -1,6 +1,8 @@
 package com.weidi.media.wdplayer.business.contents;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 /***
@@ -222,29 +225,21 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                 itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                     @Override
                     public void onFocusChange(View view, boolean hasFocus) {
-                        //Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
+                        Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
+
                         if (hasFocus) {
+                            focusedView = view;
                             view.setBackground(ContextCompat.getDrawable(view.getContext(),
                                     R.drawable.item_selector_focused));
                         } else {
                             view.setBackground(ContextCompat.getDrawable(view.getContext(),
                                     R.drawable.item_selector_normal));
                         }
+                        mUiHandler.removeMessages(0);
+                        mUiHandler.sendEmptyMessageDelayed(0, 500);
                     }
                 });
             }
-            /*if (hasFocus) {
-                mUiHandler.removeMessages(0);
-                Message msg = mUiHandler.obtainMessage(0);
-                msg.obj = v;
-                mUiHandler.sendMessageDelayed(msg, 100);
-            } else {
-                mUiHandler.removeMessages(1);
-                Message msg = mUiHandler.obtainMessage(1);
-                msg.obj = v;
-                //mUiHandler.sendMessageDelayed(msg, 200);
-                mUiHandler.sendMessage(msg);
-            }*/
 
             title = itemView.findViewById(R.id.content_title);
             downloadBtn = itemView.findViewById(R.id.item_download_btn);
@@ -295,29 +290,31 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                     }
                 };
 
-        /*private Handler mUiHandler = new Handler() {
-            @Override
-            public void handleMessage(@NonNull Message msg) {
-                //super.handleMessage(msg);
-                if (msg == null || msg.obj == null) {
-                    return;
-                }
-
-                View v = (View) msg.obj;
-                switch (msg.what) {
-                    case 0:
-                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
-                                R.drawable.item_selector_focused));
-                        break;
-                    case 1:
-                        v.setBackground(ContextCompat.getDrawable(v.getContext(),
-                                R.drawable.item_selector_normal));
-                        break;
-                    default:
-                        break;
-                }
-            }
-        };*/
     }
+
+    private View focusedView;
+    private Handler mUiHandler = new Handler() {
+        @Override
+        public void handleMessage(@NonNull Message msg) {
+            //super.handleMessage(msg);
+            if (msg == null) {
+                return;
+            }
+
+            switch (msg.what) {
+                case 0:
+                    if (focusedView != null) {
+                        focusedView.setBackground(ContextCompat.getDrawable(
+                                focusedView.getContext(),
+                                R.drawable.item_selector_focused));
+                    }
+                    break;
+                case 1:
+                    break;
+                default:
+                    break;
+            }
+        }
+    };
 
 }
