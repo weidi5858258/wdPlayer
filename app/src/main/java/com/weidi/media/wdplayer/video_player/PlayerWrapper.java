@@ -179,8 +179,8 @@ public class PlayerWrapper {
 
     private AudioManager mAudioManager;
     private AudioFocusRequest mAudioFocusRequest;
-    private int minVolume = 0;
-    private int maxVolume = 15;
+    private int minVolume;
+    private int maxVolume;
 
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
@@ -678,14 +678,20 @@ public class PlayerWrapper {
             }
         });
 
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+        minVolume = 0;
+        maxVolume = 15;
+        int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             minVolume = mAudioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC);
-            maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-            int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-            Log.i(TAG, "onCreate() minVolume: " + minVolume);// 0
-            Log.i(TAG, "onCreate() maxVolume: " + maxVolume);// 15
-            Log.i(TAG, "onCreate() curVolume: " + curVolume);
         }
+        maxVolume = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            mVolumeSeekBar.setMin(minVolume);
+        }
+        mVolumeSeekBar.setMax(maxVolume);
+        Log.i(TAG, "onCreate() minVolume: " + minVolume);// 0
+        Log.i(TAG, "onCreate() maxVolume: " + maxVolume);// 15(Phone) 100(TV)
+        Log.i(TAG, "onCreate() curVolume: " + curVolume);
 
         // Test
         /*new Thread(new Runnable() {
@@ -1323,17 +1329,17 @@ public class PlayerWrapper {
             case MSG_VOLUME_SEEK_TO_ADD:
                 mAudioManager.setStreamVolume(
                         AudioManager.STREAM_MUSIC,
-                        (int) addStep,
+                        volumeStep,
                         AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                addStep = 0;
+                volumeStep = 0;
                 mVolumeLayout.setVisibility(View.INVISIBLE);
                 break;
             case MSG_VOLUME_SEEK_TO_SUBTRACT:
                 mAudioManager.setStreamVolume(
                         AudioManager.STREAM_MUSIC,
-                        (int) subtractStep,
+                        volumeStep,
                         AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                subtractStep = 0;
+                volumeStep = 0;
                 mVolumeLayout.setVisibility(View.INVISIBLE);
                 break;
             default:
@@ -1484,6 +1490,228 @@ public class PlayerWrapper {
                 break;
             case MSG_LOAD_CONTENTS:
                 loadContents();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.button_fr:
+                if (!isFrameByFrameMode) {
+                    if (!mIsH264) {
+                        if (mMediaDuration > 300) {
+                            subtractStep += 30;
+                        } else {
+                            subtractStep += 10;
+                        }
+                    } else {
+                        if (mMediaDuration > 52428800) {// 50MB
+                            subtractStep += 1048576;// 1MB
+                        } else {
+                            subtractStep += 524288;// 514KB
+                        }
+                    }
+                    Log.d(TAG, "onClick() subtractStep: " + subtractStep);
+                    mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
+                    mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
+                } else {
+                    if (mFFMPEGPlayer != null) {
+                        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
+                    }
+                }
+                break;
+            case R.id.button_ff:
+                if (!isFrameByFrameMode) {
+                    if (!mIsH264) {
+                        if (mMediaDuration > 300) {
+                            addStep += 30;
+                        } else {
+                            addStep += 10;
+                        }
+                    } else {
+                        if (mMediaDuration > 52428800) {// 50MB
+                            addStep += 1048576;// 1MB
+                        } else {
+                            addStep += 524288;// 514KB
+                        }
+                    }
+                    Log.d(TAG, "onClick() addStep: " + addStep);
+                    mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
+                    mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
+                } else {
+                    if (mFFMPEGPlayer != null) {
+                        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
+                    }
+                }
+                break;
+            case R.id.button_prev:
+                mPlayPrevFile = true;
+                mPlayNextFile = false;
+                mPrePath = null;
+                onRelease();
+                break;
+            case R.id.button_next:
+                mPlayPrevFile = false;
+                mPlayNextFile = true;
+                mPrePath = null;
+                onRelease();
+                break;
+            case R.id.button_play:
+                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                    if (mIjkPlayer != null) {
+                        mPlayIB.setVisibility(View.INVISIBLE);
+                        mPauseIB.setVisibility(View.VISIBLE);
+                        mIjkPlayer.pause();
+                    }
+                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                    if (mSimpleVideoPlayer.isRunning()) {
+                        if (mSimpleVideoPlayer.isPlaying()) {
+                            mPlayIB.setVisibility(View.INVISIBLE);
+                            mPauseIB.setVisibility(View.VISIBLE);
+                            mSimpleVideoPlayer.pause();
+                        }
+                    }
+                } else {
+                    if (mFFMPEGPlayer != null) {
+                        if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
+                                DO_SOMETHING_CODE_isRunning, null))) {
+                            mPlayIB.setVisibility(View.INVISIBLE);
+                            mPauseIB.setVisibility(View.VISIBLE);
+                            sendEmptyMessage(DO_SOMETHING_CODE_pause);
+                        }
+                    }
+                }
+                break;
+            case R.id.button_pause:
+                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                    if (mIjkPlayer != null) {
+                        mPlayIB.setVisibility(View.VISIBLE);
+                        mPauseIB.setVisibility(View.INVISIBLE);
+                        mIjkPlayer.start();
+                    }
+                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+                    if (mSimpleVideoPlayer.isRunning()) {
+                        if (!mSimpleVideoPlayer.isPlaying()) {
+                            mPlayIB.setVisibility(View.VISIBLE);
+                            mPauseIB.setVisibility(View.INVISIBLE);
+                            mSimpleVideoPlayer.play();
+                        }
+                    }
+                } else {
+                    if (mFFMPEGPlayer != null) {
+                        if (isFrameByFrameMode) {
+                            isFrameByFrameMode = false;
+                            mFFMPEGPlayer.onTransact(
+                                    DO_SOMETHING_CODE_frameByFrameForFinish, null);
+                            mVolumeNormal.setVisibility(View.VISIBLE);
+                            mVolumeMute.setVisibility(View.INVISIBLE);
+                            mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
+                            mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
+                            mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                            MyToast.show("帧模式已关闭");
+                        }
+                        mPlayIB.setVisibility(View.VISIBLE);
+                        mPauseIB.setVisibility(View.INVISIBLE);
+                        if (!IS_WATCH) {
+                            mLoadingView.setVisibility(View.GONE);
+                        }
+                        sendEmptyMessage(DO_SOMETHING_CODE_play);
+                    }
+                }
+                break;
+            case R.id.surfaceView:
+                mIsScreenPress = true;
+                onEvent(KeyEvent.KEYCODE_HEADSETHOOK, null);
+                break;
+            case R.id.button_exit:
+                mDownloadClickCounts = 0;
+                mIsDownloading = false;
+                isFrameByFrameMode = false;
+                // 表示用户主动关闭,不需要再继续播放
+                removeView();
+                break;
+            case R.id.volume_normal:
+                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                MyToast.show(String.valueOf(curVolume));
+                mVolumeSeekBar.setProgress(curVolume);
+                mVolumeLayout.setVisibility(View.VISIBLE);
+                break;
+            case R.id.volume_mute:
+                if (isFrameByFrameMode) {
+                    return;
+                }
+                curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                MyToast.show(String.valueOf(curVolume));
+                mVolumeSeekBar.setProgress(curVolume);
+                mVolumeLayout.setVisibility(View.VISIBLE);
+                break;
+            case R.id.button_repeat_off:
+                MyToast.show("Repeat All");
+                mRepeat = Repeat.Repeat_All;
+                setRepeatView();
+                break;
+            case R.id.button_repeat_all:
+                MyToast.show("Repeat One");
+                mRepeat = Repeat.Repeat_One;
+                setRepeatView();
+                break;
+            case R.id.button_repeat_one:
+                MyToast.show("Repeat Off");
+                mRepeat = Repeat.Repeat_Off;
+                setRepeatView();
+                break;
+            case R.id.button_shuffle_off:
+                MyToast.show("Shuffle On");
+                mShuffle = Shuffle.Shuffle_On;
+                setShuffleView();
+                break;
+            case R.id.button_shuffle_on:
+                MyToast.show("Shuffle Off");
+                mShuffle = Shuffle.Shuffle_Off;
+                setShuffleView();
+                break;
+            case R.id.download_tv:
+                if (TextUtils.isEmpty(mDownloadTV.getText())) {
+                    mDownloadTV.setText("0");
+                    mDownloadTV.setBackgroundColor(
+                            mContext.getResources().getColor(R.color.burlywood));
+                    return;
+                }
+                mDownloadClickCounts++;
+                mThreadHandler.removeMessages(MSG_DOWNLOAD);
+                mThreadHandler.sendEmptyMessageDelayed(MSG_DOWNLOAD, 1000);
+                break;
+            case R.id.button_volume_min:
+                if (volumeStep == 0) {
+                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    volumeStep = curVolume - 1;
+                } else {
+                    volumeStep -= 1;
+                }
+                if (volumeStep < minVolume) {
+                    volumeStep = minVolume;
+                }
+                MyToast.show(String.valueOf(volumeStep));
+                mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_ADD);
+                mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_SUBTRACT);
+                mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_SUBTRACT, 2000);
+                break;
+            case R.id.button_volume_max:
+                if (volumeStep == 0 || volumeStep == maxVolume) {
+                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    volumeStep = curVolume + 1;
+                } else {
+                    volumeStep += 1;
+                }
+                if (volumeStep > maxVolume) {
+                    volumeStep = maxVolume;
+                }
+                MyToast.show(String.valueOf(volumeStep));
+                mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_SUBTRACT);
+                mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_ADD);
+                mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_ADD, 2000);
                 break;
             default:
                 break;
@@ -2679,228 +2907,13 @@ public class PlayerWrapper {
         }
     };
 
+    private int volumeStep = 0;
     private long addStep = 0;
     private long subtractStep = 0;
     private View.OnClickListener mOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            switch (v.getId()) {
-                case R.id.button_fr:
-                    if (!isFrameByFrameMode) {
-                        if (!mIsH264) {
-                            if (mMediaDuration > 300) {
-                                subtractStep += 30;
-                            } else {
-                                subtractStep += 10;
-                            }
-                        } else {
-                            if (mMediaDuration > 52428800) {// 50MB
-                                subtractStep += 1048576;// 1MB
-                            } else {
-                                subtractStep += 524288;// 514KB
-                            }
-                        }
-                        Log.d(TAG, "onClick() subtractStep: " + subtractStep);
-                        mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
-                        mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
-                        }
-                    }
-                    break;
-                case R.id.button_ff:
-                    if (!isFrameByFrameMode) {
-                        if (!mIsH264) {
-                            if (mMediaDuration > 300) {
-                                addStep += 30;
-                            } else {
-                                addStep += 10;
-                            }
-                        } else {
-                            if (mMediaDuration > 52428800) {// 50MB
-                                addStep += 1048576;// 1MB
-                            } else {
-                                addStep += 524288;// 514KB
-                            }
-                        }
-                        Log.d(TAG, "onClick() addStep: " + addStep);
-                        mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
-                        mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
-                        }
-                    }
-                    break;
-                case R.id.button_prev:
-                    mPlayPrevFile = true;
-                    mPlayNextFile = false;
-                    mPrePath = null;
-                    onRelease();
-                    break;
-                case R.id.button_next:
-                    mPlayPrevFile = false;
-                    mPlayNextFile = true;
-                    mPrePath = null;
-                    onRelease();
-                    break;
-                case R.id.button_play:
-                    if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                        if (mIjkPlayer != null) {
-                            mPlayIB.setVisibility(View.INVISIBLE);
-                            mPauseIB.setVisibility(View.VISIBLE);
-                            mIjkPlayer.pause();
-                        }
-                    } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        if (mSimpleVideoPlayer.isRunning()) {
-                            if (mSimpleVideoPlayer.isPlaying()) {
-                                mPlayIB.setVisibility(View.INVISIBLE);
-                                mPauseIB.setVisibility(View.VISIBLE);
-                                mSimpleVideoPlayer.pause();
-                            }
-                        }
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
-                                    DO_SOMETHING_CODE_isRunning, null))) {
-                                mPlayIB.setVisibility(View.INVISIBLE);
-                                mPauseIB.setVisibility(View.VISIBLE);
-                                sendEmptyMessage(DO_SOMETHING_CODE_pause);
-                            }
-                        }
-                    }
-                    break;
-                case R.id.button_pause:
-                    if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                        if (mIjkPlayer != null) {
-                            mPlayIB.setVisibility(View.VISIBLE);
-                            mPauseIB.setVisibility(View.INVISIBLE);
-                            mIjkPlayer.start();
-                        }
-                    } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                        if (mSimpleVideoPlayer.isRunning()) {
-                            if (!mSimpleVideoPlayer.isPlaying()) {
-                                mPlayIB.setVisibility(View.VISIBLE);
-                                mPauseIB.setVisibility(View.INVISIBLE);
-                                mSimpleVideoPlayer.play();
-                            }
-                        }
-                    } else {
-                        if (mFFMPEGPlayer != null) {
-                            if (isFrameByFrameMode) {
-                                isFrameByFrameMode = false;
-                                mFFMPEGPlayer.onTransact(
-                                        DO_SOMETHING_CODE_frameByFrameForFinish, null);
-                                mVolumeNormal.setVisibility(View.VISIBLE);
-                                mVolumeMute.setVisibility(View.INVISIBLE);
-                                mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
-                                mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
-                                MyToast.show("帧模式已关闭");
-                            }
-                            mPlayIB.setVisibility(View.VISIBLE);
-                            mPauseIB.setVisibility(View.INVISIBLE);
-                            if (!IS_WATCH) {
-                                mLoadingView.setVisibility(View.GONE);
-                            }
-                            sendEmptyMessage(DO_SOMETHING_CODE_play);
-                        }
-                    }
-                    break;
-                case R.id.surfaceView:
-                    mIsScreenPress = true;
-                    onEvent(KeyEvent.KEYCODE_HEADSETHOOK, null);
-                    break;
-                case R.id.button_exit:
-                    mDownloadClickCounts = 0;
-                    mIsDownloading = false;
-                    isFrameByFrameMode = false;
-                    // 表示用户主动关闭,不需要再继续播放
-                    removeView();
-                    break;
-                case R.id.volume_normal:
-                    int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                    MyToast.show(String.valueOf(curVolume));
-                    mVolumeSeekBar.setProgress(curVolume);
-                    mVolumeLayout.setVisibility(View.VISIBLE);
-                    break;
-                case R.id.volume_mute:
-                    if (isFrameByFrameMode) {
-                        return;
-                    }
-                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                    MyToast.show(String.valueOf(curVolume));
-                    mVolumeSeekBar.setProgress(curVolume);
-                    mVolumeLayout.setVisibility(View.VISIBLE);
-                    break;
-                case R.id.button_repeat_off:
-                    MyToast.show("Repeat All");
-                    mRepeat = Repeat.Repeat_All;
-                    setRepeatView();
-                    break;
-                case R.id.button_repeat_all:
-                    MyToast.show("Repeat One");
-                    mRepeat = Repeat.Repeat_One;
-                    setRepeatView();
-                    break;
-                case R.id.button_repeat_one:
-                    MyToast.show("Repeat Off");
-                    mRepeat = Repeat.Repeat_Off;
-                    setRepeatView();
-                    break;
-                case R.id.button_shuffle_off:
-                    MyToast.show("Shuffle On");
-                    mShuffle = Shuffle.Shuffle_On;
-                    setShuffleView();
-                    break;
-                case R.id.button_shuffle_on:
-                    MyToast.show("Shuffle Off");
-                    mShuffle = Shuffle.Shuffle_Off;
-                    setShuffleView();
-                    break;
-                case R.id.download_tv:
-                    if (TextUtils.isEmpty(mDownloadTV.getText())) {
-                        mDownloadTV.setText("0");
-                        mDownloadTV.setBackgroundColor(
-                                mContext.getResources().getColor(R.color.burlywood));
-                        return;
-                    }
-                    mDownloadClickCounts++;
-                    mThreadHandler.removeMessages(MSG_DOWNLOAD);
-                    mThreadHandler.sendEmptyMessageDelayed(MSG_DOWNLOAD, 1000);
-                    break;
-                case R.id.button_volume_min:
-                    if (subtractStep == 0) {
-                        curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                        subtractStep = curVolume - 1;
-                    } else {
-                        subtractStep -= 1;
-                    }
-                    if (subtractStep < minVolume) {
-                        subtractStep = minVolume;
-                    }
-                    MyToast.show(String.valueOf(subtractStep));
-                    mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_SUBTRACT);
-                    mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_SUBTRACT, 1000);
-                    break;
-                case R.id.button_volume_max:
-                    if (addStep == 0) {
-                        curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                        addStep = curVolume + 1;
-                    } else {
-                        addStep += 1;
-                    }
-                    if (addStep > maxVolume) {
-                        addStep = maxVolume;
-                    }
-                    MyToast.show(String.valueOf(addStep));
-                    mUiHandler.removeMessages(MSG_VOLUME_SEEK_TO_ADD);
-                    mUiHandler.sendEmptyMessageDelayed(MSG_VOLUME_SEEK_TO_ADD, 1000);
-                    break;
-                default:
-                    break;
-            }
+            PlayerWrapper.this.onClick(v);
         }
     };
 

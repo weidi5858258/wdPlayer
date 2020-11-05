@@ -228,7 +228,7 @@
                 android:enabled="true"
                 android:layout_marginStart="@dimen/dimen_40_dp"
                 android:layout_marginEnd="@dimen/dimen_40_dp"
-                android:max="15"
+                android:min="0"
                 android:progress="1"
                 android:progressBackgroundTint="@color/white"
                 android:secondaryProgress="1"
