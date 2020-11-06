@@ -231,7 +231,7 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                             focusedView = view;
                         }
                         mUiHandler.removeMessages(0);
-                        mUiHandler.sendEmptyMessageDelayed(0, 500);
+                        mUiHandler.sendEmptyMessageDelayed(0, 1000);
                     }
                 });
             }
