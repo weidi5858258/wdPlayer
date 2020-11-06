@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--点击后显示的颜色-->
+    <item android:drawable="@drawable/media_ic_exit_pressed" android:state_pressed="true" />
+    <!--得到焦点后显示的颜色-->
+    <item android:drawable="@drawable/media_ic_exit_focused" android:state_focused="true" />
+    <!--鼠标悬停时显示的颜色-->
+    <item android:drawable="@drawable/media_ic_exit_focused" android:state_hovered="true" />
+
+    <item android:drawable="@drawable/media_ic_exit_normal" android:state_pressed="false" />
+    <item android:drawable="@drawable/media_ic_exit_normal" android:state_focused="false" />
+    <item android:drawable="@drawable/media_ic_exit_normal" android:state_hovered="false" />
+</selector>

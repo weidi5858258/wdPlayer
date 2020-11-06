@@ -1649,6 +1649,8 @@ public class PlayerWrapper {
         mFFMPEGPlayer.setHandler(mUiHandler);
         sendEmptyMessage(DO_SOMETHING_CODE_init);
 
+        requestAudioFocus();
+
         if (mIsSeparatedAudioVideo) {
             if ((TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)
                     || TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC))) {
@@ -1696,7 +1698,6 @@ public class PlayerWrapper {
                 mIjkPlayer.setSurface(mSurfaceHolder.getSurface());
                 mIjkPlayer.setDataSource(mCurPath);
                 mIjkPlayer.prepareAsync();
-                requestAudioFocus();
                 return;
             } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
                 mSimpleVideoPlayer = new SimpleVideoPlayer();
@@ -1742,8 +1743,6 @@ public class PlayerWrapper {
                 return;
             }
         }
-
-        requestAudioFocus();
 
         mUiHandler.removeMessages(MSG_START_PLAYBACK);
         mUiHandler.sendEmptyMessage(MSG_START_PLAYBACK);
@@ -2839,22 +2838,25 @@ public class PlayerWrapper {
                 break;
             case Callback.ERROR_FFMPEG_INIT:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                /*if (mIsVideo) {
+                MyToast.show("音视频初始化失败");
+                if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
-                        startForGetMediaFormat();
+                        //startForGetMediaFormat();
+                        mThreadHandler.removeMessages(MSG_PREPARE);
+                        mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
                         break;
                     } else {
                         String path = mSP.getString(PLAYBACK_ADDRESS, null);
                         if (TextUtils.equals(path, mCurPath)
                                 && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
-                            startForGetMediaFormat();
+                            //startForGetMediaFormat();
+                            mThreadHandler.removeMessages(MSG_PREPARE);
+                            mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
                             break;
                         }
                     }
-                }*/
-
-                MyToast.show("音视频初始化失败");
+                }
 
                 removeView();
                 if (mSurfaceHolder != null) {

@@ -109,7 +109,8 @@
             android:layout_marginRight="@dimen/dimen_8_dp"
             android:layout_toLeftOf="@id/button_play"
             android:contentDescription="Exit"
-            android:src="@drawable/exit_view" />
+            android:src="@drawable/media_ic_exit" />
+            <!--exit_view-->
 
         <ImageButton
             android:id="@+id/button_play"
