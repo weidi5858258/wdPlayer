@@ -74,6 +74,10 @@ import java.util.Random;
 
 import androidx.core.content.ContextCompat;
 
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_PLAYING;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -113,6 +117,21 @@ import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AAC_H264;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AUDIO_VIDEO;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
+
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_EXIT;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_NEXT;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PAUSE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PLAY;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PREV;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ALL;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_OFF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ONE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_OFF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_ON;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_MUTE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
 
 /***
  /Users/alexander/mydev/workspace_android/wdPlayer/gradle/wrapper/gradle-wrapper.properties
@@ -415,20 +434,7 @@ public class PlayerWrapper {
         mVolumeNormal.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (isFrameByFrameMode) {
-                    return true;
-                }
-                mVolumeNormal.setVisibility(View.INVISIBLE);
-                mVolumeMute.setVisibility(View.VISIBLE);
-                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                    mIjkPlayer.setVolume(VOLUME_MUTE);
-                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                    mSimpleVideoPlayer.setVolume(VOLUME_MUTE);
-                } else {
-                    mFFMPEGPlayer.setVolume(VOLUME_MUTE);
-                    mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
-                }
-                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+                buttonLongClickForVolumeNormal();
                 return true;
             }
         });
@@ -436,20 +442,7 @@ public class PlayerWrapper {
         mVolumeMute.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if (isFrameByFrameMode) {
-                    return true;
-                }
-                mVolumeNormal.setVisibility(View.VISIBLE);
-                mVolumeMute.setVisibility(View.INVISIBLE);
-                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                    mIjkPlayer.setVolume(VOLUME_NORMAL);
-                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                    mSimpleVideoPlayer.setVolume(VOLUME_NORMAL);
-                } else {
-                    mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
-                    mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                }
-                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                buttonLongClickForVolumeMute();
                 return true;
             }
         });
@@ -1496,173 +1489,48 @@ public class PlayerWrapper {
     private void onClick(View v) {
         switch (v.getId()) {
             case R.id.button_fr:
-                if (!isFrameByFrameMode) {
-                    if (!mIsH264) {
-                        if (mMediaDuration > 300) {
-                            subtractStep += 30;
-                        } else {
-                            subtractStep += 10;
-                        }
-                    } else {
-                        if (mMediaDuration > 52428800) {// 50MB
-                            subtractStep += 1048576;// 1MB
-                        } else {
-                            subtractStep += 524288;// 514KB
-                        }
-                    }
-                    Log.d(TAG, "onClick() subtractStep: " + subtractStep);
-                    mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
-                    mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
-                } else {
-                    if (mFFMPEGPlayer != null) {
-                        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
-                    }
-                }
+                buttonClickForFr();
                 break;
             case R.id.button_ff:
-                if (!isFrameByFrameMode) {
-                    if (!mIsH264) {
-                        if (mMediaDuration > 300) {
-                            addStep += 30;
-                        } else {
-                            addStep += 10;
-                        }
-                    } else {
-                        if (mMediaDuration > 52428800) {// 50MB
-                            addStep += 1048576;// 1MB
-                        } else {
-                            addStep += 524288;// 514KB
-                        }
-                    }
-                    Log.d(TAG, "onClick() addStep: " + addStep);
-                    mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
-                    mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
-                } else {
-                    if (mFFMPEGPlayer != null) {
-                        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
-                    }
-                }
+                buttonClickForFf();
                 break;
             case R.id.button_prev:
-                mPlayPrevFile = true;
-                mPlayNextFile = false;
-                mPrePath = null;
-                onRelease();
+                buttonClickForPrev();
                 break;
             case R.id.button_next:
-                mPlayPrevFile = false;
-                mPlayNextFile = true;
-                mPrePath = null;
-                onRelease();
+                buttonClickForNext();
                 break;
             case R.id.button_play:
-                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                    if (mIjkPlayer != null) {
-                        mPlayIB.setVisibility(View.INVISIBLE);
-                        mPauseIB.setVisibility(View.VISIBLE);
-                        mIjkPlayer.pause();
-                    }
-                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                    if (mSimpleVideoPlayer.isRunning()) {
-                        if (mSimpleVideoPlayer.isPlaying()) {
-                            mPlayIB.setVisibility(View.INVISIBLE);
-                            mPauseIB.setVisibility(View.VISIBLE);
-                            mSimpleVideoPlayer.pause();
-                        }
-                    }
-                } else {
-                    if (mFFMPEGPlayer != null) {
-                        if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
-                                DO_SOMETHING_CODE_isRunning, null))) {
-                            mPlayIB.setVisibility(View.INVISIBLE);
-                            mPauseIB.setVisibility(View.VISIBLE);
-                            sendEmptyMessage(DO_SOMETHING_CODE_pause);
-                        }
-                    }
-                }
+                buttonClickForPlay();
                 break;
             case R.id.button_pause:
-                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-                    if (mIjkPlayer != null) {
-                        mPlayIB.setVisibility(View.VISIBLE);
-                        mPauseIB.setVisibility(View.INVISIBLE);
-                        mIjkPlayer.start();
-                    }
-                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-                    if (mSimpleVideoPlayer.isRunning()) {
-                        if (!mSimpleVideoPlayer.isPlaying()) {
-                            mPlayIB.setVisibility(View.VISIBLE);
-                            mPauseIB.setVisibility(View.INVISIBLE);
-                            mSimpleVideoPlayer.play();
-                        }
-                    }
-                } else {
-                    if (mFFMPEGPlayer != null) {
-                        if (isFrameByFrameMode) {
-                            isFrameByFrameMode = false;
-                            mFFMPEGPlayer.onTransact(
-                                    DO_SOMETHING_CODE_frameByFrameForFinish, null);
-                            mVolumeNormal.setVisibility(View.VISIBLE);
-                            mVolumeMute.setVisibility(View.INVISIBLE);
-                            mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
-                            mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                            mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
-                            MyToast.show("帧模式已关闭");
-                        }
-                        mPlayIB.setVisibility(View.VISIBLE);
-                        mPauseIB.setVisibility(View.INVISIBLE);
-                        if (!IS_WATCH) {
-                            mLoadingView.setVisibility(View.GONE);
-                        }
-                        sendEmptyMessage(DO_SOMETHING_CODE_play);
-                    }
-                }
+                buttonClickForPause();
                 break;
             case R.id.surfaceView:
                 mIsScreenPress = true;
                 onEvent(KeyEvent.KEYCODE_HEADSETHOOK, null);
                 break;
             case R.id.button_exit:
-                mDownloadClickCounts = 0;
-                mIsDownloading = false;
-                isFrameByFrameMode = false;
-                // 表示用户主动关闭,不需要再继续播放
-                removeView();
+                buttonClickForExit();
                 break;
             case R.id.volume_normal:
             case R.id.volume_mute:
-                if (isFrameByFrameMode) {
-                    return;
-                }
-                int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-                MyToast.show(String.valueOf(curVolume));
-                mVolumeSeekBar.setProgress(curVolume);
-                mVolumeLayout.setVisibility(View.VISIBLE);
+                buttonClickForVolume();
                 break;
             case R.id.button_repeat_off:
-                MyToast.show("Repeat All");
-                mRepeat = Repeat.Repeat_All;
-                setRepeatView();
+                buttonClickForRepeatOff();
                 break;
             case R.id.button_repeat_all:
-                MyToast.show("Repeat One");
-                mRepeat = Repeat.Repeat_One;
-                setRepeatView();
+                buttonClickForRepeatAll();
                 break;
             case R.id.button_repeat_one:
-                MyToast.show("Repeat Off");
-                mRepeat = Repeat.Repeat_Off;
-                setRepeatView();
+                buttonClickForRepeatOne();
                 break;
             case R.id.button_shuffle_off:
-                MyToast.show("Shuffle On");
-                mShuffle = Shuffle.Shuffle_On;
-                setShuffleView();
+                buttonClickForShuffleOff();
                 break;
             case R.id.button_shuffle_on:
-                MyToast.show("Shuffle Off");
-                mShuffle = Shuffle.Shuffle_Off;
-                setShuffleView();
+                buttonClickForShuffleOn();
                 break;
             case R.id.download_tv:
                 if (TextUtils.isEmpty(mDownloadTV.getText())) {
@@ -1677,7 +1545,7 @@ public class PlayerWrapper {
                 break;
             case R.id.button_volume_min:
                 if (volumeStep == 0) {
-                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                     volumeStep = curVolume - 1;
                 } else {
                     volumeStep -= 1;
@@ -1692,7 +1560,7 @@ public class PlayerWrapper {
                 break;
             case R.id.button_volume_max:
                 if (volumeStep == 0 || volumeStep == maxVolume) {
-                    curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                    int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                     volumeStep = curVolume + 1;
                 } else {
                     volumeStep += 1;
@@ -2488,6 +2356,217 @@ public class PlayerWrapper {
         mThreadHandler.sendEmptyMessage(MSG_LOAD_CONTENTS);
     }
 
+    private void buttonClickForFr() {
+        if (!isFrameByFrameMode) {
+            if (!mIsH264) {
+                if (mMediaDuration > 300) {
+                    subtractStep += 30;
+                } else {
+                    subtractStep += 10;
+                }
+            } else {
+                if (mMediaDuration > 52428800) {// 50MB
+                    subtractStep += 1048576;// 1MB
+                } else {
+                    subtractStep += 524288;// 514KB
+                }
+            }
+            Log.d(TAG, "onClick() subtractStep: " + subtractStep);
+            mUiHandler.removeMessages(MSG_SEEK_TO_SUBTRACT);
+            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_SUBTRACT, 1000);
+        } else {
+            if (mFFMPEGPlayer != null) {
+                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
+            }
+        }
+    }
+
+    private void buttonClickForFf() {
+        if (!isFrameByFrameMode) {
+            if (!mIsH264) {
+                if (mMediaDuration > 300) {
+                    addStep += 30;
+                } else {
+                    addStep += 10;
+                }
+            } else {
+                if (mMediaDuration > 52428800) {// 50MB
+                    addStep += 1048576;// 1MB
+                } else {
+                    addStep += 524288;// 514KB
+                }
+            }
+            Log.d(TAG, "onClick() addStep: " + addStep);
+            mUiHandler.removeMessages(MSG_SEEK_TO_ADD);
+            mUiHandler.sendEmptyMessageDelayed(MSG_SEEK_TO_ADD, 1000);
+        } else {
+            if (mFFMPEGPlayer != null) {
+                mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_frameByFrame, null);
+            }
+        }
+    }
+
+    private void buttonClickForPrev() {
+        mPlayPrevFile = true;
+        mPlayNextFile = false;
+        mPrePath = null;
+        onRelease();
+    }
+
+    private void buttonClickForNext() {
+        mPlayPrevFile = false;
+        mPlayNextFile = true;
+        mPrePath = null;
+        onRelease();
+    }
+
+    private void buttonClickForPlay() {
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+            if (mIjkPlayer != null) {
+                mPlayIB.setVisibility(View.INVISIBLE);
+                mPauseIB.setVisibility(View.VISIBLE);
+                mIjkPlayer.pause();
+            }
+        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+            if (mSimpleVideoPlayer.isRunning()) {
+                if (mSimpleVideoPlayer.isPlaying()) {
+                    mPlayIB.setVisibility(View.INVISIBLE);
+                    mPauseIB.setVisibility(View.VISIBLE);
+                    mSimpleVideoPlayer.pause();
+                }
+            }
+        } else {
+            if (mFFMPEGPlayer != null) {
+                if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
+                        DO_SOMETHING_CODE_isRunning, null))) {
+                    mPlayIB.setVisibility(View.INVISIBLE);
+                    mPauseIB.setVisibility(View.VISIBLE);
+                    sendEmptyMessage(DO_SOMETHING_CODE_pause);
+                }
+            }
+        }
+    }
+
+    private void buttonClickForPause() {
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+            if (mIjkPlayer != null) {
+                mPlayIB.setVisibility(View.VISIBLE);
+                mPauseIB.setVisibility(View.INVISIBLE);
+                mIjkPlayer.start();
+            }
+        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+            if (mSimpleVideoPlayer.isRunning()) {
+                if (!mSimpleVideoPlayer.isPlaying()) {
+                    mPlayIB.setVisibility(View.VISIBLE);
+                    mPauseIB.setVisibility(View.INVISIBLE);
+                    mSimpleVideoPlayer.play();
+                }
+            }
+        } else {
+            if (mFFMPEGPlayer != null) {
+                if (isFrameByFrameMode) {
+                    isFrameByFrameMode = false;
+                    mFFMPEGPlayer.onTransact(
+                            DO_SOMETHING_CODE_frameByFrameForFinish, null);
+                    mVolumeNormal.setVisibility(View.VISIBLE);
+                    mVolumeMute.setVisibility(View.INVISIBLE);
+                    mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
+                    mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
+                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                    MyToast.show("帧模式已关闭");
+                }
+                mPlayIB.setVisibility(View.VISIBLE);
+                mPauseIB.setVisibility(View.INVISIBLE);
+                if (!IS_WATCH) {
+                    mLoadingView.setVisibility(View.GONE);
+                }
+                sendEmptyMessage(DO_SOMETHING_CODE_play);
+            }
+        }
+    }
+
+    private void buttonClickForExit() {
+        mDownloadClickCounts = 0;
+        mIsDownloading = false;
+        isFrameByFrameMode = false;
+        // 表示用户主动关闭,不需要再继续播放
+        removeView();
+    }
+
+    private void buttonClickForVolume() {
+        if (isFrameByFrameMode) {
+            return;
+        }
+        int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        MyToast.show(String.valueOf(curVolume));
+        mVolumeSeekBar.setProgress(curVolume);
+        mVolumeLayout.setVisibility(View.VISIBLE);
+    }
+
+    private void buttonLongClickForVolumeNormal() {
+        if (isFrameByFrameMode) {
+            return;
+        }
+        mVolumeNormal.setVisibility(View.INVISIBLE);
+        mVolumeMute.setVisibility(View.VISIBLE);
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+            mIjkPlayer.setVolume(VOLUME_MUTE);
+        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+            mSimpleVideoPlayer.setVolume(VOLUME_MUTE);
+        } else {
+            mFFMPEGPlayer.setVolume(VOLUME_MUTE);
+            mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
+        }
+        mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+    }
+
+    private void buttonLongClickForVolumeMute() {
+        if (isFrameByFrameMode) {
+            return;
+        }
+        mVolumeNormal.setVisibility(View.VISIBLE);
+        mVolumeMute.setVisibility(View.INVISIBLE);
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+            mIjkPlayer.setVolume(VOLUME_NORMAL);
+        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+            mSimpleVideoPlayer.setVolume(VOLUME_NORMAL);
+        } else {
+            mFFMPEGPlayer.setVolume(VOLUME_NORMAL);
+            mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
+        }
+        mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+    }
+
+    private void buttonClickForRepeatOff() {
+        MyToast.show("Repeat All");
+        mRepeat = Repeat.Repeat_All;
+        setRepeatView();
+    }
+
+    private void buttonClickForRepeatAll() {
+        MyToast.show("Repeat One");
+        mRepeat = Repeat.Repeat_One;
+        setRepeatView();
+    }
+
+    private void buttonClickForRepeatOne() {
+        MyToast.show("Repeat Off");
+        mRepeat = Repeat.Repeat_Off;
+        setRepeatView();
+    }
+
+    private void buttonClickForShuffleOff() {
+        MyToast.show("Shuffle On");
+        mShuffle = Shuffle.Shuffle_On;
+        setShuffleView();
+    }
+
+    private void buttonClickForShuffleOn() {
+        MyToast.show("Shuffle Off");
+        mShuffle = Shuffle.Shuffle_Off;
+        setShuffleView();
+    }
+
     private void setRepeatView() {
         switch (mRepeat) {
             case Repeat_Off:
@@ -2717,7 +2796,8 @@ public class PlayerWrapper {
                     mSurfaceHolder.removeCallback(mSurfaceCallback);
                     mSurfaceHolder = null;
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        && mAudioFocusRequest != null) {
                     mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
                 }
                 System.gc();
@@ -2781,7 +2861,8 @@ public class PlayerWrapper {
                     mSurfaceHolder.removeCallback(mSurfaceCallback);
                     mSurfaceHolder = null;
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                        && mAudioFocusRequest != null) {
                     mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
                 }
                 System.gc();
@@ -3454,6 +3535,77 @@ public class PlayerWrapper {
                 //Log.d(TAG, "clickOne()");
                 //clickOne();
                 break;
+
+            case BUTTON_CLICK_FR:
+                buttonClickForFr();
+                break;
+            case BUTTON_CLICK_FF:
+                buttonClickForFf();
+                break;
+            case BUTTON_CLICK_PREV:
+                buttonClickForPrev();
+                break;
+            case BUTTON_CLICK_NEXT:
+                buttonClickForNext();
+                break;
+            case BUTTON_CLICK_PLAY:
+                buttonClickForPlay();
+                break;
+            case BUTTON_CLICK_PAUSE:
+                buttonClickForPause();
+                break;
+            case BUTTON_CLICK_EXIT:
+                buttonClickForExit();
+                break;
+            case BUTTON_CLICK_VOLUME_NORMAL:
+                buttonLongClickForVolumeNormal();
+                break;
+            case BUTTON_CLICK_VOLUME_MUTE:
+                buttonLongClickForVolumeMute();
+                break;
+            case BUTTON_CLICK_REPEAT_OFF:
+                buttonClickForRepeatOff();
+                break;
+            case BUTTON_CLICK_REPEAT_ALL:
+                buttonClickForRepeatAll();
+                break;
+            case BUTTON_CLICK_REPEAT_ONE:
+                buttonClickForRepeatOne();
+                break;
+            case BUTTON_CLICK_SHUFFLE_OFF:
+                buttonClickForShuffleOff();
+                break;
+            case BUTTON_CLICK_SHUFFLE_ON:
+                buttonClickForShuffleOn();
+                break;
+
+            case DO_SOMETHING_EVENT_IS_PLAYING:
+                if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                    if (mIjkPlayer != null && mIjkPlayer.isPlaying()) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+
+                } else {
+                    if (mFFMPEGPlayer != null) {
+                        if (Boolean.parseBoolean(mFFMPEGPlayer.onTransact(
+                                DO_SOMETHING_CODE_isRunning, null))) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+                break;
+            case DO_SOMETHING_EVENT_GET_MEDIA_DURATION:
+                return mMediaDuration;
+            case DO_SOMETHING_EVENT_GET_REPEAT:
+                return mRepeat;
+            case DO_SOMETHING_EVENT_GET_SHUFFLE:
+                return mShuffle;
+
             default:
                 break;
         }

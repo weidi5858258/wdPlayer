@@ -14,19 +14,21 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+        <FrameLayout
+            android:id="@+id/controller_panel_framelayout"
+            android:layout_width="@dimen/dimen_400_dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="@dimen/dimen_16_dp">
+
+            <include layout="@layout/controller_panel" />
+        </FrameLayout>
+
         <TextView
             android:id="@+id/text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/handle_info" />
 
-        <FrameLayout
-            android:layout_width="@dimen/dimen_400_dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/dimen_16_dp"
-            android:layout_gravity="end">
-
-            <include layout="@layout/controller_panel" />
-        </FrameLayout>
     </LinearLayout>
 </ScrollView>

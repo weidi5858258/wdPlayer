@@ -16,13 +16,14 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
 import com.weidi.media.wdplayer.util.MediaUtils;
@@ -35,13 +36,25 @@ import java.io.File;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
-import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_EXIT;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_NEXT;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PAUSE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PLAY;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PREV;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ALL;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_OFF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ONE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_OFF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_ON;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_MUTE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_PLAYING;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 public class MainActivity extends AppCompatActivity {
@@ -57,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
                 com.weidi.library.R.anim.push_left_in,
                 com.weidi.library.R.anim.push_left_out);
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate()");
         // Volume change should always affect media volume_normal
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
@@ -129,11 +143,36 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////
 
     private int whatIsDevice = -1;
     private int clickCounts = 0;
     private boolean IS_TV = false;
+
+    // 快退
+    private ImageButton mFrIB;
+    // 快进
+    private ImageButton mFfIB;
+    // 歌曲上一首
+    private ImageButton mPrevIB;
+    // 歌曲下一首
+    private ImageButton mNextIB;
+    private ImageButton mPlayIB;
+    private ImageButton mPauseIB;
+    private ImageButton mExitIB;
+    // 声音
+    private ImageButton mVolumeNormal;
+    private ImageButton mVolumeMute;
+    private ImageButton mRepeatOff;
+    private ImageButton mRepeatAll;
+    private ImageButton mRepeatOne;
+    private ImageButton mShuffleOff;
+    private ImageButton mShuffleOn;
+
+    // 关闭重复播放
+    private PlayerWrapper.Repeat mRepeat = PlayerWrapper.Repeat.Repeat_Off;
+    // 关闭随机播放
+    private PlayerWrapper.Shuffle mShuffle = PlayerWrapper.Shuffle.Shuffle_Off;
 
     private void internalCreate(Bundle savedInstanceState) {
         UiModeManager uiModeManager =
@@ -221,11 +260,63 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void internalResume() {
-        boolean isPlaying = true;
+        Object result = EventBusUtils.post(
+                PlayerWrapper.class, DO_SOMETHING_EVENT_IS_PLAYING, null);
+        boolean isPlaying = false;
+        if (result != null) {
+            isPlaying = (boolean) result;
+        }
         if (IS_TV && isPlaying) {
-            findViewById(R.id.controller_panel_layout).setVisibility(View.VISIBLE);
+            findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
+
+            long mediaDuration = (long) EventBusUtils.post(
+                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
+            mRepeat = (PlayerWrapper.Repeat) EventBusUtils.post(
+                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_REPEAT, null);
+            mShuffle = (PlayerWrapper.Shuffle) EventBusUtils.post(
+                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_SHUFFLE, null);
+
+            SeekBar progress_bar = findViewById(R.id.progress_bar);
+            RelativeLayout show_time_rl = findViewById(R.id.show_time_rl);
+            ImageButton button_fr = findViewById(R.id.button_fr);
+            ImageButton button_ff = findViewById(R.id.button_ff);
+            ImageButton button_prev = findViewById(R.id.button_prev);
+            ImageButton button_next = findViewById(R.id.button_next);
+            ImageButton button_repeat_off = findViewById(R.id.button_repeat_off);
+            ImageButton button_repeat_all = findViewById(R.id.button_repeat_all);
+            ImageButton button_repeat_one = findViewById(R.id.button_repeat_one);
+            ImageButton button_shuffle_off = findViewById(R.id.button_shuffle_off);
+            ImageButton button_shuffle_on = findViewById(R.id.button_shuffle_on);
+            if (mediaDuration <= 0) {
+                progress_bar.setVisibility(View.GONE);
+                show_time_rl.setVisibility(View.GONE);
+                button_fr.setVisibility(View.INVISIBLE);
+                button_ff.setVisibility(View.INVISIBLE);
+                button_prev.setVisibility(View.INVISIBLE);
+                button_next.setVisibility(View.INVISIBLE);
+                button_repeat_off.setVisibility(View.INVISIBLE);
+                button_repeat_all.setVisibility(View.INVISIBLE);
+                button_repeat_one.setVisibility(View.INVISIBLE);
+                button_shuffle_off.setVisibility(View.INVISIBLE);
+                button_shuffle_on.setVisibility(View.INVISIBLE);
+            } else {
+                progress_bar.setVisibility(View.VISIBLE);
+                show_time_rl.setVisibility(View.VISIBLE);
+                button_fr.setVisibility(View.VISIBLE);
+                button_ff.setVisibility(View.VISIBLE);
+                button_prev.setVisibility(View.VISIBLE);
+                button_next.setVisibility(View.VISIBLE);
+                setRepeatView();
+                setShuffleView();
+            }
+
+            if (mPlayIB.getVisibility() == View.VISIBLE) {
+                mPlayIB.requestFocus();
+            } else {
+                mPauseIB.requestFocus();
+            }
         } else {
-            findViewById(R.id.controller_panel_layout).setVisibility(View.GONE);
+            findViewById(R.id.controller_panel_framelayout).setVisibility(View.GONE);
         }
     }
 
@@ -236,20 +327,20 @@ public class MainActivity extends AppCompatActivity {
         TextView mSeekTimeTV = findViewById(R.id.seek_time_tv);
         TextView mDurationTimeTV = findViewById(R.id.duration_time_tv);
 
-        ImageButton mFrIB = findViewById(R.id.button_fr);
-        ImageButton mFfIB = findViewById(R.id.button_ff);
-        ImageButton mPrevIB = findViewById(R.id.button_prev);
-        ImageButton mNextIB = findViewById(R.id.button_next);
-        ImageButton mPlayIB = findViewById(R.id.button_play);
-        ImageButton mPauseIB = findViewById(R.id.button_pause);
-        ImageButton mExitIB = findViewById(R.id.button_exit);
-        ImageButton mVolumeNormal = findViewById(R.id.volume_normal);
-        ImageButton mVolumeMute = findViewById(R.id.volume_mute);
-        ImageButton mRepeatOff = findViewById(R.id.button_repeat_off);
-        ImageButton mRepeatAll = findViewById(R.id.button_repeat_all);
-        ImageButton mRepeatOne = findViewById(R.id.button_repeat_one);
-        ImageButton mShuffleOff = findViewById(R.id.button_shuffle_off);
-        ImageButton mShuffleOn = findViewById(R.id.button_shuffle_on);
+        mFrIB = findViewById(R.id.button_fr);
+        mFfIB = findViewById(R.id.button_ff);
+        mPrevIB = findViewById(R.id.button_prev);
+        mNextIB = findViewById(R.id.button_next);
+        mPlayIB = findViewById(R.id.button_play);
+        mPauseIB = findViewById(R.id.button_pause);
+        mExitIB = findViewById(R.id.button_exit);
+        mVolumeNormal = findViewById(R.id.volume_normal);
+        mVolumeMute = findViewById(R.id.volume_mute);
+        mRepeatOff = findViewById(R.id.button_repeat_off);
+        mRepeatAll = findViewById(R.id.button_repeat_all);
+        mRepeatOne = findViewById(R.id.button_repeat_one);
+        mShuffleOff = findViewById(R.id.button_shuffle_off);
+        mShuffleOn = findViewById(R.id.button_shuffle_on);
 
         mFrIB.setOnClickListener(mOnClickListener);
         mFfIB.setOnClickListener(mOnClickListener);
@@ -266,7 +357,7 @@ public class MainActivity extends AppCompatActivity {
         mShuffleOff.setOnClickListener(mOnClickListener);
         mShuffleOn.setOnClickListener(mOnClickListener);
 
-        mFrIB.setOnFocusChangeListener(mOnFocusChangeListener);
+        /*mFrIB.setOnFocusChangeListener(mOnFocusChangeListener);
         mFfIB.setOnFocusChangeListener(mOnFocusChangeListener);
         mPrevIB.setOnFocusChangeListener(mOnFocusChangeListener);
         mNextIB.setOnFocusChangeListener(mOnFocusChangeListener);
@@ -279,45 +370,171 @@ public class MainActivity extends AppCompatActivity {
         mRepeatAll.setOnFocusChangeListener(mOnFocusChangeListener);
         mRepeatOne.setOnFocusChangeListener(mOnFocusChangeListener);
         mShuffleOff.setOnFocusChangeListener(mOnFocusChangeListener);
-        mShuffleOn.setOnFocusChangeListener(mOnFocusChangeListener);
+        mShuffleOn.setOnFocusChangeListener(mOnFocusChangeListener);*/
     }
 
     private void onClick(View v) {
         switch (v.getId()) {
             case R.id.button_fr:
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_FR,
+                        null);
+                mFrIB.requestFocus();
                 break;
             case R.id.button_ff:
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_FF,
+                        null);
+                mFfIB.requestFocus();
                 break;
             case R.id.button_prev:
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_PREV,
+                        null);
+                mPrevIB.requestFocus();
                 break;
             case R.id.button_next:
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_NEXT,
+                        null);
+                mNextIB.requestFocus();
                 break;
             case R.id.button_play:
+                mPlayIB.setVisibility(View.INVISIBLE);
+                mPauseIB.setVisibility(View.VISIBLE);
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_PLAY,
+                        null);
+                mPauseIB.requestFocus();
                 break;
             case R.id.button_pause:
+                mPlayIB.setVisibility(View.VISIBLE);
+                mPauseIB.setVisibility(View.INVISIBLE);
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_PAUSE,
+                        null);
+                mPlayIB.requestFocus();
                 break;
             case R.id.button_exit:
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_EXIT,
+                        null);
+                findViewById(R.id.text).requestFocus();
+                findViewById(R.id.controller_panel_framelayout).setVisibility(View.GONE);
                 break;
             case R.id.volume_normal:
+                mVolumeNormal.setVisibility(View.INVISIBLE);
+                mVolumeMute.setVisibility(View.VISIBLE);
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_VOLUME_NORMAL,
+                        null);
+                mVolumeMute.requestFocus();
                 break;
             case R.id.volume_mute:
+                mVolumeNormal.setVisibility(View.VISIBLE);
+                mVolumeMute.setVisibility(View.INVISIBLE);
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_VOLUME_MUTE,
+                        null);
+                mVolumeNormal.requestFocus();
                 break;
             case R.id.button_repeat_off:
+                mRepeat = PlayerWrapper.Repeat.Repeat_All;
+                setRepeatView();
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_REPEAT_OFF,
+                        null);
+                mRepeatAll.requestFocus();
                 break;
             case R.id.button_repeat_all:
+                mRepeat = PlayerWrapper.Repeat.Repeat_One;
+                setRepeatView();
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_REPEAT_ALL,
+                        null);
+                mRepeatOne.requestFocus();
                 break;
             case R.id.button_repeat_one:
+                mRepeat = PlayerWrapper.Repeat.Repeat_Off;
+                setRepeatView();
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_REPEAT_ONE,
+                        null);
+                mRepeatOff.requestFocus();
                 break;
             case R.id.button_shuffle_off:
+                mShuffle = PlayerWrapper.Shuffle.Shuffle_On;
+                setShuffleView();
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_SHUFFLE_OFF,
+                        null);
+                mShuffleOn.requestFocus();
                 break;
             case R.id.button_shuffle_on:
+                mShuffle = PlayerWrapper.Shuffle.Shuffle_Off;
+                setShuffleView();
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_SHUFFLE_ON,
+                        null);
+                mShuffleOff.requestFocus();
                 break;
             default:
                 break;
         }
     }
 
-    private void onFocusChange(View v, boolean hasFocus) {
+    private void setRepeatView() {
+        switch (mRepeat) {
+            case Repeat_Off:
+                mRepeatOff.setVisibility(View.VISIBLE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
+                break;
+            case Repeat_All:
+                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.VISIBLE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
+                break;
+            case Repeat_One:
+                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void setShuffleView() {
+        switch (mShuffle) {
+            case Shuffle_Off:
+                mShuffleOff.setVisibility(View.VISIBLE);
+                mShuffleOn.setVisibility(View.INVISIBLE);
+                break;
+            case Shuffle_On:
+                mShuffleOff.setVisibility(View.INVISIBLE);
+                mShuffleOn.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    /*private void onFocusChange(View v, boolean hasFocus) {
         switch (v.getId()) {
             case R.id.button_fr:
                 break;
@@ -350,7 +567,7 @@ public class MainActivity extends AppCompatActivity {
             default:
                 break;
         }
-    }
+    }*/
 
     private void test2() {
         /***
@@ -464,11 +681,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private View.OnFocusChangeListener mOnFocusChangeListener = new View.OnFocusChangeListener() {
+    /*private View.OnFocusChangeListener mOnFocusChangeListener = new View.OnFocusChangeListener() {
         @Override
         public void onFocusChange(View v, boolean hasFocus) {
             MainActivity.this.onFocusChange(v, hasFocus);
         }
-    };
+    };*/
 
 }

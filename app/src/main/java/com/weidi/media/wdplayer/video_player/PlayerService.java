@@ -159,6 +159,7 @@ public class PlayerService extends Service {
                             (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
                     int whatIsDevice = uiModeManager.getCurrentModeType();
                     intent = new Intent();
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
                         intent.setClass(getApplicationContext(), MainActivity.class);
                     } else {
