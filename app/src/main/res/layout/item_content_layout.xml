@@ -5,7 +5,7 @@
     android:id="@+id/item_root_layout"
     android:layout_width="match_parent"
     android:layout_height="@dimen/dimen_50_dp"
-    android:background="@drawable/item_selector_normal"
+    android:background="@drawable/item_bg_selector"
     android:gravity="center_vertical"
     android:padding="@dimen/box_inset_layout_padding"
     android:paddingStart="@dimen/dimen_8_dp"

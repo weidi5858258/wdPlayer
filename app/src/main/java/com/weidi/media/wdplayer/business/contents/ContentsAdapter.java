@@ -229,11 +229,6 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
                         if (hasFocus) {
                             focusedView = view;
-                            view.setBackground(ContextCompat.getDrawable(view.getContext(),
-                                    R.drawable.item_selector_focused));
-                        } else {
-                            view.setBackground(ContextCompat.getDrawable(view.getContext(),
-                                    R.drawable.item_selector_normal));
                         }
                         mUiHandler.removeMessages(0);
                         mUiHandler.sendEmptyMessageDelayed(0, 500);
