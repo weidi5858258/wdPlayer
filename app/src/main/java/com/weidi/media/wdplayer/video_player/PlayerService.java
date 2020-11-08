@@ -148,40 +148,21 @@ public class PlayerService extends Service {
     private void internalStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
             // app crash后的操作
-            SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-            boolean isNormalFinish = sp.getBoolean(PLAYBACK_NORMAL_FINISH, true);
-            mPath = sp.getString(PLAYBACK_ADDRESS, null);
-            if (!isNormalFinish && !TextUtils.isEmpty(mPath)) {
-                String type = sp.getString(PLAYBACK_MEDIA_TYPE, null);
-                if (TextUtils.isEmpty(type)
-                        || type.startsWith("video/")) {
-                    UiModeManager uiModeManager =
-                            (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-                    int whatIsDevice = uiModeManager.getCurrentModeType();
-                    intent = new Intent();
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
-                        intent.setClass(getApplicationContext(), MainActivity.class);
-                    } else {
-                        intent.setClass(getApplicationContext(), WearMainActivity.class);
-                    }
-                    startActivity(intent);
-
-                    if (mPlayerWrapper != null) {
-                        mPlayerWrapper.setType(type);
-                    }
-                    mUiHandler.removeMessages(COMMAND_SHOW_WINDOW);
-                    mUiHandler.sendEmptyMessageDelayed(COMMAND_SHOW_WINDOW, 3000);
-                }
-            }
+            handleAppCrash();
             return;
         }
 
         String action = intent.getAction();
         Log.d(TAG, "internalStartCommand()   action: " + action);
+        if (TextUtils.isEmpty(action)) {
+            handleAppCrash();
+            return;
+        }
+
         if (!TextUtils.equals(COMMAND_ACTION, action)) {
             return;
         }
+
         int commandName = intent.getIntExtra(COMMAND_NAME, 0);
         switch (commandName) {
             case COMMAND_SHOW_WINDOW:
@@ -223,6 +204,35 @@ public class PlayerService extends Service {
         mWindowManager.removeView(mView);
         unRegisterHeadsetPlugReceiver();
         EventBusUtils.unregister(this);
+    }
+
+    private void handleAppCrash() {
+        SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        boolean isNormalFinish = sp.getBoolean(PLAYBACK_NORMAL_FINISH, true);
+        mPath = sp.getString(PLAYBACK_ADDRESS, null);
+        if (!isNormalFinish && !TextUtils.isEmpty(mPath)) {
+            String type = sp.getString(PLAYBACK_MEDIA_TYPE, null);
+            if (TextUtils.isEmpty(type)
+                    || type.startsWith("video/")) {
+                UiModeManager uiModeManager =
+                        (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+                int whatIsDevice = uiModeManager.getCurrentModeType();
+                Intent intent = new Intent();
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                    intent.setClass(getApplicationContext(), MainActivity.class);
+                } else {
+                    intent.setClass(getApplicationContext(), WearMainActivity.class);
+                }
+                startActivity(intent);
+
+                if (mPlayerWrapper != null) {
+                    mPlayerWrapper.setType(type);
+                }
+                mUiHandler.removeMessages(COMMAND_SHOW_WINDOW);
+                mUiHandler.sendEmptyMessageDelayed(COMMAND_SHOW_WINDOW, 3000);
+            }
+        }
     }
 
     private Object onEvent(int what, Object[] objArray) {

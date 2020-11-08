@@ -201,6 +201,8 @@ public class PlayerWrapper {
     private int minVolume;
     private int maxVolume;
 
+    private BatteryManager mBatteryManager;
+
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
     private ProgressBar mLoadingView;
@@ -247,6 +249,7 @@ public class PlayerWrapper {
     // 跟视频有关的提示信息
     private ScrollView textInfoScrollView;
     private TextView textInfoTV;
+    private String textInfo;
 
     private Handler mUiHandler;
     private Handler mThreadHandler;
@@ -324,6 +327,7 @@ public class PlayerWrapper {
             mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         }
 
+        mBatteryManager = (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics displayMetrics = new DisplayMetrics();
@@ -860,19 +864,16 @@ public class PlayerWrapper {
 
     private void setControllerPanelBackgroundColor() {
         //Log.i(TAG, "setControllerPanelBackgroundColor()");
-        if (//mContext.getResources().getConfiguration().orientation
-            // != Configuration.ORIENTATION_PORTRAIT
-            //|| mControllerPanelLayout.getVisibility() != View.VISIBLE
-            //||
-                !mIsAddedView) {
+        if (!mIsAddedView) {
             Log.i(TAG, "setControllerPanelBackgroundColor() return");
             return;
         }
 
-        if (mColorsHasUsedList == null)
-            mColorsHasUsedList = new ArrayList<>();
         if (mRandom == null)
             mRandom = new Random();
+        if (mColorsHasUsedList == null)
+            mColorsHasUsedList = new ArrayList<>();
+
         int length = COLORS.length;
         int targetColor = -1;
         for (; ; ) {
@@ -911,6 +912,19 @@ public class PlayerWrapper {
         if (mIsVideo) {
             textInfoTV.setTextColor(
                     ContextCompat.getColor(mContext, targetColor));
+            StringBuilder sb = new StringBuilder();
+            if (!TextUtils.isEmpty(textInfo)) {
+                sb.append(textInfo);
+                sb.append("\n");
+            } else {
+                if (IS_WATCH && orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                    sb.append("    ");
+                }
+            }
+            sb.append("[");
+            sb.append(mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY));
+            sb.append("]");
+            textInfoTV.setText(sb.toString());
         }
         if (!IS_WATCH) {
             ObjectAnimator controllerPanelAnimator =
@@ -976,10 +990,7 @@ public class PlayerWrapper {
 
         // 手机没在充电
         try {
-            BatteryManager batteryManager =
-                    (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
-            int battery =
-                    batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            int battery = mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY);
             Log.i(TAG, "allowToPlayback()    battery: " + battery);
             if (battery <= 15) {
                 Log.e(TAG, "allowToPlayback() 电量过低,不允许再循环播放!!!");
@@ -1595,6 +1606,7 @@ public class PlayerWrapper {
             return;
         }
 
+        textInfo = null;
         mIsFinished = false;
 
         // region 判断是什么样的文件(一般用于本地文件)
@@ -2812,6 +2824,7 @@ public class PlayerWrapper {
             //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
             if (toastInfo.contains("[")
                     && toastInfo.contains("]")) {
+                textInfo = toastInfo;
                 textInfoTV.setText(toastInfo);
             } else if (toastInfo.contains("AVERROR_EOF")) {
                 mPrePath = null;
