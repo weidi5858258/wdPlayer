@@ -229,11 +229,17 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
                         if (hasFocus) {
                             focusedView = view;
+                            prePosition = curPosition;
+                            curPosition = mRecyclerView.getChildLayoutPosition(view);
+                            if (curPosition == -1) {
+                                curPosition = prePosition;
+                            }
+                            //Log.i("ContentsAdapter", "position: " + curPosition);
                         }
                         mUiHandler.removeMessages(0);
                         mUiHandler.sendEmptyMessageDelayed(0, 500);
                         mUiHandler.sendEmptyMessageDelayed(0, 1000);
-                        mUiHandler.sendEmptyMessageDelayed(0, 1500);
+                        mUiHandler.sendEmptyMessageDelayed(0, 2000);
                     }
                 });
             }
@@ -300,13 +306,13 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
             switch (msg.what) {
                 case 0:
-                    if (focusedView != null) {
-                        // 应该调用requestFocus()方法,而不是调用setBackground(...)
-                        // 调用setBackground(...)存在短板
-                        focusedView.requestFocus();
-                        /*focusedView.setBackground(ContextCompat.getDrawable(
-                                focusedView.getContext(),
-                                R.drawable.item_selector_focused));*/
+                    if (mRecyclerView != null && curPosition != -1) {
+                        RecyclerView.ViewHolder holder =
+                                mRecyclerView.findViewHolderForAdapterPosition(curPosition);
+                        if (holder != null && holder.itemView != null) {
+                            //Log.i("ContentsAdapter", "position: " + curPosition);
+                            holder.itemView.requestFocus();
+                        }
                     }
                     break;
                 case 1:
