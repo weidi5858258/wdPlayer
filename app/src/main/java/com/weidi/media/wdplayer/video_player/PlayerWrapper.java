@@ -290,6 +290,7 @@ public class PlayerWrapper {
 
     // 第一个存储视频地址,第二个存储标题
     public static final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
+    public static final LinkedHashMap<String, String> mMenFavoriteContentsMap = new LinkedHashMap();
     public static LinkedHashMap<String, String> mLocalVideoContentsMap;
     public static LinkedHashMap<String, String> mLocalAudioContentsMap;
     // 当mShuffle = Shuffle.Shuffle_On;时,保存已经播放过的文件
@@ -3266,6 +3267,8 @@ public class PlayerWrapper {
     private void loadContents() {
         Log.i(TAG, "loadContents() start");
         mContentsMap.clear();
+        mMenFavoriteContentsMap.clear();
+
         File[] files = mContext.getExternalFilesDirs(Environment.MEDIA_SHARED);
         if (files == null) {
             Log.e(TAG, "loadContents() files is null");
@@ -3298,14 +3301,27 @@ public class PlayerWrapper {
         sb.append(file.getAbsolutePath());
         sb.append("/");
         sb.append("contents.txt");
-        file = new File(sb.toString());
-        if (file.exists()) {
-            readContents(file);
-            //return;
+        File contentsFile = new File(sb.toString());
+        if (contentsFile.exists()) {
+            readContents(contentsFile, mContentsMap);
         } else {
-            if (copyFile(file)) {
-                loadContents();
-                return;
+            if (copyFile("contents.", contentsFile)) {
+                readContents(contentsFile, mContentsMap);
+            }
+        }
+
+        if (IS_PHONE) {
+            sb.delete(0, sb.length());
+            sb.append(file.getAbsolutePath());
+            sb.append("/");
+            sb.append("men_favorite.txt");
+            File menFavoriteFile = new File(sb.toString());
+            if (menFavoriteFile.exists()) {
+                readContents(menFavoriteFile, mMenFavoriteContentsMap);
+            } else {
+                if (copyFile("men_favorite.", menFavoriteFile)) {
+                    readContents(menFavoriteFile, mMenFavoriteContentsMap);
+                }
             }
         }
 
@@ -3372,7 +3388,7 @@ public class PlayerWrapper {
         }
     }
 
-    private boolean copyFile(File targetFile) {
+    private boolean copyFile(String flag, File targetFile) {
         if (!targetFile.exists()) {
             try {
                 targetFile.createNewFile();
@@ -3400,7 +3416,7 @@ public class PlayerWrapper {
                 // /wifipro_regexlist.xml
                 Log.i(TAG, "getAssets               : " + fileName);
                 //if (file.getAbsolutePath().contains("contents.")) {
-                if (fileName.contains("contents.")) {
+                if (fileName.contains(flag)) {
                     InputStream is = mContext.getAssets().open(fileName);
                     FileOutputStream fos = new FileOutputStream(targetFile);
                     byte[] buffer = new byte[2048];
@@ -3425,7 +3441,7 @@ public class PlayerWrapper {
         return false;
     }
 
-    private void readContents(File file) {
+    private void readContents(File file, LinkedHashMap<String, String> map) {
         final String TAG = "@@@@@@@@@@";
         BufferedReader reader = null;
         try {
@@ -3464,8 +3480,8 @@ public class PlayerWrapper {
                     sb.append(value);
 
                     if (contents.length > 1) {
-                        if (!mContentsMap.containsKey(key)) {
-                            mContentsMap.put(key, sb.toString());
+                        if (!map.containsKey(key)) {
+                            map.put(key, sb.toString());
                         } else {
                             --i;
                         }

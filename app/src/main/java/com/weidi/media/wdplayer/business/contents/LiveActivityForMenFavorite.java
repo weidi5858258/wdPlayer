@@ -29,15 +29,14 @@ import java.util.Map;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
-public class LiveActivity extends Activity {
+public class LiveActivityForMenFavorite extends Activity {
 
-    private static final String TAG = "LiveActivity";
+    private static final String TAG = "LiveActivityFMF";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -119,7 +118,7 @@ public class LiveActivity extends Activity {
     private ContentsAdapter mAdapter;
     private SharedPreferences mPreferences;
     private int mContentsCount = 0;
-    private final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
+    private final LinkedHashMap<String, String> mMenFavoriteContentsMap = new LinkedHashMap();
     private static final int ONE_TIME_ADD_COUNT = 40;
     private static final int MSG_ON_CLICK_PLAYBACK_BUTTOM = 1;
     private int mClickCount = 0;
@@ -128,7 +127,7 @@ public class LiveActivity extends Activity {
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                LiveActivity.this.uiHandleMessage(msg);
+                LiveActivityForMenFavorite.this.uiHandleMessage(msg);
             }
         };
 
@@ -138,8 +137,8 @@ public class LiveActivity extends Activity {
 
         mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
-        if (!TextUtils.isEmpty(path) && PlayerWrapper.mContentsMap.containsKey(path)) {
-            mAddressET.setText(PlayerWrapper.mContentsMap.get(path));
+        if (!TextUtils.isEmpty(path) && PlayerWrapper.mMenFavoriteContentsMap.containsKey(path)) {
+            mAddressET.setText(PlayerWrapper.mMenFavoriteContentsMap.get(path));
         }
 
         // item高度固定,进行这样的设置以提高性能
@@ -156,29 +155,30 @@ public class LiveActivity extends Activity {
             mRecyclerView.requestFocus();
         }
 
-        if (!PlayerWrapper.mContentsMap.isEmpty()) {
+        if (!PlayerWrapper.mMenFavoriteContentsMap.isEmpty()) {
             initAdapter();
             mRecyclerView.setLayoutManager(mLayoutManager);
             mLayoutManager.setRecyclerView(mRecyclerView);
             mRecyclerView.setAdapter(mAdapter);
             mRecyclerView.addOnScrollListener(OnScrollListener);
-            MLog.d(TAG, "initView() PlayerWrapper.mContentsMap.size(): " +
-                    PlayerWrapper.mContentsMap.size());
+            MLog.d(TAG, "initView() PlayerWrapper.mMenFavoriteContentsMap.size(): " +
+                    PlayerWrapper.mMenFavoriteContentsMap.size());
 
-            if (PlayerWrapper.mContentsMap.size() > 100) {
+            /*if (PlayerWrapper.mMenFavoriteContentsMap.size() > 100) {
                 // 太多的先加载20个
-                mContentsMap.clear();
-                for (Map.Entry<String, String> tempMap : PlayerWrapper.mContentsMap.entrySet()) {
+                mMenFavoriteContentsMap.clear();
+                for (Map.Entry<String, String> tempMap : PlayerWrapper.mMenFavoriteContentsMap
+                .entrySet()) {
                     mContentsCount++;
-                    mContentsMap.put(tempMap.getKey(), tempMap.getValue());
+                    mMenFavoriteContentsMap.put(tempMap.getKey(), tempMap.getValue());
                     if (mContentsCount == ONE_TIME_ADD_COUNT) {
                         break;
                     }
                 }
-                mAdapter.addData(mContentsMap);
+                mAdapter.addData(mMenFavoriteContentsMap);
             } else {
-                mAdapter.setData(PlayerWrapper.mContentsMap);
-            }
+            }*/
+            mAdapter.setData(PlayerWrapper.mMenFavoriteContentsMap);
         }
     }
 
@@ -215,7 +215,7 @@ public class LiveActivity extends Activity {
                             return;
                         }
 
-                        mAddressET.setText(PlayerWrapper.mContentsMap.get(key));
+                        mAddressET.setText(PlayerWrapper.mMenFavoriteContentsMap.get(key));
 
                         switch (viewId) {
                             case R.id.item_root_layout:
@@ -259,9 +259,9 @@ public class LiveActivity extends Activity {
                         && !newPath.startsWith("rtsp://")
                         && !newPath.startsWith("/storage/")) {
                     int index = 0;
-                    if (PlayerWrapper.mContentsMap.containsValue(videoPlaybackPath)) {
+                    if (PlayerWrapper.mMenFavoriteContentsMap.containsValue(videoPlaybackPath)) {
                         for (Map.Entry<String, String> entry :
-                                PlayerWrapper.mContentsMap.entrySet()) {
+                                PlayerWrapper.mMenFavoriteContentsMap.entrySet()) {
                             index++;
                             if (TextUtils.equals(videoPlaybackPath, entry.getValue())) {
                                 videoPlaybackPath = entry.getKey();
@@ -314,8 +314,8 @@ public class LiveActivity extends Activity {
         MLog.i(TAG, "maybeJumpToPosition()       position: " + position);
         if (position < 0) {
             position = 1;
-        } else if (position > PlayerWrapper.mContentsMap.size()) {
-            position = PlayerWrapper.mContentsMap.size();
+        } else if (position > PlayerWrapper.mMenFavoriteContentsMap.size()) {
+            position = PlayerWrapper.mMenFavoriteContentsMap.size();
         }
 
         if (position <= mLayoutManager.getItemCount()) {
@@ -328,23 +328,23 @@ public class LiveActivity extends Activity {
             // 需要加载更多的数据
             int needToLoadCount = position - mLayoutManager.getItemCount();
             needToLoadCount += ONE_TIME_ADD_COUNT;
-            mContentsMap.clear();
+            mMenFavoriteContentsMap.clear();
             int i = 0;
             int addCount = 0;
             for (Map.Entry<String, String> tempMap :
-                    PlayerWrapper.mContentsMap.entrySet()) {
+                    PlayerWrapper.mMenFavoriteContentsMap.entrySet()) {
                 i++;
                 if (i <= mContentsCount) {
                     continue;
                 }
                 mContentsCount++;
                 addCount++;
-                mContentsMap.put(tempMap.getKey(), tempMap.getValue());
+                mMenFavoriteContentsMap.put(tempMap.getKey(), tempMap.getValue());
                 if (addCount == needToLoadCount) {
                     break;
                 }
             }
-            mAdapter.addData(mContentsMap);
+            mAdapter.addData(mMenFavoriteContentsMap);
 
             int finalPosition = position;
             mUiHandler.postDelayed(new Runnable() {
@@ -421,23 +421,24 @@ public class LiveActivity extends Activity {
                                 //&& lastVisiblePosition == (mLayoutManager.getItemCount() - 1)) {
                                 MLog.d(TAG, "onScrollStateChanged() SCROLL_STATE_IDLE");
                                 // 加载更多功能的代码
-                                mContentsMap.clear();
+                                mMenFavoriteContentsMap.clear();
                                 int i = 0;
                                 int addCount = 0;
                                 for (Map.Entry<String, String> tempMap :
-                                        PlayerWrapper.mContentsMap.entrySet()) {
+                                        PlayerWrapper.mMenFavoriteContentsMap.entrySet()) {
                                     i++;
                                     if (i <= mContentsCount) {
                                         continue;
                                     }
                                     mContentsCount++;
                                     addCount++;
-                                    mContentsMap.put(tempMap.getKey(), tempMap.getValue());
+                                    mMenFavoriteContentsMap.put(tempMap.getKey(),
+                                            tempMap.getValue());
                                     if (addCount == ONE_TIME_ADD_COUNT) {
                                         break;
                                     }
                                 }
-                                mAdapter.addData(mContentsMap);
+                                mAdapter.addData(mMenFavoriteContentsMap);
                             }
                             break;
                         default:

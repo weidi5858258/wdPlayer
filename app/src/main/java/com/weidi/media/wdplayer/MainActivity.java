@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
+import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
@@ -257,6 +258,13 @@ public class MainActivity extends AppCompatActivity {
                     case 9:
                         break;
                     case 10:
+                        break;
+                    case 20:
+                        if (IS_PHONE) {
+                            startActivity(
+                                    new Intent(MainActivity.this,
+                                            LiveActivityForMenFavorite.class));
+                        }
                         break;
                     default:
                         break;
