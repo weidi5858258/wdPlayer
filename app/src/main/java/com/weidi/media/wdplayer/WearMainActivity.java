@@ -16,7 +16,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.View;
 
-import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite;
+import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavoriteWear;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForWear;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear;
 import com.weidi.media.wdplayer.business.contents.LocalVideoActivityForWear;
@@ -198,7 +198,7 @@ public class WearMainActivity extends WearableActivity {
                     case 20:
                         startActivity(
                                 new Intent(WearMainActivity.this,
-                                        LiveActivityForMenFavorite.class));
+                                        LiveActivityForMenFavoriteWear.class));
                         break;
                     default:
                         break;

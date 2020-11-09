@@ -356,8 +356,10 @@ public class IjkPlayer {
                         mCallback.onProgressUpdated(position / 1000);
                     }
 
-                    Log.i(TAG, "videoBytes: " + mIjkMediaPlayer.getVideoCachedBytes() +
-                            " audioBytes: " + mIjkMediaPlayer.getAudioCachedBytes());
+                    /*Log.i(TAG, "videoBytes: " + mIjkMediaPlayer.getVideoCachedBytes() +
+                            " audioBytes: " + mIjkMediaPlayer.getAudioCachedBytes() +
+                            " videopackets: " + mIjkMediaPlayer.getVideoCachedPackets() +
+                            " audiopackets: " + mIjkMediaPlayer.getAudioCachedPackets());*/
 
                     mCallback.onTransact(Callback.MSG_ON_TRANSACT_VIDEO_PRODUCER,
                             FFMPEG.videoProducer.writeInt((int) mIjkMediaPlayer.getVideoCachedPackets()));
