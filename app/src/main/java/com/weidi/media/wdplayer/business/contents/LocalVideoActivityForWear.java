@@ -1,6 +1,5 @@
 package com.weidi.media.wdplayer.business.contents;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
@@ -20,7 +19,6 @@ import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
-import com.weidi.recycler_view.VerticalLayoutManager;
 import com.weidi.utils.MyToast;
 
 import java.util.LinkedHashMap;
@@ -32,10 +30,10 @@ import androidx.wear.widget.WearableRecyclerView;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 public class LocalVideoActivityForWear extends WearableActivity {
 
@@ -383,10 +381,10 @@ public class LocalVideoActivityForWear extends WearableActivity {
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
             mAddressET.setText("");
             MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
-        } else if (text.startsWith("player_ff")) {// player_ffmpeg
-            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG).commit();
+        } else if (text.startsWith("player_ijk")) {// player_ijkplayer
+            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
             mAddressET.setText("");
-            MyToast.show(PLAYER_FFMPEG);
+            MyToast.show(PLAYER_IJKPLAYER);
         } else if (text.startsWith("player_mc")) {// player_mediacodec
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_MEDIACODEC).commit();
             mAddressET.setText("");

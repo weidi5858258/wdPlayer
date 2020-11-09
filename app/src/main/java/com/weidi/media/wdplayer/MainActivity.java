@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaFormat;
@@ -55,6 +56,11 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DU
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_PLAYING;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 public class MainActivity extends AppCompatActivity {
@@ -147,6 +153,8 @@ public class MainActivity extends AppCompatActivity {
 
     private int whatIsDevice = -1;
     private int clickCounts = 0;
+    private boolean IS_PHONE = false;
+    private boolean IS_WATCH = false;
     private boolean IS_TV = false;
 
     // 快退
@@ -178,12 +186,19 @@ public class MainActivity extends AppCompatActivity {
         UiModeManager uiModeManager =
                 (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
         whatIsDevice = uiModeManager.getCurrentModeType();
+        IS_PHONE = false;
+        IS_WATCH = false;
         IS_TV = false;
         switch (whatIsDevice) {
+            case Configuration.UI_MODE_TYPE_WATCH:
+                IS_WATCH = true;
+                break;
             case Configuration.UI_MODE_TYPE_TELEVISION:
                 IS_TV = true;
                 break;
+            case Configuration.UI_MODE_TYPE_NORMAL:
             default:
+                IS_PHONE = true;
                 break;
         }
 
@@ -191,9 +206,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 //super.handleMessage(msg);
-                if (clickCounts > 5) {
+
+                SharedPreferences sp = null;
+                /*if (clickCounts > 5) {
                     clickCounts = 5;
-                }
+                }*/
                 switch (clickCounts) {
                     case 1:
                         break;
@@ -201,20 +218,45 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, LiveActivity.class));
                         break;
                     case 3:
-                        Intent intent = new Intent();
-                        intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
-                        intent.setClass(MainActivity.this, JniPlayerActivity.class);
-                        startActivity(intent);
+                        if (IS_PHONE) {
+                            Intent intent = new Intent();
+                            intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
+                            intent.setClass(MainActivity.this, JniPlayerActivity.class);
+                            startActivity(intent);
+                        }
                         break;
                     case 4:
-                        if (PlayerWrapper.IS_PHONE) {
+                        if (IS_PHONE) {
                             startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
-                        } else {
-                            finish();
                         }
                         break;
                     case 5:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
+                        MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
+                        break;
+                    case 6:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
+                        MyToast.show(PLAYER_IJKPLAYER);
+                        break;
+                    case 7:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        int softSolution = sp.getInt(HARD_SOLUTION, 1);
+                        if (softSolution == 1) {
+                            MyToast.show("使用软解");
+                            sp.edit().putInt(HARD_SOLUTION, 0).commit();
+                        } else if (softSolution == 0) {
+                            MyToast.show("使用硬解");
+                            sp.edit().putInt(HARD_SOLUTION, 1).commit();
+                        }
+                        break;
+                    case 8:
                         finish();
+                        break;
+                    case 9:
+                        break;
+                    case 10:
                         break;
                     default:
                         break;

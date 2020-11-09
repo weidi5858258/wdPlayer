@@ -3,7 +3,6 @@ package com.weidi.media.wdplayer.business.contents;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -12,7 +11,6 @@ import android.support.wearable.activity.WearableActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.EditText;
 
 import com.weidi.eventbus.EventBusUtils;
@@ -32,8 +30,9 @@ import androidx.wear.widget.WearableRecyclerView;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 
 public class LiveActivityForWear extends WearableActivity {
@@ -401,10 +400,10 @@ public class LiveActivityForWear extends WearableActivity {
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
             mAddressET.setText("");
             MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
-        } else if (text.startsWith("player_ff")) {// player_ffmpeg
-            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG).commit();
+        } else if (text.startsWith("player_ijk")) {// player_ijkplayer
+            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
             mAddressET.setText("");
-            MyToast.show(PLAYER_FFMPEG);
+            MyToast.show(PLAYER_IJKPLAYER);
         } else if (text.startsWith("player_mc")) {// player_mediacodec
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_MEDIACODEC).commit();
             mAddressET.setText("");

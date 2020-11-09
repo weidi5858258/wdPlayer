@@ -2246,145 +2246,145 @@ namespace alexander_media_mediacodec {
         if (averageTimeDiff > 0) {
             LOGI("hope_to_get_a_good_result() averageTimeDiff: %lf frameRate: %d \n",
                  averageTimeDiff, frameRate);
-            bool isGoodResult = false;
+            /*bool isGoodResult = false;
             if ((bitRate > 0 && bit_rate_video > 0 && bitRate >= bit_rate_video)
                 || (bitRate > 0 && bit_rate_video == 0)
                 || (bitRate == 0 && bit_rate_video == 0)) {
                 isGoodResult = true;
             }
-
             if (isGoodResult) {
-                // region
+            } else {
+                TIME_DIFFERENCE = averageTimeDiff + 0.100000;
+            }*/
 
-                needToGetResultAgain = true;
-                if (averageTimeDiff > 0.500000) {
-                    averageTimeDiffCount++;
-                    needToResetVideoPts = true;
-                } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
-                    // region 第一次就走进这里的话,算是得到一个比较好的结果了
+            // region
 
-                    /***
-                     0.405114 0.418364 0.429602 0.439030 0.449823
-                     0.457614 0.461167 0.472319 0.486549 0.494847
-                     */
-                    needToGetResultAgain = false;
-                    double step = -0.000500;
-                    if (videoWrapper->father->useMediaCodec) {
-                        if (audioWrapper->father->useMediaCodec) {
-                            step = -0.105000;
-                            step = -0.115000;
-                        }
+            needToGetResultAgain = true;
+            if (averageTimeDiff > 0.500000) {
+                averageTimeDiffCount++;
+                needToResetVideoPts = true;
+            } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
+                // region 第一次就走进这里的话,算是得到一个比较好的结果了
 
-                        if (averageTimeDiff > 0.490000) {
-                            TIME_DIFFERENCE = 0.199500 + step;
-                        } else if (averageTimeDiff > 0.480000 && averageTimeDiff < 0.490000) {
-                            TIME_DIFFERENCE = 0.199000 + step;
-                        } else if (averageTimeDiff > 0.470000 && averageTimeDiff < 0.480000) {
-                            TIME_DIFFERENCE = 0.198500 + step;
-                        } else if (averageTimeDiff > 0.460000 && averageTimeDiff < 0.470000) {
-                            TIME_DIFFERENCE = 0.198000 + step;
-                        } else if (averageTimeDiff > 0.450000 && averageTimeDiff < 0.460000) {
-                            TIME_DIFFERENCE = 0.197500 + step;
-                        } else if (averageTimeDiff > 0.440000 && averageTimeDiff < 0.450000) {
-                            TIME_DIFFERENCE = 0.197000 + step;
-                        } else if (averageTimeDiff > 0.430000 && averageTimeDiff < 0.440000) {
-                            TIME_DIFFERENCE = 0.196500 + step;
-                        } else if (averageTimeDiff > 0.420000 && averageTimeDiff < 0.430000) {
-                            TIME_DIFFERENCE = 0.196000 + step;
-                        } else if (averageTimeDiff > 0.410000 && averageTimeDiff < 0.420000) {
-                            TIME_DIFFERENCE = 0.195500 + step;
-                        } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.410000) {
-                            TIME_DIFFERENCE = 0.195000 + step;
-                        }
-
-                        //TIME_DIFFERENCE = 0.200000;
-                    } else {
-                        TIME_DIFFERENCE = 0.300000;
-                    }
-
-                    // endregion
-                } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
-                    /***
-                     0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
-                     */
-                    needToGetResultAgain = false;
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.100000;
-                    } else {
-                        TIME_DIFFERENCE = 0.200000;
-                    }
+                /***
+                 0.405114 0.418364 0.429602 0.439030 0.449823
+                 0.457614 0.461167 0.472319 0.486549 0.494847
+                 */
+                needToGetResultAgain = false;
+                double step = -0.000500;
+                if (videoWrapper->father->useMediaCodec) {
                     if (audioWrapper->father->useMediaCodec) {
-                        //TIME_DIFFERENCE = 0.300000;
-                        TIME_DIFFERENCE = 0.050000;
+                        step = -0.105000;
+                        step = -0.115000;
                     }
-                } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
-                    /***
-                     0.204199 0.245688 0.263926 0.271427 0.284538
-                     */
-                    needToGetResultAgain = false;
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = 0.050000;
-                    } else {
-                        TIME_DIFFERENCE = 0.100000;
+
+                    if (averageTimeDiff > 0.490000) {
+                        TIME_DIFFERENCE = 0.199500 + step;
+                    } else if (averageTimeDiff > 0.480000 && averageTimeDiff < 0.490000) {
+                        TIME_DIFFERENCE = 0.199000 + step;
+                    } else if (averageTimeDiff > 0.470000 && averageTimeDiff < 0.480000) {
+                        TIME_DIFFERENCE = 0.198500 + step;
+                    } else if (averageTimeDiff > 0.460000 && averageTimeDiff < 0.470000) {
+                        TIME_DIFFERENCE = 0.198000 + step;
+                    } else if (averageTimeDiff > 0.450000 && averageTimeDiff < 0.460000) {
+                        TIME_DIFFERENCE = 0.197500 + step;
+                    } else if (averageTimeDiff > 0.440000 && averageTimeDiff < 0.450000) {
+                        TIME_DIFFERENCE = 0.197000 + step;
+                    } else if (averageTimeDiff > 0.430000 && averageTimeDiff < 0.440000) {
+                        TIME_DIFFERENCE = 0.196500 + step;
+                    } else if (averageTimeDiff > 0.420000 && averageTimeDiff < 0.430000) {
+                        TIME_DIFFERENCE = 0.196000 + step;
+                    } else if (averageTimeDiff > 0.410000 && averageTimeDiff < 0.420000) {
+                        TIME_DIFFERENCE = 0.195500 + step;
+                    } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.410000) {
+                        TIME_DIFFERENCE = 0.195000 + step;
                     }
-                } else if (averageTimeDiff > 0.100000 && averageTimeDiff < 0.200000) {
-                    /***
-                     0.100523 0.127849 0.168335
-                     */
-                    needToGetResultAgain = false;
-                    if (videoWrapper->father->useMediaCodec) {
-                        TIME_DIFFERENCE = averageTimeDiff - 0.100000;
-                    } else {
-                        TIME_DIFFERENCE = averageTimeDiff;
-                    }
-                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
-                    needToResetVideoPts2 = true;
-                } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
-                    /***
-                     之前frameRate <= 23时,会走这里.
-                     现在好像当frameRate = 0或者frameRate >= 50时才可能走到这里.
-                     0.014149 0.018936
-                     0.022836 0.023516 0.024403 0.026983 0.027595 0.028610 0.029898
-                     0.030690 0.031515 0.034621 0.035779 0.036042 0.037615 0.038017 0.039632
-                     0.042750 0.043855 0.047141 0.048789
-                     0.052697 0.054136 0.055711 0.059648
-                     0.062606 0.063012 0.064637 0.065509 0.066374 0.067457
-                     0.073902 0.074668 0.079382
-                     0.088914
-                     0.099370
-                     */
-                    needToGetResultAgain = false;
-                    TIME_DIFFERENCE = averageTimeDiff + 0.050000;
-                    if (TIME_DIFFERENCE < 0.100000) {
-                        TIME_DIFFERENCE = 0.100000;
-                    }
-                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
-                    needToResetVideoPts2 = true;
+
+                    //TIME_DIFFERENCE = 0.200000;
+                } else {
+                    TIME_DIFFERENCE = 0.300000;
                 }
 
                 // endregion
-
-                if (needToGetResultAgain) {
-                    runCounts = 0;
-                    averageTimeDiff = 0;
-                    if (needToResetVideoPts) {
-                        TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
-                        if (TIME_DIFFERENCE < 0) {
-                            TIME_DIFFERENCE = 0.100000;
-                        }
-                        //TIME_DIFFERENCE = 0.000800;
-                    }
+            } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
+                /***
+                 0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
+                 */
+                needToGetResultAgain = false;
+                if (videoWrapper->father->useMediaCodec) {
+                    TIME_DIFFERENCE = 0.100000;
                 } else {
-                    // 对4K视频特殊处理
-                    if (frameRate >= 45
-                        && videoWrapper->srcWidth >= 3840
-                        && videoWrapper->srcHeight >= 2160) {
-                        // 增大TIME_DIFFERENCE值让视频加快
-                        TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                    TIME_DIFFERENCE = 0.200000;
+                }
+                if (audioWrapper->father->useMediaCodec) {
+                    //TIME_DIFFERENCE = 0.300000;
+                    TIME_DIFFERENCE = 0.050000;
+                }
+            } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
+                /***
+                 0.204199 0.245688 0.263926 0.271427 0.284538
+                 */
+                needToGetResultAgain = false;
+                if (videoWrapper->father->useMediaCodec) {
+                    TIME_DIFFERENCE = 0.050000;
+                } else {
+                    TIME_DIFFERENCE = 0.100000;
+                }
+            } else if (averageTimeDiff > 0.100000 && averageTimeDiff < 0.200000) {
+                /***
+                 0.100523 0.127849 0.168335
+                 */
+                needToGetResultAgain = false;
+                if (videoWrapper->father->useMediaCodec) {
+                    TIME_DIFFERENCE = averageTimeDiff - 0.100000;
+                } else {
+                    TIME_DIFFERENCE = averageTimeDiff;
+                }
+                TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                needToResetVideoPts2 = true;
+            } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
+                /***
+                 之前frameRate <= 23时,会走这里.
+                 现在好像当frameRate = 0或者frameRate >= 50时才可能走到这里.
+                 0.014149 0.018936
+                 0.022836 0.023516 0.024403 0.026983 0.027595 0.028610 0.029898
+                 0.030690 0.031515 0.034621 0.035779 0.036042 0.037615 0.038017 0.039632
+                 0.042750 0.043855 0.047141 0.048789
+                 0.052697 0.054136 0.055711 0.059648
+                 0.062606 0.063012 0.064637 0.065509 0.066374 0.067457
+                 0.073902 0.074668 0.079382
+                 0.088914
+                 0.099370
+                 */
+                needToGetResultAgain = false;
+                TIME_DIFFERENCE = averageTimeDiff + 0.050000;
+                if (TIME_DIFFERENCE < 0.100000) {
+                    TIME_DIFFERENCE = 0.100000;
+                }
+                TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                needToResetVideoPts2 = true;
+            }
+
+            // endregion
+
+            if (needToGetResultAgain) {
+                runCounts = 0;
+                averageTimeDiff = 0;
+                if (needToResetVideoPts) {
+                    TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
+                    if (TIME_DIFFERENCE < 0) {
+                        TIME_DIFFERENCE = 0.100000;
                     }
+                    //TIME_DIFFERENCE = 0.000800;
                 }
             } else {
-                TIME_DIFFERENCE = averageTimeDiff + 0.100000;
+                // 对4K视频特殊处理
+                if (frameRate >= 45
+                    && videoWrapper->srcWidth >= 3840
+                    && videoWrapper->srcHeight >= 2160) {
+                    // 增大TIME_DIFFERENCE值让视频加快
+                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                }
             }
             LOGI("hope_to_get_a_good_result() TIME_DIFFERENCE: %lf\n", TIME_DIFFERENCE);
         }

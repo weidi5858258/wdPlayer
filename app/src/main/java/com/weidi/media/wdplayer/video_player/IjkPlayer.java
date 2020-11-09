@@ -11,17 +11,15 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.Surface;
-import android.view.View;
 
 import com.weidi.media.wdplayer.util.Callback;
-
-import java.io.IOException;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 
 /***
  ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);//关闭mediacodec硬解，使用软解
@@ -266,23 +264,35 @@ public class IjkPlayer {
         mIjkMediaPlayer = new IjkMediaPlayer();
         mIjkMediaPlayer.native_setLogLevel(IjkMediaPlayer.IJK_LOG_DEBUG);
 
-        /*mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 0);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 0);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);*/
+        boolean useHardSolution = true;
+        if (mContext != null) {
+            SharedPreferences sp =
+                    mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+            int softSolution = sp.getInt(HARD_SOLUTION, 1);
+            if (softSolution == 0) {
+                useHardSolution = false;
+            }
+        }
 
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1);
-        mIjkMediaPlayer.setOption(
-                IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
+        if (useHardSolution) {
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 1);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 1);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 1);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 1);
+        } else {
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-auto-rotate", 0);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec-handle-resolution-change", 0);
+            mIjkMediaPlayer.setOption(
+                    IjkMediaPlayer.OPT_CATEGORY_PLAYER, "opensles", 0);
+        }
 
         mIjkMediaPlayer.setOption(
                 IjkMediaPlayer.OPT_CATEGORY_PLAYER, "overlay-format", IjkMediaPlayer.SDL_FCC_RV32);

@@ -1,7 +1,9 @@
 package com.weidi.media.wdplayer;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,6 +26,11 @@ import java.io.File;
 
 import androidx.annotation.NonNull;
 
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 //import android.support.wearable.activity.WearableActivity;
@@ -136,9 +143,11 @@ public class WearMainActivity extends WearableActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 //super.handleMessage(msg);
-                if (clickCounts > 5) {
+
+                SharedPreferences sp = null;
+                /*if (clickCounts > 5) {
                     clickCounts = 5;
-                }
+                }*/
                 switch (clickCounts) {
                     case 1:
                         break;
@@ -158,7 +167,32 @@ public class WearMainActivity extends WearableActivity {
                                 new Intent(WearMainActivity.this, LocalVideoActivityForWear.class));
                         break;
                     case 5:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
+                        MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
+                        break;
+                    case 6:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
+                        MyToast.show(PLAYER_IJKPLAYER);
+                        break;
+                    case 7:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        int softSolution = sp.getInt(HARD_SOLUTION, 1);
+                        if (softSolution == 1) {
+                            MyToast.show("使用软解");
+                            sp.edit().putInt(HARD_SOLUTION, 0).commit();
+                        } else if (softSolution == 0) {
+                            MyToast.show("使用硬解");
+                            sp.edit().putInt(HARD_SOLUTION, 1).commit();
+                        }
+                        break;
+                    case 8:
                         finish();
+                        break;
+                    case 9:
+                        break;
+                    case 10:
                         break;
                     default:
                         break;

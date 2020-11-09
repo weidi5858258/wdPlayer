@@ -86,7 +86,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLA
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
-import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
@@ -186,6 +186,7 @@ public class PlayerWrapper {
     private boolean mIsSeparatedAudioVideo = false;
     private long mMediaDuration;
     private boolean mIsLocal = true;
+    private boolean mIsLive = false;
     private boolean mIsH264 = false;
     private boolean mIsVideo = false;
     private boolean mIsAudio = false;
@@ -1818,6 +1819,13 @@ public class PlayerWrapper {
         }
     }
 
+    private void abandonAudioFocusRequest() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && mAudioFocusRequest != null) {
+            mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
+        }
+    }
+
     // 执行全屏和取消全屏的方法
     private void setFullscreen(Activity context, boolean fullscreen) {
         Window window = context.getWindow();
@@ -2106,7 +2114,7 @@ public class PlayerWrapper {
                             mScreenWidth,
                             mNeedVideoHeight, x, y);
                 } else {
-                    if (mMediaDuration <= 0) {
+                    if (mIsLive) {
                         // 直播节目
                         updateRootViewLayout(
                                 mScreenWidth,
@@ -2119,13 +2127,13 @@ public class PlayerWrapper {
                 }
             } else {
                 if (mIsVideo) {
-                    if (mMediaDuration <= 0) {
+                    if (mIsLive) {
                         // 是视频并且只下载不播放的情况下
                         updateRootViewLayout(mScreenWidth, pauseRlHeight, x, y);
                         return;
                     }
                 }
-                if (mMediaDuration > 0) {
+                if (!mIsLive) {
                     // 音乐 或者 mMediaDuration > 0
                     updateRootViewLayout(mScreenWidth, mControllerPanelLayoutHeight + 1, x, y);
                 } else {
@@ -2222,7 +2230,7 @@ public class PlayerWrapper {
                 if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
                     updateRootViewLayout(mScreenWidth, mNeedVideoHeight, x, y);
                 } else {
-                    if (mMediaDuration <= 0) {
+                    if (mIsLive) {
                         updateRootViewLayout(mScreenWidth,
                                 mNeedVideoHeight + pauseRlHeight, x, y);
                     } else {
@@ -2694,6 +2702,11 @@ public class PlayerWrapper {
                     mFFMPEGPlayer.onTransact(
                             DO_SOMETHING_CODE_getDuration, null));
         }
+        if (mMediaDuration <= 0) {
+            mIsLive = true;
+        } else {
+            mIsLive = false;
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW               mMediaDuration: " +
                 mMediaDuration);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                   videoWidth: " +
@@ -2807,10 +2820,7 @@ public class PlayerWrapper {
                     mSurfaceHolder.removeCallback(mSurfaceCallback);
                     mSurfaceHolder = null;
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        && mAudioFocusRequest != null) {
-                    mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
-                }
+                abandonAudioFocusRequest();
                 System.gc();
 
                 mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
@@ -2846,6 +2856,7 @@ public class PlayerWrapper {
             case Callback.ERROR_TIME_OUT:
                 //case Callback.ERROR_DATA_EXCEPTION:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_OUT errorInfo: " + errorInfo);
+                MyToast.show("读取数据超时");
                 // 需要重新播放
                 mHasError = true;
                 break;
@@ -2876,10 +2887,7 @@ public class PlayerWrapper {
                     mSurfaceHolder.removeCallback(mSurfaceCallback);
                     mSurfaceHolder = null;
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                        && mAudioFocusRequest != null) {
-                    mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
-                }
+                abandonAudioFocusRequest();
                 System.gc();
                 break;
             default:
@@ -2896,7 +2904,7 @@ public class PlayerWrapper {
             mProgressTimeTV.setText(String.valueOf(mPresentationTime));
         }
 
-        if (mMediaDuration > 0) {
+        if (!mIsLive) {
             if (mNeedToSyncProgressBar) {
                 int currentPosition = (int) (mPresentationTime);
                 float pos = (float) currentPosition / mMediaDuration;
@@ -2950,7 +2958,7 @@ public class PlayerWrapper {
             ImageButton button_repeat_one = mRootView.findViewById(R.id.button_repeat_one);
             ImageButton button_shuffle_off = mRootView.findViewById(R.id.button_shuffle_off);
             ImageButton button_shuffle_on = mRootView.findViewById(R.id.button_shuffle_on);
-            if (mMediaDuration <= 0 && !mIsH264) {
+            if (mIsLive && !mIsH264) {
                 progress_bar.setVisibility(View.GONE);
                 show_time_rl.setVisibility(View.GONE);
                 if (!IS_WATCH) {
@@ -3155,6 +3163,17 @@ public class PlayerWrapper {
     }
 
     private void clickFive() {
+        int softSolution = mSP.getInt(HARD_SOLUTION, 1);
+        if (softSolution == 1) {
+            MyToast.show("使用软解");
+            mSP.edit().putInt(HARD_SOLUTION, 0).commit();
+        } else if (softSolution == 0) {
+            MyToast.show("使用硬解");
+            mSP.edit().putInt(HARD_SOLUTION, 1).commit();
+        }
+    }
+
+    private void clickSix() {
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
         } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
         } else {
@@ -3184,17 +3203,6 @@ public class PlayerWrapper {
                 mPauseIB.setVisibility(View.VISIBLE);
                 MyToast.show("帧模式已开启");
             }
-        }
-    }
-
-    private void clickSix() {
-        String whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
-        if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
-            MyToast.show(PLAYER_FFMPEG);
-            mSP.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG).commit();
-        } else {
-            MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
-            mSP.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
         }
     }
 

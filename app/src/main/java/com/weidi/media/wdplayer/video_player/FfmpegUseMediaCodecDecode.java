@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
 
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
@@ -361,7 +362,6 @@ public class FfmpegUseMediaCodecDecode {
      */
     public boolean initAudioMediaCodec(JniObject jniObject) {
         Log.d(TAG, "initAudioMediaCodec() start");
-
         if (jniObject == null
                 || jniObject.valueObjectArray == null
                 || jniObject.valueObjectArray.length < 2) {
@@ -372,8 +372,8 @@ public class FfmpegUseMediaCodecDecode {
         if (mContext != null) {
             SharedPreferences sp =
                     mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-            String whatPlayer = sp.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
-            if (!TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+            int softSolution = sp.getInt(HARD_SOLUTION, 1);
+            if (softSolution == 0) {
                 return false;
             }
         }
@@ -691,6 +691,15 @@ public class FfmpegUseMediaCodecDecode {
             return false;
         }
 
+        if (mContext != null) {
+            SharedPreferences sp =
+                    mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+            int softSolution = sp.getInt(HARD_SOLUTION, 1);
+            if (softSolution == 0) {
+                return false;
+            }
+        }
+
         if (mVideoWrapper != null
                 && mVideoWrapper.decoderMediaCodec != null) {
             // mVideoWrapper.decoderMediaCodec.flush();
@@ -778,28 +787,6 @@ public class FfmpegUseMediaCodecDecode {
         // 码率
         int bitrate = (int) parameters[4];
         int max_input_size = (int) parameters[5];
-
-        if (mContext != null) {
-            SharedPreferences sp =
-                    mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-            String whatPlayer = sp.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
-            if (!TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)
-                    /*||
-                    // 480P及以下的视频使用ffmpeg解码
-                    (((width <= 854 && height <= 480)
-                            || (width <= 480 && height <= 854))
-                            && duration > 0 && duration <= 600
-                            && frame_rate <= 30)*/) {
-                return false;
-            }
-
-            /*String use_mode = sp.getString(PLAYBACK_USE_EXOPLAYER_OR_FFMPEG, "use_exoplayer");
-            if (TextUtils.equals(use_mode, "use_ffmpeg")
-                    || TextUtils.equals(videoMime, "video/hevc")) {
-                // http://112.17.40.12/PLTV/88888888/224/3221226758/1.m3u8 (video/hevc)
-                useExoPlayerForMediaFormat = false;
-            }*/
-        }
 
         // region
 

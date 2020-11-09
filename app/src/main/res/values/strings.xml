@@ -10,21 +10,29 @@
     <string name="handle_info">
         \n
         播放器选择:\n
-        player_fm&#160;&#160;-> player_ffmpeg_mediacodec(自主研发)\n
+        player_fm&#160;&#160;-> player_ffmpeg_mediacodec\n
         player_ijk&#160;&#160;&#160;-> player_ijkplayer\n
-        player_ff&#160;&#160;&#160;&#160;-> player_ffmpeg\n
         player_mc&#160;-> player_mediacodec(测试使用)\n
+        \n
+        敲击当前文字界面的次数操作:\n
+        2次.进入在线视频节目\n
+        3次.(手机)进入全屏状态,(手表)进入本地音乐节目\n
+        4次.(手机)进入本地音乐节目,(手表)进入本地视频节目\n
+        5次.使用player_ffmpeg_mediacodec\n
+        6次.使用player_ijkplayer\n
+        7次.使用硬解还是软解\n
+        8次.退出应用\n
         \n
         敲击播放界面的次数操作:\n
         1次.O系统以上(包括O系统)或横屏,显示或隐藏有关信息和控制面板\n
         2次.播放或暂停\n
         3次.缓冲\n
         4次.竖屏时不变,横屏时三种情况之间不断切换\n
-        5次.帧模式\n
-        6次.是否使用音视频硬解码\n
-        7次.是否使用音频硬解码\n
-        8次.关闭音频,播放视频\n
-        9次.关闭视频,播放音频\n
+        5次.使用硬解还是软解\n
+        6次.帧模式(针对player_ffmpeg_mediacodec)\n
+        7次.是否使用音频硬解码(针对player_ffmpeg_mediacodec)\n
+        8次.关闭音频,播放视频(针对player_ffmpeg_mediacodec)\n
+        9次.关闭视频,播放音频(针对player_ffmpeg_mediacodec)\n
         10次.退出播放
         \n
     </string>
