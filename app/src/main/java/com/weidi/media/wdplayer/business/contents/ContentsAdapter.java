@@ -228,7 +228,6 @@ public class ContentsAdapter extends RecyclerView.Adapter {
                         //Log.i("ContentsAdapter", "view: " + view + " hasFocus: " + hasFocus);
 
                         if (hasFocus) {
-                            focusedView = view;
                             prePosition = curPosition;
                             curPosition = mRecyclerView.getChildLayoutPosition(view);
                             if (curPosition == -1) {
@@ -295,7 +294,6 @@ public class ContentsAdapter extends RecyclerView.Adapter {
 
     }
 
-    private View focusedView;
     private Handler mUiHandler = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
