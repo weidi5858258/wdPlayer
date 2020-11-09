@@ -79,6 +79,8 @@ public class IjkPlayer {
     private Surface mSurface = null;
     private long mPositionMs;
     public boolean mIsLocal = true;
+    private boolean mHasPlayed = true;
+
 
     //    private IMediaPlayer.OnBufferingUpdateListener mOnBufferingUpdateListener;
     //    private IMediaPlayer.OnSeekCompleteListener mOnSeekCompleteListener;
@@ -224,6 +226,7 @@ public class IjkPlayer {
         // because somebody might have called start() previously
         release(false);
 
+        mHasPlayed = true;
         mCurrentState = STATE_IDLE;
 
         // init player
@@ -361,10 +364,21 @@ public class IjkPlayer {
                             " videopackets: " + mIjkMediaPlayer.getVideoCachedPackets() +
                             " audiopackets: " + mIjkMediaPlayer.getAudioCachedPackets());*/
 
-                    mCallback.onTransact(Callback.MSG_ON_TRANSACT_VIDEO_PRODUCER,
-                            FFMPEG.videoProducer.writeInt((int) mIjkMediaPlayer.getVideoCachedPackets()));
-                    mCallback.onTransact(Callback.MSG_ON_TRANSACT_AUDIO_PRODUCER,
-                            FFMPEG.audioProducer.writeInt((int) mIjkMediaPlayer.getAudioCachedPackets()));
+                    if (!mIsLocal) {
+                        int videoPackets = (int) mIjkMediaPlayer.getVideoCachedPackets();
+                        int audioPackets = (int) mIjkMediaPlayer.getAudioCachedPackets();
+                        if (mHasPlayed && (videoPackets <= 10 || audioPackets <= 10)) {
+                            mHasPlayed = false;
+                            mCallback.onPaused();
+                        } else if (!mHasPlayed && videoPackets > 10 && audioPackets > 10) {
+                            mHasPlayed = true;
+                            mCallback.onPlayed();
+                        }
+                        mCallback.onTransact(Callback.MSG_ON_TRANSACT_VIDEO_PRODUCER,
+                                FFMPEG.videoProducer.writeInt(videoPackets));
+                        mCallback.onTransact(Callback.MSG_ON_TRANSACT_AUDIO_PRODUCER,
+                                FFMPEG.audioProducer.writeInt(audioPackets));
+                    }
 
                     mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
                     mUiHandler.sendEmptyMessageDelayed(
