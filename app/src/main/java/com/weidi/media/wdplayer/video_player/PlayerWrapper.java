@@ -2729,7 +2729,7 @@ public class PlayerWrapper {
                     mControllerPanelLayout.setVisibility(View.INVISIBLE);
                     textInfoScrollView.setVisibility(View.GONE);
                 }
-                if (!mIsLocal && !TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+                if (!mIsLocal/* && !TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)*/) {
                     mProgressBarLayout.setVisibility(View.VISIBLE);
                 }
                 if (!mCouldPlaybackPathList.contains(mCurPath)) {
@@ -3310,7 +3310,7 @@ public class PlayerWrapper {
             }
         }
 
-        if (IS_PHONE) {
+        if (IS_PHONE || IS_WATCH) {
             sb.delete(0, sb.length());
             sb.append(file.getAbsolutePath());
             sb.append("/");
@@ -3323,9 +3323,7 @@ public class PlayerWrapper {
                     readContents(menFavoriteFile, mMenFavoriteContentsMap);
                 }
             }
-        }
 
-        if (IS_PHONE || IS_WATCH) {
             // 最好把文件放在下面这些目录中
             // Alarms  DCIM      Download Music         Pictures Ringtones
             // Android Documents Movies   Notifications Podcasts

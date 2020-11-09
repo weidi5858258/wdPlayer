@@ -320,6 +320,8 @@ public class IjkPlayer {
                     IjkMediaPlayer.OPT_CATEGORY_FORMAT, "analyzeduration", 1);
             mIjkMediaPlayer.setOption(
                     IjkMediaPlayer.OPT_CATEGORY_PLAYER, "min-frames", 100);
+
+            mIjkMediaPlayer.setCacheShare(100);
         } else {
             // 清空DNS,有时因为在APP里面要播放多种类型的视频(如:MP4,直播,直播平台保存的视频,和其他http视频),
             // 有时会造成因为DNS的问题而报10000问题
@@ -329,6 +331,8 @@ public class IjkPlayer {
             // 参考 https://github.com/Bilibili/ijkplayer/issues/445
             mIjkMediaPlayer.setOption(
                     IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
+
+            mIjkMediaPlayer.setCacheShare(10000);
         }
     }
 
@@ -351,6 +355,15 @@ public class IjkPlayer {
                     if (position > 0) {
                         mCallback.onProgressUpdated(position / 1000);
                     }
+
+                    Log.i(TAG, "videoBytes: " + mIjkMediaPlayer.getVideoCachedBytes() +
+                            " audioBytes: " + mIjkMediaPlayer.getAudioCachedBytes());
+
+                    mCallback.onTransact(Callback.MSG_ON_TRANSACT_VIDEO_PRODUCER,
+                            FFMPEG.videoProducer.writeInt((int) mIjkMediaPlayer.getVideoCachedPackets()));
+                    mCallback.onTransact(Callback.MSG_ON_TRANSACT_AUDIO_PRODUCER,
+                            FFMPEG.audioProducer.writeInt((int) mIjkMediaPlayer.getAudioCachedPackets()));
+
                     mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
                     mUiHandler.sendEmptyMessageDelayed(
                             Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED, 1000);
