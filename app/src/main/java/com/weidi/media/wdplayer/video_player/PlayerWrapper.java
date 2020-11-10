@@ -201,15 +201,15 @@ public class PlayerWrapper {
     private AudioFocusRequest mAudioFocusRequest;
     private int minVolume;
     private int maxVolume;
-
+    // 查看剩余电量
     private BatteryManager mBatteryManager;
 
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
-    private ProgressBar mLoadingView;
-    private SeekBar mProgressBar;
+    private ProgressBar mLoadingLayout;
+    private SeekBar mPositionSeekBar;
     private TextView mFileNameTV;
-    private TextView mProgressTimeTV;
+    private TextView mPositionTimeTV;
     private TextView mSeekTimeTV;
     private TextView mDurationTimeTV;
     // 快退
@@ -269,10 +269,10 @@ public class PlayerWrapper {
     // 控制面板的高度
     private int mControllerPanelLayoutHeight;
     // 音视频的加载进度
-    private LinearLayout mProgressBarLayout;
+    private LinearLayout mDataCacheLayout;
     private ProgressBar mVideoProgressBar;
     private ProgressBar mAudioProgressBar;
-    private int mProgressBarLayoutHeight;
+    private int mDataCacheLayoutHeight;
 
     private Context mContext;
     private PlayerService mService;
@@ -359,10 +359,10 @@ public class PlayerWrapper {
 
         LayoutInflater inflater =
                 (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        if (!IS_WATCH) {
-            mRootView = inflater.inflate(R.layout.media_player, null);
-        } else {
+        if (IS_WATCH) {
             mRootView = inflater.inflate(R.layout.media_player_wear, null);
+        } else {
+            mRootView = inflater.inflate(R.layout.media_player, null);
         }
         mLayoutParams = new WindowManager.LayoutParams();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -383,10 +383,10 @@ public class PlayerWrapper {
 
         mSurfaceView = mRootView.findViewById(R.id.surfaceView);
         mControllerPanelLayout = mRootView.findViewById(R.id.controller_panel_layout);
-        mLoadingView = mRootView.findViewById(R.id.loading_view);
-        mProgressBar = mRootView.findViewById(R.id.progress_bar);
+        mLoadingLayout = mRootView.findViewById(R.id.loading_view);
+        mPositionSeekBar = mRootView.findViewById(R.id.progress_bar);
         mFileNameTV = mRootView.findViewById(R.id.file_name_tv);
-        mProgressTimeTV = mRootView.findViewById(R.id.progress_time_tv);
+        mPositionTimeTV = mRootView.findViewById(R.id.progress_time_tv);
         mSeekTimeTV = mRootView.findViewById(R.id.seek_time_tv);
         mDurationTimeTV = mRootView.findViewById(R.id.duration_time_tv);
 
@@ -411,7 +411,7 @@ public class PlayerWrapper {
         mVolumeMax = mRootView.findViewById(R.id.button_volume_max);
         mVolumeSeekBar = mRootView.findViewById(R.id.volume_progress_bar);
 
-        mProgressBarLayout = mRootView.findViewById(R.id.progress_bar_layout);
+        mDataCacheLayout = mRootView.findViewById(R.id.progress_bar_layout);
         mVideoProgressBar = mRootView.findViewById(R.id.video_progress_bar);
         mAudioProgressBar = mRootView.findViewById(R.id.audio_progress_bar);
 
@@ -561,10 +561,10 @@ public class PlayerWrapper {
         int duration = (int) mMediaDuration;
         int currentPosition = (int) mPresentationTime;
         float pos = (float) currentPosition / duration;
-        int target = Math.round(pos * mProgressBar.getMax());
-        mProgressBar.setProgress(target);
-        mProgressBar.setSecondaryProgress(0);
-        mProgressBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        int target = Math.round(pos * mPositionSeekBar.getMax());
+        mPositionSeekBar.setProgress(target);
+        mPositionSeekBar.setSecondaryProgress(0);
+        mPositionSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
             }
@@ -590,7 +590,7 @@ public class PlayerWrapper {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
-        mProgressBar.setOnTouchListener(new View.OnTouchListener() {
+        mPositionSeekBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -678,7 +678,11 @@ public class PlayerWrapper {
         });
 
         minVolume = 0;
-        maxVolume = 15;
+        if (IS_TV) {
+            maxVolume = 100;
+        } else {
+            maxVolume = 15;
+        }
         int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             minVolume = mAudioManager.getStreamMinVolume(AudioManager.STREAM_MUSIC);
@@ -730,11 +734,11 @@ public class PlayerWrapper {
 
         if (mSurfaceHolder == null) {
             mSurfaceHolder = mSurfaceView.getHolder();
-            // 没有图像出来,就是由于没有设置PixelFormat.RGBA_8888
-            // 这里要写
-            mSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
-            mSurfaceHolder.addCallback(mSurfaceCallback);
         }
+        // 没有图像出来,就是由于没有设置PixelFormat.RGBA_8888
+        // 这里要写
+        mSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
+        mSurfaceHolder.addCallback(mSurfaceCallback);
     }
 
     private void onPause() {
@@ -1948,18 +1952,18 @@ public class PlayerWrapper {
                 mControllerPanelLayoutHeight);
 
         // 生产,消耗进度条高度
-        mProgressBarLayoutHeight = mProgressBarLayout.getHeight();
+        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mProgressBarLayoutHeight);
-        if (mProgressBarLayoutHeight > 0) {
+                mDataCacheLayoutHeight);
+        if (mDataCacheLayoutHeight > 0) {
             RelativeLayout.LayoutParams relativeParams =
-                    (RelativeLayout.LayoutParams) mProgressBarLayout.getLayoutParams();
+                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
             relativeParams.setMargins(
                     (mScreenWidth - mNeedVideoWidth) / 2, (mScreenHeight - mNeedVideoHeight) / 2,
                     0, 0);
             relativeParams.width = mNeedVideoWidth;
-            relativeParams.height = mProgressBarLayoutHeight;
-            mProgressBarLayout.setLayoutParams(relativeParams);
+            relativeParams.height = mDataCacheLayoutHeight;
+            mDataCacheLayout.setLayoutParams(relativeParams);
         }
 
         // 改变SurfaceView宽高度
@@ -2048,16 +2052,16 @@ public class PlayerWrapper {
                 mScreenWidth + " mScreenHeight: " + mScreenHeight);
 
         // 生产,消耗进度条高度
-        mProgressBarLayoutHeight = mProgressBarLayout.getHeight();
+        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mProgressBarLayoutHeight);
-        if (mProgressBarLayoutHeight > 0) {
+                mDataCacheLayoutHeight);
+        if (mDataCacheLayoutHeight > 0) {
             RelativeLayout.LayoutParams relativeParams =
-                    (RelativeLayout.LayoutParams) mProgressBarLayout.getLayoutParams();
+                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
             relativeParams.setMargins(0, 0, 0, 0);
             relativeParams.width = mScreenWidth;
-            relativeParams.height = mProgressBarLayoutHeight;
-            mProgressBarLayout.setLayoutParams(relativeParams);
+            relativeParams.height = mDataCacheLayoutHeight;
+            mDataCacheLayout.setLayoutParams(relativeParams);
         }
 
         // 改变SurfaceView高度
@@ -2498,7 +2502,7 @@ public class PlayerWrapper {
                 mPlayIB.setVisibility(View.VISIBLE);
                 mPauseIB.setVisibility(View.INVISIBLE);
                 if (!IS_WATCH) {
-                    mLoadingView.setVisibility(View.GONE);
+                    mLoadingLayout.setVisibility(View.GONE);
                 }
                 sendEmptyMessage(DO_SOMETHING_CODE_play);
             }
@@ -2629,7 +2633,7 @@ public class PlayerWrapper {
         if (mIsVideo) {
             if (!mIsLocal) {
                 if (!IS_WATCH) {
-                    mLoadingView.setVisibility(View.VISIBLE);
+                    mLoadingLayout.setVisibility(View.VISIBLE);
                 }
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
             } else {
@@ -2644,18 +2648,18 @@ public class PlayerWrapper {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
         setControllerPanelBackgroundColor();
-        mProgressTimeTV.setText("00:00:00");
+        mPositionTimeTV.setText("00:00:00");
         mDurationTimeTV.setText("00:00:00");
-        mProgressBar.setProgress(0);
-        mProgressBar.setPadding(0, 0, 0, 0);
-        mProgressBar.setThumbOffset(0);
+        mPositionSeekBar.setProgress(0);
+        mPositionSeekBar.setPadding(0, 0, 0, 0);
+        mPositionSeekBar.setThumbOffset(0);
         // 左边进度值
         mVideoProgressBar.setProgress(0);
         // 右边进度值
         mVideoProgressBar.setSecondaryProgress(0);
         mAudioProgressBar.setProgress(0);
         mAudioProgressBar.setSecondaryProgress(0);
-        mProgressBarLayout.setVisibility(View.GONE);
+        mDataCacheLayout.setVisibility(View.GONE);
         mPlayIB.setVisibility(View.VISIBLE);
         mPauseIB.setVisibility(View.INVISIBLE);
         mVolumeLayout.setVisibility(View.INVISIBLE);
@@ -2730,7 +2734,7 @@ public class PlayerWrapper {
                     textInfoScrollView.setVisibility(View.GONE);
                 }
                 if (!mIsLocal/* && !TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)*/) {
-                    mProgressBarLayout.setVisibility(View.VISIBLE);
+                    mDataCacheLayout.setVisibility(View.VISIBLE);
                 }
                 if (!mCouldPlaybackPathList.contains(mCurPath)) {
                     mCouldPlaybackPathList.add(mCurPath);
@@ -2741,7 +2745,7 @@ public class PlayerWrapper {
                 setType("audio/");
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.GONE);
-                mProgressBarLayout.setVisibility(View.GONE);
+                mDataCacheLayout.setVisibility(View.GONE);
             }
         }
 
@@ -2779,7 +2783,7 @@ public class PlayerWrapper {
         mPlayIB.setVisibility(View.VISIBLE);
         mPauseIB.setVisibility(View.INVISIBLE);
         if (!IS_WATCH) {
-            mLoadingView.setVisibility(View.GONE);
+            mLoadingLayout.setVisibility(View.GONE);
         } else {
             if (mIsVideo) {
                 MyToast.show("Play");
@@ -2792,7 +2796,7 @@ public class PlayerWrapper {
         //mPauseIB.setVisibility(View.VISIBLE);
         if (!mIsLocal) {
             if (!IS_WATCH) {
-                mLoadingView.setVisibility(View.VISIBLE);
+                mLoadingLayout.setVisibility(View.VISIBLE);
             } else {
                 if (mIsVideo) {
                     MyToast.show("Pause");
@@ -2900,17 +2904,17 @@ public class PlayerWrapper {
         // 秒
         mPresentationTime = (Long) msg.obj;
         if (!mIsH264) {
-            mProgressTimeTV.setText(DateUtils.formatElapsedTime(mPresentationTime));
+            mPositionTimeTV.setText(DateUtils.formatElapsedTime(mPresentationTime));
         } else {
-            mProgressTimeTV.setText(String.valueOf(mPresentationTime));
+            mPositionTimeTV.setText(String.valueOf(mPresentationTime));
         }
 
         if (!mIsLive) {
             if (mNeedToSyncProgressBar) {
                 int currentPosition = (int) (mPresentationTime);
                 float pos = (float) currentPosition / mMediaDuration;
-                int target = Math.round(pos * mProgressBar.getMax());
-                mProgressBar.setProgress(target);
+                int target = Math.round(pos * mPositionSeekBar.getMax());
+                mPositionSeekBar.setProgress(target);
             }
 
             if (mPresentationTime < (mMediaDuration - 5)) {
@@ -3057,7 +3061,7 @@ public class PlayerWrapper {
                     mPlayIB.setVisibility(View.VISIBLE);
                     mPauseIB.setVisibility(View.INVISIBLE);
                     if (!IS_WATCH) {
-                        mLoadingView.setVisibility(View.GONE);
+                        mLoadingLayout.setVisibility(View.GONE);
                     }
                     mIjkPlayer.start();
                 }
@@ -3082,7 +3086,7 @@ public class PlayerWrapper {
                 mPlayIB.setVisibility(View.VISIBLE);
                 mPauseIB.setVisibility(View.INVISIBLE);
                 if (!IS_WATCH) {
-                    mLoadingView.setVisibility(View.GONE);
+                    mLoadingLayout.setVisibility(View.GONE);
                 }
                 sendEmptyMessage(DO_SOMETHING_CODE_play);
             }
@@ -3117,7 +3121,7 @@ public class PlayerWrapper {
             mPauseIB.setVisibility(View.VISIBLE);
             if (!mIsLocal) {
                 if (!IS_WATCH) {
-                    mLoadingView.setVisibility(View.VISIBLE);
+                    mLoadingLayout.setVisibility(View.VISIBLE);
                 }
             }
             sendEmptyMessage(DO_SOMETHING_CODE_pause);

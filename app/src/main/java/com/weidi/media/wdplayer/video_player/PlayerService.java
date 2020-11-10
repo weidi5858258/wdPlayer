@@ -154,10 +154,10 @@ public class PlayerService extends Service {
 
         String action = intent.getAction();
         Log.d(TAG, "internalStartCommand()   action: " + action);
-        if (TextUtils.isEmpty(action)) {
+        /*if (TextUtils.isEmpty(action)) {
             handleAppCrash();
             return;
-        }
+        }*/
 
         if (!TextUtils.equals(COMMAND_ACTION, action)) {
             return;
