@@ -3,7 +3,6 @@ http://ivi.bupt.edu.cn/hls/cctv1.m3u8@@@@@@@@@@CCTV-1综合
 http://ivi.bupt.edu.cn/hls/cctv2.m3u8@@@@@@@@@@CCTV-2财经
 http://ivi.bupt.edu.cn/hls/cctv3.m3u8@@@@@@@@@@CCTV-3综艺
 http://ivi.bupt.edu.cn/hls/cctv4.m3u8@@@@@@@@@@CCTV-4中文国际
-http://112.17.40.145/PLTV/88888888/224/3221226687/index.m3u8@@@@@@@@@@CCTV-5体育赛事
 http://ivi.bupt.edu.cn/hls/cctv6.m3u8@@@@@@@@@@CCTV-6电影
 http://ivi.bupt.edu.cn/hls/cctv7.m3u8@@@@@@@@@@CCTV-7国防军事
 http://ivi.bupt.edu.cn/hls/cctv8.m3u8@@@@@@@@@@CCTV-8电视剧
@@ -13,18 +12,14 @@ http://ivi.bupt.edu.cn/hls/cctv11.m3u8@@@@@@@@@@CCTV-11戏曲
 http://ivi.bupt.edu.cn/hls/cctv12.m3u8@@@@@@@@@@CCTV-12社会与法
 http://ivi.bupt.edu.cn/hls/cctv13.m3u8@@@@@@@@@@CCTV-13新闻
 http://223.110.241.130:6610/gitv/live1/G_CCTV-13-HQ/.m3u8@@@@@@@@@@CCTV-13新闻
-http://39.134.157.205/PLTV/88888888/224/3221225597/index.m3u8@@@@@@@@@@CCTV-13新闻高清*
-http://39.134.157.205/PLTV/88888888/224/3221225505/index.m3u8@@@@@@@@@@CCTV-13新闻高清*
 http://ivi.bupt.edu.cn/hls/cctv14.m3u8@@@@@@@@@@CCTV-14少儿
 http://ivi.bupt.edu.cn/hls/cctv15.m3u8@@@@@@@@@@CCTV-15音乐
 http://ivi.bupt.edu.cn/hls/cctv16.m3u8@@@@@@@@@@CGTN
 http://ivi.bupt.edu.cn/hls/cctv17.m3u8@@@@@@@@@@CCTV-17农业农村
 
-http://39.134.157.205/PLTV/88888888/224/3221225562/index.m3u8@@@@@@@@@@黑莓电影*
-http://39.134.157.205/PLTV/88888888/224/3221225664/index.m3u8@@@@@@@@@@黑莓电影*
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226292/1.m3u8@@@@@@@@@@黑莓电影
-http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8@@@@@@@@@@黑莓电影
 http://112.50.243.8/PLTV/88888888/224/3221225891/1.m3u8@@@@@@@@@@黑莓电影
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221225927/1.m3u8@@@@@@@@@@黑莓电影
+http://221.179.217.9/otttv.bj.chinamobile.com/PLTV/88888888/224/3221226292/1.m3u8@@@@@@@@@@黑莓电影
 http://scgctvshow.sctv.com/hdlive/emei/1.m3u8@@@@@@@@@@峨眉电影
 http://39.134.39.39/PLTV/88888888/224/3221226189/index.m3u8@@@@@@@@@@上海东方影视
 http://39.134.39.39/PLTV/88888888/224/3221226201/index.m3u8@@@@@@@@@@上海外语
