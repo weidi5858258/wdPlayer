@@ -2861,13 +2861,15 @@ public class PlayerWrapper {
             case Callback.ERROR_TIME_OUT:
                 //case Callback.ERROR_DATA_EXCEPTION:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_OUT errorInfo: " + errorInfo);
-                MyToast.show("读取数据超时");
+                //MyToast.show("读取数据超时");
+                MyToast.show(errorInfo);
                 // 需要重新播放
                 mHasError = true;
                 break;
             case Callback.ERROR_FFMPEG_INIT:
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                MyToast.show("音视频初始化失败");
+                //MyToast.show("音视频初始化失败");
+                MyToast.show(errorInfo);
                 if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
