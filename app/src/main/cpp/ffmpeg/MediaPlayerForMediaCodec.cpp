@@ -3282,7 +3282,7 @@ namespace alexander_media_mediacodec {
         }
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        AVPacket *srcAVPacket = av_packet_alloc();
+        AVPacket *srcAVPacket/* = av_packet_alloc()*/;
         AVPacket *copyAVPacket = av_packet_alloc();
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
