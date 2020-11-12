@@ -56,7 +56,7 @@ import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
-import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_PLAYING;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
@@ -311,12 +311,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void internalResume() {
         Object result = EventBusUtils.post(
-                PlayerWrapper.class, DO_SOMETHING_EVENT_IS_PLAYING, null);
-        boolean isPlaying = false;
+                PlayerWrapper.class, DO_SOMETHING_EVENT_IS_RUNNING, null);
+        boolean isRunning = false;
         if (result != null) {
-            isPlaying = (boolean) result;
+            isRunning = (boolean) result;
         }
-        if (IS_TV && isPlaying) {
+        if (IS_TV && isRunning) {
             findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
 
             long mediaDuration = (long) EventBusUtils.post(

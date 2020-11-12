@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.weidi.media.wdplayer.util.Callback;
+import com.weidi.media.wdplayer.util.JniObject;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -56,7 +57,7 @@ import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
  //因为项目中多次调用播放器，有网络视频，resp，本地视频，还有wifi上http视频，所以得清空DNS才能播放WIFI上的视频
  如果项目无法播放远程视频,可以试试这句话 Server returned 4XX Client Error, but not one of 40{0,1,3,4}报这个错误也可以试试
  */
-public class IjkPlayer {
+public class IjkPlayer implements WdPlayer {
 
     private static final String TAG = "player_alexander";
 
@@ -98,26 +99,32 @@ public class IjkPlayer {
         };
     }
 
+    @Override
     public void setContext(Context context) {
         mContext = context;
     }
 
+    @Override
     public void setHandler(Handler handler) {
         //mUiHandler = handler;
     }
 
-    public void setDataSource(String path) {
-        mPath = path;
-    }
-
-    public void setSurface(Surface surface) {
-        mSurface = surface;
-    }
-
+    @Override
     public void setCallback(Callback callback) {
         mCallback = callback;
     }
 
+    @Override
+    public void setDataSource(String path) {
+        mPath = path;
+    }
+
+    @Override
+    public void setSurface(Surface surface) {
+        mSurface = surface;
+    }
+
+    @Override
     public void setVolume(float volume) {
         if (mIjkMediaPlayer == null) {
             return;
@@ -126,8 +133,9 @@ public class IjkPlayer {
         mIjkMediaPlayer.setVolume(volume, volume);
     }
 
-    public void seekTo(long msec) {
-        mPositionMs = msec;
+    @Override
+    public void seekTo(long second) {
+        mPositionMs = second * 1000;
 
         if (mIjkMediaPlayer == null) {
             return;
@@ -141,84 +149,9 @@ public class IjkPlayer {
         }
     }
 
-    public boolean isPlaying() {
-        if (mIjkMediaPlayer == null) {
-            return false;
-        }
-
-        return mIjkMediaPlayer.isPlaying();
-    }
-
-    public long getDuration() {
-        if (mIjkMediaPlayer == null) {
-            return 0;
-        }
-
-        return mIjkMediaPlayer.getDuration();
-    }
-
-    public void start() {
-        if (isInPlaybackState()) {
-            mIjkMediaPlayer.start();
-            //mCurrentState = STATE_PLAYING;
-        }
-        //mTargetState = STATE_PLAYING;
-    }
-
-    public void pause() {
-        if (isInPlaybackState()) {
-            mIjkMediaPlayer.pause();
-            //mCurrentState = STATE_PAUSED;
-        }
-        //mTargetState = STATE_PAUSED;
-    }
-
-    public void stop() {
-        mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
-        if (mIjkMediaPlayer == null) {
-            if (mCallback != null) {
-                mCallback.onFinished();
-            }
-            return;
-        }
-
-        mIjkMediaPlayer.stop();
-        mIjkMediaPlayer.release();
-        mIjkMediaPlayer = null;
-        //mCurrentState = STATE_IDLE;
-        //mTargetState = STATE_IDLE;
-        release(true);
-
-        IjkMediaPlayer.native_profileEnd();
-
-        if (mUiHandler != null) {
-            mUiHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (mCallback != null) {
-                        mCallback.onFinished();
-                    }
-                }
-            }, 1000);
-        } else {
-            if (mCallback != null) {
-                mCallback.onFinished();
-            }
-        }
-    }
-
-    private void release(boolean cleartargetstate) {
-        if (mIjkMediaPlayer == null) {
-            return;
-        }
-
-        mIjkMediaPlayer.reset();
-        mIjkMediaPlayer.release();
-        mIjkMediaPlayer = null;
-    }
-
     @TargetApi(Build.VERSION_CODES.M)
-    public void prepareAsync() {
+    @Override
+    public void start() {
         if (mCallback != null) {
             mCallback.onReady();
         }
@@ -261,6 +194,101 @@ public class IjkPlayer {
 
         mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
         mUiHandler.sendEmptyMessage(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
+    }
+
+    @Override
+    public void play() {
+        if (isInPlaybackState()) {
+            mIjkMediaPlayer.start();
+            //mCurrentState = STATE_PLAYING;
+        }
+        //mTargetState = STATE_PLAYING;
+    }
+
+    @Override
+    public void pause() {
+        if (isInPlaybackState()) {
+            mIjkMediaPlayer.pause();
+            //mCurrentState = STATE_PAUSED;
+        }
+        //mTargetState = STATE_PAUSED;
+    }
+
+    @Override
+    public void release() {
+        mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
+        if (mIjkMediaPlayer == null) {
+            if (mCallback != null) {
+                mCallback.onFinished();
+            }
+            return;
+        }
+
+        mIjkMediaPlayer.stop();
+        mIjkMediaPlayer.release();
+        mIjkMediaPlayer = null;
+        //mCurrentState = STATE_IDLE;
+        //mTargetState = STATE_IDLE;
+        release(true);
+
+        IjkMediaPlayer.native_profileEnd();
+
+        if (mUiHandler != null) {
+            mUiHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (mCallback != null) {
+                        mCallback.onFinished();
+                    }
+                }
+            }, 1000);
+        } else {
+            if (mCallback != null) {
+                mCallback.onFinished();
+            }
+        }
+    }
+
+    @Override
+    public boolean isRunning() {
+        return mIjkMediaPlayer != null;
+    }
+
+    public boolean isPlaying() {
+        if (mIjkMediaPlayer == null) {
+            return false;
+        }
+
+        return mIjkMediaPlayer.isPlaying();
+    }
+
+    @Override
+    public long getDuration() {
+        if (mIjkMediaPlayer == null) {
+            return 0;
+        }
+
+        return mIjkMediaPlayer.getDuration() / 1000;
+    }
+
+    @Override
+    public String onTransact(int code, JniObject jniObject) {
+        return null;
+    }
+
+    private void release(boolean cleartargetstate) {
+        if (mIjkMediaPlayer == null) {
+            return;
+        }
+
+        mIjkMediaPlayer.reset();
+        mIjkMediaPlayer.release();
+        mIjkMediaPlayer = null;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public void prepareAsync() {
+
     }
 
     private void createPlayer() {
@@ -409,7 +437,7 @@ public class IjkPlayer {
                         }
                     }
 
-                    start();
+                    play();
 
                     if (mContext != null) {
                         SharedPreferences sp = mContext.getSharedPreferences(

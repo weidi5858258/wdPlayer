@@ -1188,7 +1188,7 @@ namespace alexander_only_audio {
             && audioWrapper->father != NULL) {
             LOGI("stop() start\n");
             timeStamp = -1;
-            audioWrapper->father->isStarted = false;
+            //audioWrapper->father->isStarted = false;
             audioWrapper->father->isReading = false;
             audioWrapper->father->isHandling = false;
             audioWrapper->father->isPausedForUser = false;

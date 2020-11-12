@@ -4,15 +4,19 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.Surface;
 
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
+import com.weidi.threadpool.ThreadPool;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
@@ -22,7 +26,7 @@ import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
  Created by root on 19-8-8.
  */
 
-public class FFMPEG {
+public class FFMPEG implements WdPlayer {
 
     private static final String TAG =
             "player_alexander";
@@ -31,6 +35,7 @@ public class FFMPEG {
     // status_t onTransact(uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags = 0)
     // public native String onTransact(int code, Parcel data, Parcel reply);
     // 从上面调到下面只定义这一个方法
+    @Override
     public native String onTransact(int code, JniObject jniObject);
 
     static {
@@ -135,15 +140,6 @@ public class FFMPEG {
     public static final int DO_SOMETHING_CODE_isWatchForCloseAudio = 1128;
 
     private byte[] eof = new byte[]{-1, -1, -1, -1, -1};
-
-    public void releaseAll() {
-        if (mFfmpegUseMediaCodecDecode != null) {
-            mFfmpegUseMediaCodecDecode.destroy();
-        }
-        onTransact(DO_SOMETHING_CODE_release, null);
-        MediaUtils.releaseAudioTrack(mAudioTrack);
-        mAudioTrack = null;
-    }
 
     private FfmpegUseMediaCodecDecode mFfmpegUseMediaCodecDecode;
 
@@ -260,6 +256,52 @@ public class FFMPEG {
         SystemClock.sleep(ms);
     }
 
+    private Context mContext;
+    private Handler mUiHandler;
+    private Surface mSurface;
+    private String mPath;
+    public boolean mIsSeparatedAudioVideo;
+
+    @Override
+    public void setContext(Context context) {
+        mContext = context;
+    }
+
+    @Override
+    public void setHandler(Handler handler) {
+        mUiHandler = handler;
+    }
+
+    @Override
+    public void setCallback(Callback callback) {
+        // do nothing
+    }
+
+    @Override
+    public void setSurface(Surface surface) {
+        mSurface = surface;
+        if (mSurface == null || TextUtils.isEmpty(mPath)) {
+            return;
+        }
+        onTransact(DO_SOMETHING_CODE_setSurface,
+                JniObject.obtain()
+                        .writeString(mPath)
+                        .writeObject(mSurface));
+    }
+
+    @Override
+    public void setDataSource(String path) {
+        mPath = path;
+        if (TextUtils.isEmpty(mPath) || mSurface == null) {
+            return;
+        }
+        onTransact(DO_SOMETHING_CODE_setSurface,
+                JniObject.obtain()
+                        .writeString(mPath)
+                        .writeObject(mSurface));
+    }
+
+    @Override
     public void setVolume(float volume) {
         if (mAudioTrack == null) {
             return;
@@ -274,15 +316,109 @@ public class FFMPEG {
         }
     }
 
-    private Handler mUiHandler;
-    private Context mContext;
-
-    public void setHandler(Handler handler) {
-        mUiHandler = handler;
+    @Override
+    public void seekTo(long second) {
+        onTransact(DO_SOMETHING_CODE_seekTo, JniObject.obtain().writeLong(second));
     }
 
-    public void setContext(Context context) {
-        mContext = context;
+    @Override
+    public void start() {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                onTransact(DO_SOMETHING_CODE_audioHandleData, null);
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                onTransact(DO_SOMETHING_CODE_videoHandleData, null);
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                SystemClock.sleep(500);
+                onTransact(DO_SOMETHING_CODE_readData, null);
+                return null;
+            }
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        if (mIsSeparatedAudioVideo) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    SystemClock.sleep(1000);
+                    onTransact(DO_SOMETHING_CODE_readData, null);
+                    return null;
+                }
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+
+        /*ThreadPool.getFixedThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                onTransact(DO_SOMETHING_CODE_audioHandleData, null);
+            }
+        });
+        ThreadPool.getFixedThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                onTransact(DO_SOMETHING_CODE_videoHandleData, null);
+            }
+        });
+        ThreadPool.getFixedThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                SystemClock.sleep(500);
+                onTransact(DO_SOMETHING_CODE_readData, null);
+            }
+        });
+        if (mIsSeparatedAudioVideo) {
+            ThreadPool.getFixedThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    SystemClock.sleep(1000);
+                    onTransact(DO_SOMETHING_CODE_readData, null);
+                }
+            });
+        }*/
+    }
+
+    @Override
+    public void play() {
+        onTransact(DO_SOMETHING_CODE_play, null);
+    }
+
+    @Override
+    public void pause() {
+        onTransact(DO_SOMETHING_CODE_pause, null);
+    }
+
+    @Override
+    public void release() {
+        if (mFfmpegUseMediaCodecDecode != null) {
+            mFfmpegUseMediaCodecDecode.destroy();
+        }
+        onTransact(DO_SOMETHING_CODE_release, null);
+        MediaUtils.releaseAudioTrack(mAudioTrack);
+        mAudioTrack = null;
+    }
+
+    @Override
+    public boolean isRunning() {
+        return Boolean.parseBoolean(onTransact(DO_SOMETHING_CODE_isRunning, null));
+    }
+
+    @Override
+    public boolean isPlaying() {
+        return Boolean.parseBoolean(onTransact(DO_SOMETHING_CODE_isPlaying, null));
+    }
+
+    @Override
+    public long getDuration() {
+        return Long.parseLong(onTransact(DO_SOMETHING_CODE_getDuration, null));
     }
 
     // 供jni层调用(底层信息才是通过这个接口反映到java层的)

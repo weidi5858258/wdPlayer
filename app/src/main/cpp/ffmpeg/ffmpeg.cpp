@@ -1594,6 +1594,18 @@ char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
             strncpy(info, "DO_SOMETHING_CODE_frameByFrame",
                     strlen("DO_SOMETHING_CODE_frameByFrame"));
             break;
+        case DO_SOMETHING_CODE_isWatch:
+            strncpy(info, "DO_SOMETHING_CODE_isWatch",
+                    strlen("DO_SOMETHING_CODE_isWatch"));
+            break;
+        case DO_SOMETHING_CODE_isWatchForCloseVideo:
+            strncpy(info, "DO_SOMETHING_CODE_isWatchForCloseVideo",
+                    strlen("DO_SOMETHING_CODE_isWatchForCloseVideo"));
+            break;
+        case DO_SOMETHING_CODE_isWatchForCloseAudio:
+            strncpy(info, "DO_SOMETHING_CODE_isWatchForCloseAudio",
+                    strlen("DO_SOMETHING_CODE_isWatchForCloseAudio"));
+            break;
         default:
             strncpy(info, "DO_SOMETHING_CODE_nothing",
                     strlen("DO_SOMETHING_CODE_nothing"));
