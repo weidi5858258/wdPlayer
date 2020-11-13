@@ -569,6 +569,12 @@ public class PlayerWrapper {
         mPositionSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                Log.d(TAG, "onStartTrackingTouch");
+                if (isFrameByFrameMode) {
+                    return;
+                }
+                mNeedToSyncProgressBar = false;
+                mSeekTimeTV.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -591,9 +597,26 @@ public class PlayerWrapper {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
+                Log.d(TAG, "onStopTrackingTouch");
+                if (isFrameByFrameMode) {
+                    return;
+                }
+                mNeedToSyncProgressBar = true;
+                mSeekTimeTV.setVisibility(View.GONE);
+                if (mIsH264) {
+                    Log.d(TAG, "onStopTrackingTouch mProgress: " + mProgress);
+                } else {
+                    Log.d(TAG, "onStopTrackingTouch mProgress: " + mProgress +
+                            " " + DateUtils.formatElapsedTime(mProgress));
+                }
+                if (mProgress >= 0 && mProgress <= mMediaDuration) {
+                    if (mWdPlayer != null) {
+                        mWdPlayer.seekTo(mProgress);
+                    }
+                }
             }
         });
-        mPositionSeekBar.setOnTouchListener(new View.OnTouchListener() {
+        /*mPositionSeekBar.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
@@ -629,11 +652,12 @@ public class PlayerWrapper {
                 }
                 return false;
             }
-        });
+        });*/
 
         mVolumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
+                mVolumeProgress = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
             }
 
             @Override
@@ -646,27 +670,11 @@ public class PlayerWrapper {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
-        mVolumeSeekBar.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        mAudioManager.setStreamVolume(
-                                AudioManager.STREAM_MUSIC,
-                                mVolumeProgress,
-                                AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
-                        mVolumeLayout.setVisibility(View.INVISIBLE);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        break;
-                    default:
-                        break;
-                }
-                return false;
+                mAudioManager.setStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        mVolumeProgress,
+                        AudioManager.FLAG_REMOVE_SOUND_AND_VIBRATE);
+                mVolumeLayout.setVisibility(View.INVISIBLE);
             }
         });
 
