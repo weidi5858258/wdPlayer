@@ -3045,6 +3045,8 @@ namespace alexander_media_mediacodec {
 
             // region 我去,找你找的好辛苦啊(折腾了好多天,才想到下面的方法)
 
+            bool test = false;
+            double preAudioPtsTemp;
             if (needToResetVideoPts && !needToGetResultAgain && isLive) {
                 long long prePts = (long long) (preVideoPts * 1000000);
                 long long curPts = (long long) (videoPts * 1000000);
@@ -3052,6 +3054,7 @@ namespace alexander_media_mediacodec {
                     //LOGE("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                     if (tempTimeDifference > 0) {
                         int cycleNumber = 0;
+                        preAudioPtsTemp = audioPts;
                         while (true) {
                             if (isFrameByFrameMode
                                 || videoWrapper->father->isPausedForUser
@@ -3062,13 +3065,24 @@ namespace alexander_media_mediacodec {
                                 LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
                                 return 0;
                             }
-                            if (tempTimeDifference > 0.14) {
+                            /*if (tempTimeDifference > 0.14) {
                                 videoPts = preVideoPts - (0.01 * (++cycleNumber));
                             } else if (tempTimeDifference < 0.10) {
                                 videoPts = preVideoPts + (0.01 * (++cycleNumber));
                             } else {
                                 break;
+                            }*/
+
+                            if (tempTimeDifference > 0.2) {
+                                audioPts = preAudioPts + (0.01 * (++cycleNumber));
+                                test = true;
+                            } else if (tempTimeDifference < 0.16) {
+                                audioPts = preAudioPts - (0.01 * (++cycleNumber));
+                                test = true;
+                            } else {
+                                break;
                             }
+
                             tempTimeDifference = videoPts - audioPts;
                         }
                     }
@@ -3163,6 +3177,10 @@ namespace alexander_media_mediacodec {
             videoWrapper->father->isSleeping = false;
 
             // endregion
+
+            if (test) {
+                audioPts = preAudioPtsTemp;
+            }
         }
 
         return 0;
