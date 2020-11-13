@@ -415,7 +415,7 @@ public class MediaUtils {
      OMX.dolby.eac3.decoder    MediaFormat.MIMETYPE_AUDIO_EAC3
      */
     public static MediaCodecInfo[] findAllDecodersByMime(String mime) {
-        Log.d(TAG, "findAllDecodersByMime()      mime: " + mime);
+        Log.d(TAG, "findAllDecodersByMime() mime: " + mime);
         MediaCodecList codecList = new MediaCodecList(MediaCodecList.ALL_CODECS);
         List<MediaCodecInfo> mediaCodecInfos = new ArrayList<MediaCodecInfo>();
         Log.d(TAG, "=====================================================before");
@@ -433,9 +433,11 @@ public class MediaUtils {
                 }
 
                 if (codecCapabilities.getVideoCapabilities() != null) {
+                    // video解码器
                     Log.d(TAG, "-----------------------------------------------------");
-                    Log.d(TAG, "findAllDecodersByMime() codecName: " +
-                            mediaCodecInfo.getName() + " 解码时支持的colorFormat start");
+                    Log.d(TAG,
+                            "findAllDecodersByMime() video codecName: " + mediaCodecInfo.getName());
+                    Log.d(TAG, "解码时支持的colorFormat:");
                     // 什么样的video解码器有什么样的colorFormat
                     // 有些video解码器有多个colorFormat,而有些可能只有一个colorFormat
                     // 只有video才有colorFormats
@@ -443,10 +445,10 @@ public class MediaUtils {
                         Log.d(TAG, "findAllDecodersByMime() " + colorFormat +
                                 " : " + colorFormatMap.get(colorFormat));
                     }
-                    Log.d(TAG, "findAllDecodersByMime() codecName: " +
-                            mediaCodecInfo.getName() + " 解码时支持的colorFormat end");
-                } else {
-                    Log.d(TAG, "findAllDecodersByMime() codecName: " + mediaCodecInfo.getName());
+                } else if (codecCapabilities.getAudioCapabilities() != null) {
+                    // audio解码器
+                    Log.d(TAG,
+                            "findAllDecodersByMime() audio codecName: " + mediaCodecInfo.getName());
                 }
             } catch (IllegalArgumentException e) {
                 // unsupported

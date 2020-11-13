@@ -420,8 +420,9 @@ public class FfmpegUseMediaCodecDecode {
                 break;
             // 86021 vorbis ---> audio/vorbis
             case AV_CODEC_ID_VORBIS:
-                audioMime = MediaFormat.MIMETYPE_AUDIO_VORBIS;
-                codecName = "OMX.google.vorbis.decoder";
+                // 因为sps_pps还不知道怎么分离出来,所以先注释掉
+                //audioMime = MediaFormat.MIMETYPE_AUDIO_VORBIS;
+                //codecName = "OMX.google.vorbis.decoder";
                 break;
             // 86028 flac ---> audio/raw
             case AV_CODEC_ID_FLAC:
@@ -443,12 +444,12 @@ public class FfmpegUseMediaCodecDecode {
             // 下面几种在我的手机上不支持
             // 86016 mp2 ---> audio/mpeg-L2
             case AV_CODEC_ID_MP2:
-                //audioMime = "audio/mpeg-L2";
+                audioMime = "audio/mpeg-L2";
                 //codecName = "OMX.MTK.AUDIO.DECODER.DSPMP2";
                 break;
             // 86024 wmav2 ---> audio/x-ms-wma
             case AV_CODEC_ID_WMAV2:
-                //audioMime = "audio/x-ms-wma";
+                audioMime = "audio/x-ms-wma";
                 //codecName = "OMX.MTK.AUDIO.DECODER.DSPWMA";
                 break;
             // 86040
