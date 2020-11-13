@@ -3692,6 +3692,9 @@ namespace alexander_media_mediacodec {
                         }
                     }
 
+                    /*if (copyAVPacket->size >= 655360) {
+                        LOGE("handleData() video AVPacket size: %d\n", copyAVPacket->size);
+                    }*/
                     feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                             0x0002,
                             copyAVPacket->data,

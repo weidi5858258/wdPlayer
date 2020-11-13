@@ -136,7 +136,7 @@ http://117.169.124.37:6610/ysten-businessmobile/live/fhchinese/1.m3u8@@@@@@@@@@�
 http://183.207.249.34/PLTV/3/224/3221226975/index.m3u8@@@@@@@@@@香港台
 http://223.110.245.136/PLTV/3/224/3221226975/index.m3u8@@@@@@@@@@香港台
 http://zhibo.hkstv.tv/livestream/mutfysrq.flv@@@@@@@@@@香港卫视
-https://hls.cntv.baishancdnx.cn/asp/hls/8000/0303000a/3/default/9891cea600df4e8a83851b1b1ce23194/8000.m3u8@@@@@@@@@@美丽中国4K
+https://hls.cntv.baishancdnx.cn/asp/hls/8000/0303000a/3/default/9891cea600df4e8a83851b1b1ce23194/8000.m3u8@@@@@@@@@@美丽中国4K(https)
 http://112.17.40.145/PLTV/88888888/224/3221226718/index.m3u8@@@@@@@@@@百事4K
 http://112.50.243.8/PLTV/88888888/224/3221226825/1.m3u8@@@@@@@@@@纯享4K
 http://112.17.40.12/PLTV/88888888/224/3221226758/1.m3u8@@@@@@@@@@CCTV-4K蓝码
