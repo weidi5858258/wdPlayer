@@ -1,7 +1,9 @@
 package com.weidi.media.wdplayer.video_player;
 
 import android.Manifest;
+import android.animation.Animator;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Service;
@@ -39,6 +41,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -53,7 +56,6 @@ import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.NetworkUtils;
-import com.weidi.threadpool.ThreadPool;
 import com.weidi.utils.MyToast;
 
 import java.io.BufferedReader;
@@ -74,46 +76,6 @@ import java.util.Random;
 
 import androidx.core.content.ContextCompat;
 
-import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
-import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
-import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
-import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLAYOUT;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
-import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
-import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
-import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_audioHandleData;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_download;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrame;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForFinish;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForReady;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_init;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_initPlayer;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatch;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseAudio;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseVideo;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_readData;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setMode;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_stepAdd;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_stepSubtract;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_videoHandleData;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AAC_H264;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AUDIO_VIDEO;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_MEDIA_MEDIACODEC;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_AUDIO;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_VIDEO;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
-
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_EXIT;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
@@ -128,6 +90,40 @@ import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_OFF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_ON;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_MUTE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLAYOUT;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_download;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrame;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForFinish;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForReady;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_init;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_initPlayer;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatch;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseAudio;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseVideo;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setMode;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AAC_H264;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AUDIO_VIDEO;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_MEDIA_MEDIACODEC;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_AUDIO;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_VIDEO;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
 
 /***
  /Users/alexander/mydev/workspace_android/wdPlayer/gradle/wrapper/gradle-wrapper.properties
@@ -195,6 +191,7 @@ public class PlayerWrapper {
     private WindowManager mWindowManager;
     private WindowManager.LayoutParams mLayoutParams;
     private View mRootView;
+    private View mMediaPlayerRootLayout;
 
     private AudioManager mAudioManager;
     private AudioFocusRequest mAudioFocusRequest;
@@ -267,6 +264,7 @@ public class PlayerWrapper {
     private int mNeedVideoHeight;
     // 控制面板的高度
     private int mControllerPanelLayoutHeight;
+
     // 音视频的加载进度
     private LinearLayout mDataCacheLayout;
     private ProgressBar mVideoProgressBar;
@@ -331,6 +329,8 @@ public class PlayerWrapper {
         mBatteryManager = (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+
+        // 得到屏幕分辨率
         DisplayMetrics displayMetrics = new DisplayMetrics();
         mWindowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
         mScreenWidth = displayMetrics.widthPixels;
@@ -380,6 +380,7 @@ public class PlayerWrapper {
 
         mRootView.setOnTouchListener(new PlayerOnTouchListener());
 
+        mMediaPlayerRootLayout = mRootView.findViewById(R.id.mediaplayer_root_layout);
         mSurfaceView = mRootView.findViewById(R.id.surfaceView);
         mControllerPanelLayout = mRootView.findViewById(R.id.controller_panel_layout);
         mLoadingLayout = mRootView.findViewById(R.id.loading_view);
@@ -558,14 +559,12 @@ public class PlayerWrapper {
         mGetMediaFormat.setPlayerWrapper(this);*/
         //mFfmpegUseMediaCodecDecode.setGetMediaFormat(mGetMediaFormat);
 
-        sendMessageForLoadContents();
-
-        int duration = (int) mMediaDuration;
+        /*int duration = (int) mMediaDuration;
         int currentPosition = (int) mPresentationTime;
         float pos = (float) currentPosition / duration;
         int target = Math.round(pos * mPositionSeekBar.getMax());
         mPositionSeekBar.setProgress(target);
-        mPositionSeekBar.setSecondaryProgress(0);
+        mPositionSeekBar.setSecondaryProgress(0);*/
         mPositionSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
@@ -696,6 +695,8 @@ public class PlayerWrapper {
         Log.i(TAG, "onCreate() minVolume: " + minVolume);// 0
         Log.i(TAG, "onCreate() maxVolume: " + maxVolume);// 15(Phone) 100(TV)
         Log.i(TAG, "onCreate() curVolume: " + curVolume);
+
+        sendMessageForLoadContents();
 
         // Test
         /*new Thread(new Runnable() {
@@ -1731,6 +1732,63 @@ public class PlayerWrapper {
         return height;
     }
 
+    private void test() {
+        /*RotateAnimation rotate = new RotateAnimation(
+                0, 90f,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+        rotate.setInterpolator(new LinearInterpolator());
+        rotate.setDuration(5 * 1000);
+        rotate.setFillAfter(true);
+        mMediaPlayerRootLayout.setAnimation(rotate);
+        rotate.start();*/
+
+        ValueAnimator animator = ValueAnimator.ofFloat(0, 90);
+        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                Float value = (Float) animation.getAnimatedValue();
+                mMediaPlayerRootLayout.setRotation(value);
+            }
+        });
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mMediaPlayerRootLayout.layout(0, 0, 2244, 1080);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+        animator.setInterpolator(new LinearInterpolator());
+        animator.setDuration(5000);
+        animator.start();
+
+        //mMediaPlayerRootLayout.animate().rotation(90).setDuration(5000).start();
+
+        /*ObjectAnimator.ofFloat(mMediaPlayerRootLayout, "rotation", 0f, 180f)
+                .setDuration(5000)
+                .start();*/
+
+        // 能够旋转,但不是原来的宽高了,点击事件还在原来位置上
+        /*ObjectAnimator anim = ObjectAnimator.ofFloat(mMediaPlayerRootLayout, "rotation", 0, 90);
+        anim.setInterpolator(new LinearInterpolator());
+        anim.setDuration(5000);
+        anim.start();*/
+    }
+
     // 处理横屏
     @SuppressLint("SourceLockedOrientationActivity")
     public void handleLandscapeScreen(int statusBarHeight) {
@@ -2505,16 +2563,19 @@ public class PlayerWrapper {
         setControllerPanelBackgroundColor();
         mPositionTimeTV.setText("00:00:00");
         mDurationTimeTV.setText("00:00:00");
+
         mPositionSeekBar.setProgress(0);
         mPositionSeekBar.setPadding(0, 0, 0, 0);
         mPositionSeekBar.setThumbOffset(0);
+
+        mDataCacheLayout.setVisibility(View.GONE);
         // 左边进度值
         mVideoProgressBar.setProgress(0);
         // 右边进度值
         mVideoProgressBar.setSecondaryProgress(0);
         mAudioProgressBar.setProgress(0);
         mAudioProgressBar.setSecondaryProgress(0);
-        mDataCacheLayout.setVisibility(View.GONE);
+
         mPlayIB.setVisibility(View.VISIBLE);
         mPauseIB.setVisibility(View.INVISIBLE);
         mVolumeLayout.setVisibility(View.INVISIBLE);
@@ -2899,6 +2960,9 @@ public class PlayerWrapper {
     }
 
     private void clickTwo() {
+        /*test();
+        if (true) return;*/
+
         if (mWdPlayer == null) {
             return;
         }
