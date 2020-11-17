@@ -8,11 +8,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
-import com.weidi.utils.MyToast;
 import com.weidi.media.wdplayer.exo.ExoAudioTrack;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
+import com.weidi.utils.MyToast;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -20,8 +20,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 /***
@@ -373,7 +372,8 @@ public class FfmpegUseMediaCodecDecode {
             SharedPreferences sp =
                     mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
             int softSolution = sp.getInt(HARD_SOLUTION, 1);
-            if (softSolution == 0) {
+            int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 1);
+            if (softSolution == 0 || softSolutionForAudio == 0) {
                 return false;
             }
         }

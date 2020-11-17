@@ -3042,10 +3042,11 @@ namespace alexander_media_mediacodec {
             //LOGW("handleVideoOutputBuffer()    videoPts: %lf\n", videoPts);
             //LOGD("handleVideoOutputBuffer()    audioPts: %lf\n", audioPts);
             //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
+            //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", (videoPts - preVideoPts));
 
-            // region 我去,找你找的好辛苦啊(折腾了好多天,才想到下面的方法)
+            // region
 
-            bool test = false;
+            /*bool test = false;
             double preAudioPtsTemp;
             if (needToResetVideoPts && !needToGetResultAgain && isLive) {
                 long long prePts = (long long) (preVideoPts * 1000000);
@@ -3065,18 +3066,11 @@ namespace alexander_media_mediacodec {
                                 LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
                                 return 0;
                             }
-                            /*if (tempTimeDifference > 0.14) {
-                                videoPts = preVideoPts - (0.01 * (++cycleNumber));
-                            } else if (tempTimeDifference < 0.10) {
-                                videoPts = preVideoPts + (0.01 * (++cycleNumber));
-                            } else {
-                                break;
-                            }*/
 
-                            if (tempTimeDifference > 0.2) {
+                            if (tempTimeDifference > 0.16) {
                                 audioPts = preAudioPts + (0.01 * (++cycleNumber));
                                 test = true;
-                            } else if (tempTimeDifference < 0.16) {
+                            } else if (tempTimeDifference < 0.12) {
                                 audioPts = preAudioPts - (0.01 * (++cycleNumber));
                                 test = true;
                             } else {
@@ -3088,7 +3082,7 @@ namespace alexander_media_mediacodec {
                     }
                     //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                 }
-            }
+            }*/
             /*else if (needToResetVideoPts2
                        && !needToGetResultAgain) {
                 long long prePts = (long long) (preVideoPts * 1000000);
@@ -3117,6 +3111,15 @@ namespace alexander_media_mediacodec {
                     //LOGI("handleVideoOutputBuffer()    timeDiff: %lf\n", tempTimeDifference);
                 }
             }*/
+
+            if (/*needToResetVideoPts
+                && !needToGetResultAgain
+                &&*/ isLive
+                     && tempTimeDifference > 0
+                     && videoPts - preVideoPts >= 0.05) {
+                videoPts = preVideoPts + 0.04;
+                tempTimeDifference = videoPts - audioPts;
+            }
 
             // endregion
 
@@ -3178,9 +3181,9 @@ namespace alexander_media_mediacodec {
 
             // endregion
 
-            if (test) {
+            /*if (test) {
                 audioPts = preAudioPtsTemp;
-            }
+            }*/
         }
 
         return 0;
@@ -3710,16 +3713,20 @@ namespace alexander_media_mediacodec {
                         }
                     }
 
-                    /*if (copyAVPacket->size >= 655360) {
+                    if (copyAVPacket->size >= 655360) {
                         LOGE("handleData() video AVPacket size: %d\n", copyAVPacket->size);
-                    }*/
+                    }
                     feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                             0x0002,
                             copyAVPacket->data,
                             copyAVPacket->size,
                             (long long) copyAVPacket->pts);
                     av_packet_unref(copyAVPacket);
-                    preVideoPts = videoPts;
+                    long long prePts = (long long) (preVideoPts * 1000000);
+                    long long curPts = (long long) (videoPts * 1000000);
+                    if (prePts != curPts) {
+                        preVideoPts = videoPts;
+                    }
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
                         LOGE("handleData() video feedInputBufferAndDrainOutputBuffer failure\n");

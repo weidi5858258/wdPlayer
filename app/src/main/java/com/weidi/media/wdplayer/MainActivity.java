@@ -58,6 +58,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
@@ -243,19 +244,28 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 7:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-                        int softSolution = sp.getInt(HARD_SOLUTION, 1);
-                        if (softSolution == 1) {
-                            MyToast.show("使用软解");
-                            sp.edit().putInt(HARD_SOLUTION, 0).commit();
-                        } else if (softSolution == 0) {
-                            MyToast.show("使用硬解");
-                            sp.edit().putInt(HARD_SOLUTION, 1).commit();
+                        int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 1);
+                        if (softSolutionForAudio == 1) {
+                            MyToast.show("使用音频软解");
+                            sp.edit().putInt(HARD_SOLUTION_AUDIO, 0).commit();
+                        } else if (softSolutionForAudio == 0) {
+                            MyToast.show("使用音频硬解");
+                            sp.edit().putInt(HARD_SOLUTION_AUDIO, 1).commit();
                         }
                         break;
                     case 8:
-                        finish();
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        int softSolution = sp.getInt(HARD_SOLUTION, 1);
+                        if (softSolution == 1) {
+                            MyToast.show("使用音视频软解");
+                            sp.edit().putInt(HARD_SOLUTION, 0).commit();
+                        } else if (softSolution == 0) {
+                            MyToast.show("使用音视频硬解");
+                            sp.edit().putInt(HARD_SOLUTION, 1).commit();
+                        }
                         break;
                     case 9:
+                        finish();
                         break;
                     case 10:
                         break;

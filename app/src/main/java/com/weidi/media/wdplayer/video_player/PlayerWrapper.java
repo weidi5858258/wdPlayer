@@ -95,6 +95,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -3053,10 +3054,10 @@ public class PlayerWrapper {
     private void clickFive() {
         int softSolution = mSP.getInt(HARD_SOLUTION, 1);
         if (softSolution == 1) {
-            MyToast.show("使用软解");
+            MyToast.show("使用音视频软解");
             mSP.edit().putInt(HARD_SOLUTION, 0).commit();
         } else if (softSolution == 0) {
-            MyToast.show("使用硬解");
+            MyToast.show("使用音视频硬解");
             mSP.edit().putInt(HARD_SOLUTION, 1).commit();
         }
     }
@@ -3097,14 +3098,13 @@ public class PlayerWrapper {
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
         } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
         } else {
-            if (mFfmpegUseMediaCodecDecode != null) {
-                if (mFfmpegUseMediaCodecDecode.mUseMediaCodecForAudio) {
-                    mFfmpegUseMediaCodecDecode.mUseMediaCodecForAudio = false;
-                    MyToast.show("不使用音频硬解码");
-                } else {
-                    mFfmpegUseMediaCodecDecode.mUseMediaCodecForAudio = true;
-                    MyToast.show("使用音频硬解码");
-                }
+            int softSolutionForAudio = mSP.getInt(HARD_SOLUTION_AUDIO, 1);
+            if (softSolutionForAudio == 1) {
+                MyToast.show("使用音频软解");
+                mSP.edit().putInt(HARD_SOLUTION_AUDIO, 0).commit();
+            } else if (softSolutionForAudio == 0) {
+                MyToast.show("使用音频硬解");
+                mSP.edit().putInt(HARD_SOLUTION_AUDIO, 1).commit();
             }
         }
     }
