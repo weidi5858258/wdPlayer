@@ -242,7 +242,7 @@ bool initMediaCodec(int type,
 bool feedInputBufferAndDrainOutputBuffer(int type,
                                          unsigned char *encodedData,
                                          int size,
-                                         long long presentationTimeUs) {
+                                         long long int presentationTimeUs) {
     bool feedAndDrainRet = false;
     JNIEnv *bufferEnv;
     bool audioIsAttached = getEnv(&bufferEnv);

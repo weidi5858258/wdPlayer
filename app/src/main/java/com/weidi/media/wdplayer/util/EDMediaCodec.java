@@ -122,6 +122,9 @@ public class EDMediaCodec {
                 return false;
             }
 
+            // room.capacity(): 33177600
+            // room.limit()   : 33177600
+
             // 入住之前打扫一下房间
             room.clear();
             // 入住
