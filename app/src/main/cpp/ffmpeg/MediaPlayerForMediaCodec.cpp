@@ -3058,34 +3058,34 @@ namespace alexander_media_mediacodec {
 
             if (needToResetVideoPts
                 && !needToGetResultAgain
-                && isLive) {
-                if (prePts != curPts && tempTimeDifference > 0) {
-                    //LOGE("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
-                    int cycleNumber = 0;
-                    while (true) {
-                        if (isFrameByFrameMode
-                            || videoWrapper->father->isPausedForUser
-                            || videoWrapper->father->isPausedForCache
-                            || videoWrapper->father->isPausedForSeek
-                            || !videoWrapper->father->isHandling
-                            || !audioWrapper->father->isHandling) {
-                            LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
-                            return 0;
-                        }
-
-                        if (tempTimeDifference > 0.14) {
-                            videoPts = preVideoPts - (0.002 * (++cycleNumber));
-                        } else if (tempTimeDifference < 0.12) {
-                            videoPts = preVideoPts + (0.002 * (++cycleNumber));
-                        } else {
-                            break;
-                        }
-
-                        tempTimeDifference = videoPts - audioPts;
+                && isLive
+                && prePts != curPts
+                && tempTimeDifference > 0) {
+                //LOGE("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
+                int cycleNumber = 0;
+                while (true) {
+                    if (isFrameByFrameMode
+                        || videoWrapper->father->isPausedForUser
+                        || videoWrapper->father->isPausedForCache
+                        || videoWrapper->father->isPausedForSeek
+                        || !videoWrapper->father->isHandling
+                        || !audioWrapper->father->isHandling) {
+                        LOGW("handleVideoOutputBuffer() tempTimeDifference return\n");
+                        return 0;
                     }
-                    //LOGI("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
-                    preVideoPts = videoPts;
+
+                    if (tempTimeDifference > 0.14) {
+                        videoPts = preVideoPts - (0.002 * (++cycleNumber));
+                    } else if (tempTimeDifference < 0.12) {
+                        videoPts = preVideoPts + (0.002 * (++cycleNumber));
+                    } else {
+                        break;
+                    }
+
+                    tempTimeDifference = videoPts - audioPts;
                 }
+                //LOGI("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
+                preVideoPts = videoPts;
             }
 
             // endregion

@@ -1038,6 +1038,14 @@ public class FfmpegUseMediaCodecDecode {
     private Object[] audioValueObjectArray = new Object[2];
 
     private EDMediaCodec.Callback mCallback = new EDMediaCodec.Callback() {
+
+        private int width;
+        private int height;
+        // 对齐宽高
+        private int alignWidth;
+        private int alignHeight;
+        private boolean needToDoIt;
+
         @Override
         public boolean isVideoFinished() {
             return !mVideoWrapper.isHandling;
@@ -1088,6 +1096,30 @@ public class FfmpegUseMediaCodecDecode {
                 }
                 Log.w(TAG, "handleVideoOutputFormat() newMediaFormat: \n" +
                         mVideoWrapper.decoderMediaFormat);
+
+                width = mVideoWrapper.decoderMediaFormat.getInteger(MediaFormat.KEY_WIDTH);
+                if (mVideoWrapper.decoderMediaFormat.containsKey("crop-left")
+                        && mVideoWrapper.decoderMediaFormat.containsKey("crop-right")) {
+                    width = mVideoWrapper.decoderMediaFormat.getInteger("crop-right") + 1 -
+                            mVideoWrapper.decoderMediaFormat.getInteger("crop-left");
+                }
+                height = mVideoWrapper.decoderMediaFormat.getInteger(MediaFormat.KEY_HEIGHT);
+                if (mVideoWrapper.decoderMediaFormat.containsKey("crop-top")
+                        && mVideoWrapper.decoderMediaFormat.containsKey("crop-bottom")) {
+                    height = mVideoWrapper.decoderMediaFormat.getInteger("crop-bottom") + 1 -
+                            mVideoWrapper.decoderMediaFormat.getInteger("crop-top");
+                }
+
+                int keyStride = mVideoWrapper.decoderMediaFormat.getInteger(
+                        MediaFormat.KEY_STRIDE);
+                int keyCliceHeight = mVideoWrapper.decoderMediaFormat.getInteger(
+                        MediaFormat.KEY_SLICE_HEIGHT);
+                alignWidth = keyStride;
+                alignHeight = keyCliceHeight;
+                needToDoIt = false;
+                if (alignWidth != 0 && alignHeight != 0 && alignHeight != height) {
+                    needToDoIt = true;
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -1202,6 +1234,22 @@ public class FfmpegUseMediaCodecDecode {
         public int handleVideoOutputBuffer(int roomIndex, ByteBuffer room,
                                            MediaCodec.BufferInfo roomInfo, int roomSize) {
             if (mFFMPEG != null) {
+
+                /*if(needToDoIt){
+                    byte[] outData = new byte[roomSize];
+                    room.get(outData);
+
+                    byte[] yData = new byte[width * height];
+                    byte[] uData = new byte[width * height / 4];
+                    byte[] vData = new byte[width * height / 4];
+
+                    yuvCopy(outData, 0, alignWidth, alignHeight, yData, width, height);
+                    yuvCopy(outData, alignWidth * alignHeight, alignWidth / 2, alignHeight / 2,
+                    uData, width / 2, height / 2);
+                    yuvCopy(outData, alignWidth * alignHeight * 5 / 4, alignWidth / 2,
+                    alignHeight / 2, vData, width / 2, height / 2);
+                }*/
+
                 videoValueIntArray[0] = roomIndex;
                 videoValueIntArray[1] = roomSize;
                 videoValueObjectArray[0] = room;
@@ -1243,5 +1291,15 @@ public class FfmpegUseMediaCodecDecode {
             return 0;
         }
     };
+
+    private static void yuvCopy(byte[] src, int offset, int inWidth, int inHeight,
+                                byte[] dest, int outWidth, int outHeight) {
+        for (int h = 0; h < inHeight; h++) {
+            if (h < outHeight) {
+                System.arraycopy(src, offset + h * inWidth,
+                        dest, h * outWidth, outWidth);
+            }
+        }
+    }
 
 }
