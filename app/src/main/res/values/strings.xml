@@ -35,7 +35,6 @@
         8次.关闭音频,播放视频(针对player_ffmpeg_mediacodec)\n
         9次.关闭视频,播放音频(针对player_ffmpeg_mediacodec)\n
         10次.退出播放
-        \n
     </string>
     <string name="test">
         Hello Square World!

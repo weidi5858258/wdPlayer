@@ -30,5 +30,25 @@
             android:layout_height="wrap_content"
             android:text="@string/handle_info" />
 
+        <EditText
+            android:id="@+id/address_et"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/dimen_5_dp"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/playback_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="GO"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
     </LinearLayout>
 </ScrollView>

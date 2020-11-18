@@ -17,8 +17,10 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
@@ -59,6 +61,8 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
@@ -138,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                && whatIsDevice == Configuration.UI_MODE_TYPE_NORMAL) {
+                && IS_PHONE) {
             PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
             boolean hasIgnored = powerManager.isIgnoringBatteryOptimizations(getPackageName());
             // 判断当前APP是否有加入电池优化的白名单，如果没有，弹出加入电池优化的白名单的设置对话框。
@@ -153,7 +157,8 @@ public class MainActivity extends AppCompatActivity {
 
     ////////////////////////////////////////////////////////////////////////////////////////////
 
-    private int whatIsDevice = -1;
+    private Handler mUiHandler;
+    private SharedPreferences mPreferences;
     private int clickCounts = 0;
     private boolean IS_PHONE = false;
     private boolean IS_WATCH = false;
@@ -179,6 +184,8 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton mShuffleOff;
     private ImageButton mShuffleOn;
 
+    private EditText mAddressET;
+
     // 关闭重复播放
     private PlayerWrapper.Repeat mRepeat = PlayerWrapper.Repeat.Repeat_Off;
     // 关闭随机播放
@@ -187,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
     private void internalCreate(Bundle savedInstanceState) {
         UiModeManager uiModeManager =
                 (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        whatIsDevice = uiModeManager.getCurrentModeType();
+        int whatIsDevice = uiModeManager.getCurrentModeType();
         IS_PHONE = false;
         IS_WATCH = false;
         IS_TV = false;
@@ -204,7 +211,8 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        Handler uiHandler = new Handler(Looper.getMainLooper()) {
+        mPreferences = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 //super.handleMessage(msg);
@@ -288,18 +296,13 @@ public class MainActivity extends AppCompatActivity {
         view.setFocusable(true);
         view.setFocusableInTouchMode(true);
         view.requestFocus();
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                clickCounts++;
-                MyToast.show(String.valueOf(clickCounts));
-                uiHandler.removeMessages(1);
-                uiHandler.sendEmptyMessageDelayed(1, 1000);
-            }
-        });
+        view.setOnClickListener(mOnClickListener);
+        findViewById(R.id.playback_btn).setOnClickListener(mOnClickListener);
 
         if (IS_TV) {
             setTvView();
+        } else if (IS_PHONE) {
+            mAddressET = findViewById(R.id.address_et);
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -320,63 +323,72 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void internalResume() {
-        Object result = EventBusUtils.post(
-                PlayerWrapper.class, DO_SOMETHING_EVENT_IS_RUNNING, null);
-        boolean isRunning = false;
-        if (result != null) {
-            isRunning = (boolean) result;
-        }
-        if (IS_TV && isRunning) {
-            findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
-
-            long mediaDuration = (long) EventBusUtils.post(
-                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
-            mRepeat = (PlayerWrapper.Repeat) EventBusUtils.post(
-                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_REPEAT, null);
-            mShuffle = (PlayerWrapper.Shuffle) EventBusUtils.post(
-                    PlayerWrapper.class, DO_SOMETHING_EVENT_GET_SHUFFLE, null);
-
-            SeekBar progress_bar = findViewById(R.id.progress_bar);
-            RelativeLayout show_time_rl = findViewById(R.id.show_time_rl);
-            ImageButton button_fr = findViewById(R.id.button_fr);
-            ImageButton button_ff = findViewById(R.id.button_ff);
-            ImageButton button_prev = findViewById(R.id.button_prev);
-            ImageButton button_next = findViewById(R.id.button_next);
-            ImageButton button_repeat_off = findViewById(R.id.button_repeat_off);
-            ImageButton button_repeat_all = findViewById(R.id.button_repeat_all);
-            ImageButton button_repeat_one = findViewById(R.id.button_repeat_one);
-            ImageButton button_shuffle_off = findViewById(R.id.button_shuffle_off);
-            ImageButton button_shuffle_on = findViewById(R.id.button_shuffle_on);
-            if (mediaDuration <= 0) {
-                progress_bar.setVisibility(View.GONE);
-                show_time_rl.setVisibility(View.GONE);
-                button_fr.setVisibility(View.INVISIBLE);
-                button_ff.setVisibility(View.INVISIBLE);
-                button_prev.setVisibility(View.INVISIBLE);
-                button_next.setVisibility(View.INVISIBLE);
-                button_repeat_off.setVisibility(View.INVISIBLE);
-                button_repeat_all.setVisibility(View.INVISIBLE);
-                button_repeat_one.setVisibility(View.INVISIBLE);
-                button_shuffle_off.setVisibility(View.INVISIBLE);
-                button_shuffle_on.setVisibility(View.INVISIBLE);
-            } else {
-                progress_bar.setVisibility(View.VISIBLE);
-                show_time_rl.setVisibility(View.VISIBLE);
-                button_fr.setVisibility(View.VISIBLE);
-                button_ff.setVisibility(View.VISIBLE);
-                button_prev.setVisibility(View.VISIBLE);
-                button_next.setVisibility(View.VISIBLE);
-                setRepeatView();
-                setShuffleView();
+        if (IS_TV) {
+            findViewById(R.id.address_et).setVisibility(View.GONE);
+            Object result = EventBusUtils.post(
+                    PlayerWrapper.class, DO_SOMETHING_EVENT_IS_RUNNING, null);
+            boolean isRunning = false;
+            if (result != null) {
+                isRunning = (boolean) result;
             }
+            if (isRunning) {
+                findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
 
-            if (mPlayIB.getVisibility() == View.VISIBLE) {
-                mPlayIB.requestFocus();
+                long mediaDuration = (long) EventBusUtils.post(
+                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
+                mRepeat = (PlayerWrapper.Repeat) EventBusUtils.post(
+                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_REPEAT, null);
+                mShuffle = (PlayerWrapper.Shuffle) EventBusUtils.post(
+                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_SHUFFLE, null);
+
+                SeekBar progress_bar = findViewById(R.id.progress_bar);
+                RelativeLayout show_time_rl = findViewById(R.id.show_time_rl);
+                ImageButton button_fr = findViewById(R.id.button_fr);
+                ImageButton button_ff = findViewById(R.id.button_ff);
+                ImageButton button_prev = findViewById(R.id.button_prev);
+                ImageButton button_next = findViewById(R.id.button_next);
+                ImageButton button_repeat_off = findViewById(R.id.button_repeat_off);
+                ImageButton button_repeat_all = findViewById(R.id.button_repeat_all);
+                ImageButton button_repeat_one = findViewById(R.id.button_repeat_one);
+                ImageButton button_shuffle_off = findViewById(R.id.button_shuffle_off);
+                ImageButton button_shuffle_on = findViewById(R.id.button_shuffle_on);
+                if (mediaDuration <= 0) {
+                    progress_bar.setVisibility(View.GONE);
+                    show_time_rl.setVisibility(View.GONE);
+                    button_fr.setVisibility(View.INVISIBLE);
+                    button_ff.setVisibility(View.INVISIBLE);
+                    button_prev.setVisibility(View.INVISIBLE);
+                    button_next.setVisibility(View.INVISIBLE);
+                    button_repeat_off.setVisibility(View.INVISIBLE);
+                    button_repeat_all.setVisibility(View.INVISIBLE);
+                    button_repeat_one.setVisibility(View.INVISIBLE);
+                    button_shuffle_off.setVisibility(View.INVISIBLE);
+                    button_shuffle_on.setVisibility(View.INVISIBLE);
+                } else {
+                    progress_bar.setVisibility(View.VISIBLE);
+                    show_time_rl.setVisibility(View.VISIBLE);
+                    button_fr.setVisibility(View.VISIBLE);
+                    button_ff.setVisibility(View.VISIBLE);
+                    button_prev.setVisibility(View.VISIBLE);
+                    button_next.setVisibility(View.VISIBLE);
+                    setRepeatView();
+                    setShuffleView();
+                }
+
+                if (mPlayIB.getVisibility() == View.VISIBLE) {
+                    mPlayIB.requestFocus();
+                } else {
+                    mPauseIB.requestFocus();
+                }
             } else {
-                mPauseIB.requestFocus();
+                findViewById(R.id.controller_panel_framelayout).setVisibility(View.GONE);
             }
-        } else {
+        } else if (IS_PHONE) {
             findViewById(R.id.controller_panel_framelayout).setVisibility(View.GONE);
+            String path = mPreferences.getString(PLAYBACK_ADDRESS, null);
+            if (!TextUtils.isEmpty(path)) {
+                mAddressET.setText(path);
+            }
         }
     }
 
@@ -551,6 +563,44 @@ public class MainActivity extends AppCompatActivity {
                         BUTTON_CLICK_SHUFFLE_ON,
                         null);
                 mShuffleOff.requestFocus();
+                break;
+            case R.id.text:
+                clickCounts++;
+                MyToast.show(String.valueOf(clickCounts));
+                mUiHandler.removeMessages(1);
+                mUiHandler.sendEmptyMessageDelayed(1, 1000);
+                break;
+            case R.id.playback_btn:
+                String mediaPath = null;
+                String mediaType = null;
+                if (mAddressET.getVisibility() == View.VISIBLE) {
+                    mediaPath = mAddressET.getText().toString().trim();
+                    mediaType = "video/";
+                    if (TextUtils.isEmpty(mediaPath)) {
+                        mediaPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
+                        mediaType = mPreferences.getString(PLAYBACK_MEDIA_TYPE, null);
+                    }
+                } else {
+                    mediaPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
+                    mediaType = mPreferences.getString(PLAYBACK_MEDIA_TYPE, null);
+                }
+                if (!TextUtils.isEmpty(mediaPath) && !TextUtils.isEmpty(mediaType)) {
+                    if (!isRunService(this, PLAYERSERVICE)) {
+                        Intent intent = new Intent();
+                        intent.setClass(this, PlayerService.class);
+                        intent.setAction(PlayerService.COMMAND_ACTION);
+                        intent.putExtra(PlayerService.COMMAND_PATH, mediaPath);
+                        intent.putExtra(PlayerService.COMMAND_TYPE, mediaType);
+                        intent.putExtra(PlayerService.COMMAND_NAME,
+                                PlayerService.COMMAND_SHOW_WINDOW);
+                        startService(intent);
+                    } else {
+                        EventBusUtils.post(
+                                PlayerService.class,
+                                PlayerService.COMMAND_SHOW_WINDOW,
+                                new Object[]{mediaPath, mediaType});
+                    }
+                }
                 break;
             default:
                 break;
