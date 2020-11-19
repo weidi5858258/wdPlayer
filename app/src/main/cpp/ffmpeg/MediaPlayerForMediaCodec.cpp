@@ -2148,7 +2148,7 @@ namespace alexander_media_mediacodec {
                 }
             }// 文件已读完
 
-            if (srcAVPacket->data == nullptr) {
+            if (srcAVPacket->buf == nullptr) {
                 continue;
             }
 
