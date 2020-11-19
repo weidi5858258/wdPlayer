@@ -573,7 +573,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.playback_btn:
                 String mediaPath = null;
                 String mediaType = null;
-                if (mAddressET.getVisibility() == View.VISIBLE) {
+                if (mAddressET != null && mAddressET.getVisibility() == View.VISIBLE) {
                     mediaPath = mAddressET.getText().toString().trim();
                     mediaType = "video/";
                     if (TextUtils.isEmpty(mediaPath)) {
