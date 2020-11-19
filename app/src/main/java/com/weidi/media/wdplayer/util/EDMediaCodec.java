@@ -260,7 +260,7 @@ public class EDMediaCodec {
                                 "Video Output MediaCodec.BUFFER_FLAG_END_OF_STREAM");
                     }
                     // 结束
-                    return false;
+                    return true;
                 }
 
                 // 根据房间号找到房间
