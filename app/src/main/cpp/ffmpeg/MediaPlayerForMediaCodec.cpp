@@ -1764,12 +1764,12 @@ namespace alexander_media_mediacodec {
                 copyAVPacket->pts - pts_start_from[copyAVPacket->stream_index],
                 in_stream->time_base,
                 out_stream->time_base,
-                (AVRounding) (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+                (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
         copyAVPacket->dts = av_rescale_q_rnd(
                 copyAVPacket->dts - dts_start_from[copyAVPacket->stream_index],
                 in_stream->time_base,
                 out_stream->time_base,
-                (AVRounding) (AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
+                (AVRounding)(AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX));
 
         if (copyAVPacket->pts < 0) {
             copyAVPacket->pts = 0;
@@ -1832,13 +1832,13 @@ namespace alexander_media_mediacodec {
         copyAVPacket->pts = av_rescale_q_rnd(copyAVPacket->pts,
                                              wrapper->avStream->time_base,
                                              time_base,
-                                             (AVRounding) (AV_ROUND_NEAR_INF |
-                                                           AV_ROUND_PASS_MINMAX));
+                                             (AVRounding)(AV_ROUND_NEAR_INF |
+                                                          AV_ROUND_PASS_MINMAX));
         copyAVPacket->dts = av_rescale_q_rnd(copyAVPacket->dts,
                                              wrapper->avStream->time_base,
                                              time_base,
-                                             (AVRounding) (AV_ROUND_NEAR_INF |
-                                                           AV_ROUND_PASS_MINMAX));
+                                             (AVRounding)(AV_ROUND_NEAR_INF |
+                                                          AV_ROUND_PASS_MINMAX));
         copyAVPacket->duration = av_rescale_q(copyAVPacket->duration,
                                               wrapper->avStream->time_base,
                                               time_base);
@@ -1868,15 +1868,15 @@ namespace alexander_media_mediacodec {
         av_packet_unref(copyAVPacket);
     }
 
-    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket, AVPacket *copyAVPacket) {
+    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket) {
         wrapper->readFramesCount++;
         // 复制数据
-        av_packet_ref(copyAVPacket, srcAVPacket);
-        av_packet_unref(srcAVPacket);
+        // av_packet_ref(copyAVPacket, srcAVPacket);
+        // av_packet_unref(srcAVPacket);
 
         // 保存数据
         pthread_mutex_lock(&wrapper->readLockMutex);
-        wrapper->list2->push_back(*copyAVPacket);
+        wrapper->list2->push_back(*srcAVPacket);
         size_t list2Size = wrapper->list2->size();
         pthread_mutex_unlock(&wrapper->readLockMutex);
 
@@ -1999,13 +1999,9 @@ namespace alexander_media_mediacodec {
         }
 
         AVPacket *srcAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = av_packet_alloc();
         av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
         srcAVPacket->size = 0;
-        av_init_packet(copyAVPacket);
-        copyAVPacket->data = nullptr;
-        copyAVPacket->size = 0;
 
         // seekTo
         if (timeStamp > 0) {
@@ -2045,6 +2041,7 @@ namespace alexander_media_mediacodec {
             endReadTime = av_gettime_relative();
 
             if (isInterrupted) {
+                LOGI("%s\n", "readData() break for isInterrupted");
                 stop();
                 break;
             }
@@ -2077,7 +2074,7 @@ namespace alexander_media_mediacodec {
                     if (readFrame == 0) {
                         while ((readFrame = av_bsf_receive_packet(
                                 audioWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                            readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                            readDataImpl(audioWrapper->father, srcAVPacket);
                         }
                     }
                     audioHasSentNullPacket = true;
@@ -2087,7 +2084,7 @@ namespace alexander_media_mediacodec {
                     if (readFrame == 0) {
                         while ((readFrame = av_bsf_receive_packet(
                                 videoWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                            readDataImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
+                            readDataImpl(videoWrapper->father, srcAVPacket);
                         }
                     }
                     videoHasSentNullPacket = true;
@@ -2145,9 +2142,9 @@ namespace alexander_media_mediacodec {
                      播放优酷视频时,播放一半的时候就读完了,导致再次播放时因为mPrePath != null;播放不了.
                      因此走到这里时发送一个字符串给上层,然后执行mPrePath = null;这样就能再次播放了.
                      */
+                    LOGI("%s\n", "readData() break for readFrame < 0");
                     onInfo("AVERROR_EOF");
-                    // for (;;) end
-                    break;
+                    break;// for (;;) end
                 }
             }// 文件已读完
 
@@ -2175,9 +2172,9 @@ namespace alexander_media_mediacodec {
             }
 
             if (isInitSuccess && needToDownload) {
-                downloadImpl(wrapper, srcAVPacket, copyAVPacket);
+                //downloadImpl(wrapper, srcAVPacket, copyAVPacket);
                 if (onlyDownloadNotPlayback) {
-                    av_packet_unref(srcAVPacket);
+                    //av_packet_unref(srcAVPacket);
                     continue;
                 }
             }
@@ -2188,11 +2185,11 @@ namespace alexander_media_mediacodec {
                     break;
                 }
                 while (av_bsf_receive_packet(wrapper->avbsfContext, srcAVPacket) == 0) {
-                    readDataImpl(wrapper, srcAVPacket, copyAVPacket);
+                    readDataImpl(wrapper, srcAVPacket);
                 }
                 continue;
             }
-            readDataImpl(wrapper, srcAVPacket, copyAVPacket);
+            readDataImpl(wrapper, srcAVPacket);
         }// for(;;) end
         LOGF("readData() end\n");
 
@@ -2203,7 +2200,7 @@ namespace alexander_media_mediacodec {
                 if (readFrame == 0) {
                     while ((readFrame = av_bsf_receive_packet(
                             audioWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                        readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                        readDataImpl(audioWrapper->father, srcAVPacket);
                     }
                 }
             }
@@ -2216,7 +2213,7 @@ namespace alexander_media_mediacodec {
                 if (readFrame == 0) {
                     while ((readFrame = av_bsf_receive_packet(
                             videoWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                        readDataImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
+                        readDataImpl(videoWrapper->father, srcAVPacket);
                     }
                 }
             }
@@ -2232,7 +2229,8 @@ namespace alexander_media_mediacodec {
         pthread_mutex_unlock(&readLockMutex);
 
         if (srcAVPacket != nullptr) {
-            av_packet_unref(srcAVPacket);
+            //av_packet_unref(srcAVPacket);
+            av_packet_free(&srcAVPacket);
             srcAVPacket = nullptr;
         }
 
@@ -3261,7 +3259,7 @@ namespace alexander_media_mediacodec {
         }
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        AVPacket *srcAVPacket/* = av_packet_alloc()*/;
+        AVPacket *srcAVPacket = nullptr/* = av_packet_alloc()*/;
         AVPacket *copyAVPacket = av_packet_alloc();
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
