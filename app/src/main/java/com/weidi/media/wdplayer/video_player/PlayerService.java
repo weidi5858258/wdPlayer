@@ -12,6 +12,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -128,20 +129,39 @@ public class PlayerService extends Service {
      -n com.weidi.usefragments/com.weidi.usefragments.business.video_player.PlayerService \
      -a com.weidi.usefragments.business.video_player.PlayerService \
      --ei HandlePlayerService 4
+
+     Intent intent = new Intent();
+     // 从当前应用开启
+     intent.setClass(this, PlayerService.class);
+     // 从其他应用开启
+     intent.setComponent(
+     new ComponentName(
+     "com.weidi.media.wdplayer",
+     "com.weidi.media.wdplayer.video_player.PlayerService"));
+     intent.setAction(PlayerService.COMMAND_ACTION);
+     intent.putExtra(PlayerService.COMMAND_PATH, mediaPath);
+     intent.putExtra(PlayerService.COMMAND_TYPE, mediaType);
+     intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_SHOW_WINDOW);
+     startService(intent);
      */
 
     public static final String COMMAND_ACTION =
             "com.weidi.media.wdplayer.video_player.PlayerService";
     public static final String COMMAND_NAME = "HandlePlayerService";
+    // 需要播放的媒体路径
     public static final String COMMAND_PATH = "HandlePlayerServicePath";
+    // 需要播放的媒体是视频("video/")还是音频("audio/")
     public static final String COMMAND_TYPE = "HandlePlayerServiceType";
+    public static final String COMMAND_ON_EVENT_TYPE = "command_on_event_type";
+
+    // 对COMMAND_NAME进行设置的值
     public static final int COMMAND_SHOW_WINDOW = 1;
     public static final int COMMAND_HIDE_WINDOW = 2;
     public static final int COMMAND_STOP_SERVICE = 3;
     public static final int COMMAND_RESTART_LOAD_CONTENTS = 4;
     public static final int COMMAND_HANDLE_LANDSCAPE_SCREEN = 5;
     public static final int COMMAND_HANDLE_PORTRAIT_SCREEN = 6;
-    public static final int COMMAND_TEST = 7;
+    public static final int COMMAND_ON_EVENT = 7;
 
     // 测试时使用
     private void internalStartCommand(Intent intent, int flags, int startId) {
@@ -192,6 +212,17 @@ public class PlayerService extends Service {
                 if (mPlayerWrapper != null)
                     mPlayerWrapper.sendMessageForLoadContents();
                 break;
+            case COMMAND_ON_EVENT:
+                int eventType = intent.getIntExtra(COMMAND_ON_EVENT_TYPE, -1);
+                if (eventType != -1 && mPlayerWrapper != null) {
+                    Bundle bundle = intent.getExtras();
+                    if (bundle != null) {
+                        mPlayerWrapper.onEvent(eventType, new Object[]{bundle});
+                    } else {
+                        mPlayerWrapper.onEvent(eventType, null);
+                    }
+                }
+                break;
             default:
                 break;
         }
@@ -234,6 +265,7 @@ public class PlayerService extends Service {
         }
     }
 
+    // 当前Service活着的时候,由其他地方发送事件到这里进行处理
     private Object onEvent(int what, Object[] objArray) {
         Object result = null;
         switch (what) {
