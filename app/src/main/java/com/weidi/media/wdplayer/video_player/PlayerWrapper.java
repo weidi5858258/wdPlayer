@@ -491,8 +491,9 @@ public class PlayerWrapper {
             return;
         }
 
+        mPrePath = mCurPath;
         mCurPath = path;
-        mPrePath = path;
+        Log.i(TAG, "setDataSource() mPrePath:\n" + mPrePath);
         Log.i(TAG, "setDataSource() mCurPath:\n" + mCurPath);
 
         addView();
@@ -1004,6 +1005,7 @@ public class PlayerWrapper {
     }
 
     private boolean needToPlaybackOtherVideo() {
+        Log.i(TAG, "needToPlaybackOtherVideo()");
         if (!mIsLocal && !NetworkUtils.isConnected(mContext)) {
             Log.i(TAG, "needToPlaybackOtherVideo() return false for network doesn't connect");
             return false;
@@ -2715,6 +2717,7 @@ public class PlayerWrapper {
     }
 
     private void onFinished() {
+        Log.i(TAG, "onFinished()");
         mIsFinished = true;
         if (mFfmpegUseMediaCodecDecode != null)
             mFfmpegUseMediaCodecDecode.releaseMediaCodec();

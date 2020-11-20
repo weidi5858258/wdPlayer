@@ -2193,6 +2193,7 @@ namespace alexander_media_mediacodec {
         }// for(;;) end
         LOGF("readData() end\n");
 
+        LOGI("readData() end 1\n");
         if (!audioHasSentNullPacket) {
             if (!audioDisable
                 && audioWrapper->father->useMediaCodec) {
@@ -2205,7 +2206,7 @@ namespace alexander_media_mediacodec {
                 }
             }
         }
-
+        LOGI("readData() end 2\n");
         if (!videoHasSentNullPacket) {
             if (!videoDisable
                 && videoWrapper->father->useMediaCodec) {
@@ -2218,7 +2219,7 @@ namespace alexander_media_mediacodec {
                 }
             }
         }
-
+        LOGI("readData() end 3\n");
         pthread_mutex_lock(&readLockMutex);
         if (needToDownload && isInitSuccess) {
             LOGI("readData() 读线程退出,停止下载\n");
@@ -2227,13 +2228,13 @@ namespace alexander_media_mediacodec {
             closeDownload();
         }
         pthread_mutex_unlock(&readLockMutex);
-
+        LOGI("readData() end 4\n");
         if (srcAVPacket != nullptr) {
             //av_packet_unref(srcAVPacket);
             av_packet_free(&srcAVPacket);
             srcAVPacket = nullptr;
         }
-
+        LOGI("readData() end 5\n");
         isReading = false;
 
         return nullptr;

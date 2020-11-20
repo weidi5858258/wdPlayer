@@ -47,7 +47,6 @@ public class PlayerService extends Service {
     private static final String TAG = "player_alexander";
     private static final boolean DEBUG = true;
 
-
     @Override
     public IBinder onBind(Intent intent) {
         Log.i(TAG, "onBind() intent: " + intent);
