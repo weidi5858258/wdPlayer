@@ -1011,8 +1011,8 @@ public class PlayerWrapper {
             return false;
         }
         if (mPrePath != null) {
-            addView();
             Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
+            addView();
             return true;
         } else if (IS_PHONE || IS_WATCH) {
             if (!mIsAddedView || !mRootView.isShown()) {
@@ -2739,8 +2739,8 @@ public class PlayerWrapper {
                 }
                 abandonAudioFocusRequest();
                 mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
+                System.gc();
             }
-            System.gc();
         }
     }
 
