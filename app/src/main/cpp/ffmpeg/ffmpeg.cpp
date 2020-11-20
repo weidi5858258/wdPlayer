@@ -462,7 +462,7 @@ void onFinished() {
     LOGF("onFinished()\n");
     JNIEnv *jniEnv;
     bool isAttached = getEnv(&jniEnv);
-    LOGF("onFinished() isAttached: %d\n", isAttached);
+    //LOGF("onFinished() isAttached: %d\n", isAttached);
     if (jniEnv == nullptr) {
         LOGI("onFinished() jniEnv = nullptr\n");
     }
@@ -475,7 +475,7 @@ void onFinished() {
     if (jniEnv != nullptr
         && callback_jobject != nullptr
         && callback.onFinishedMethodID != nullptr) {
-        LOGF("onFinished() callback.onFinishedMethodID\n");
+        //LOGF("onFinished() callback.onFinishedMethodID\n");
         jniEnv->CallVoidMethod(callback_jobject, callback.onFinishedMethodID);
     }
     if (isAttached) {

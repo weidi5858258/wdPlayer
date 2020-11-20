@@ -187,6 +187,7 @@ public class FfmpegUseMediaCodecDecode {
     }
 
     public void releaseMediaCodec() {
+        Log.i(TAG, "releaseMediaCodec() start");
         mType = null;
         if (mVideoWrapper != null) {
             MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
@@ -203,6 +204,7 @@ public class FfmpegUseMediaCodecDecode {
             mAudioWrapper.decoderMediaCodec = null;
             mAudioWrapper = null;
         }
+        Log.i(TAG, "releaseMediaCodec() end");
     }
 
     public void destroy() {
@@ -1097,7 +1099,7 @@ public class FfmpegUseMediaCodecDecode {
                 Log.w(TAG, "handleVideoOutputFormat() newMediaFormat: \n" +
                         mVideoWrapper.decoderMediaFormat);
 
-                width = mVideoWrapper.decoderMediaFormat.getInteger(MediaFormat.KEY_WIDTH);
+                /*width = mVideoWrapper.decoderMediaFormat.getInteger(MediaFormat.KEY_WIDTH);
                 if (mVideoWrapper.decoderMediaFormat.containsKey("crop-left")
                         && mVideoWrapper.decoderMediaFormat.containsKey("crop-right")) {
                     width = mVideoWrapper.decoderMediaFormat.getInteger("crop-right") + 1 -
@@ -1119,7 +1121,7 @@ public class FfmpegUseMediaCodecDecode {
                 needToDoIt = false;
                 if (alignWidth != 0 && alignHeight != 0 && alignHeight != height) {
                     needToDoIt = true;
-                }
+                }*/
             } catch (Exception e) {
                 e.printStackTrace();
             }

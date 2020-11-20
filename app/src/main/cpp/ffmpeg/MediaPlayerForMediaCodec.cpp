@@ -3199,7 +3199,7 @@ namespace alexander_media_mediacodec {
             closeOther();
             // 必须保证每次退出都要执行到
             onFinished();
-            LOGF("%s\n", "Safe Exit");
+            //LOGF("Safe Exit");
         } else {
             LOGW("handleDataClose() for (;;) video end\n");
             isVideoHandling = false;
@@ -3261,9 +3261,10 @@ namespace alexander_media_mediacodec {
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
         AVPacket *srcAVPacket = av_packet_alloc();
-        av_init_packet(srcAVPacket);
+        /*av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
-        srcAVPacket->size = 0;
+        srcAVPacket->size = 0;*/
+
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
         // flags: 0, pts: 119228401, pkt_pos: 871192, pkt_duration: 3600, pkt_size: 7599

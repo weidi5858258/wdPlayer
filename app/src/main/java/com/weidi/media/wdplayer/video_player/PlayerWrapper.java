@@ -775,7 +775,7 @@ public class PlayerWrapper {
         }
     }
 
-    private void addView() {
+    private synchronized void addView() {
         Log.i(TAG, "addView()    mIsAddedView: " + mIsAddedView);
         if (mIsAddedView) {
             mIsAddedView = false;
@@ -788,18 +788,17 @@ public class PlayerWrapper {
 
         mIsAddedView = true;
         onResume();
-        mWindowManager.addView(mRootView, mLayoutParams);
-
         getMD5ForPath();
+        mWindowManager.addView(mRootView, mLayoutParams);
     }
 
-    public void removeView() {
+    public synchronized void removeView() {
         Log.i(TAG, "removeView() mIsAddedView: " + mIsAddedView);
         mPrePath = null;
         if (mIsAddedView) {
+            mIsAddedView = false;
             onPause();
             mWindowManager.removeView(mRootView);
-            mIsAddedView = false;
         }
     }
 
@@ -2719,8 +2718,9 @@ public class PlayerWrapper {
     private void onFinished() {
         Log.i(TAG, "onFinished()");
         mIsFinished = true;
-        if (mFfmpegUseMediaCodecDecode != null)
+        if (mFfmpegUseMediaCodecDecode != null) {
             mFfmpegUseMediaCodecDecode.releaseMediaCodec();
+        }
 
         if (mHasError) {
             mHasError = false;
@@ -2728,6 +2728,7 @@ public class PlayerWrapper {
             // 重新开始播放
             startForGetMediaFormat();
         } else {
+            Log.i(TAG, "Safe Exit");
             MyToast.show("Safe Exit");
 
             // 播放结束
@@ -2753,6 +2754,7 @@ public class PlayerWrapper {
                 textInfo = toastInfo;
                 textInfoTV.setText(toastInfo);
             } else if (toastInfo.contains("AVERROR_EOF")) {
+                Log.i(TAG, "inInfo() mPrePath = null");
                 mPrePath = null;
             } else {
                 MyToast.show(toastInfo);
