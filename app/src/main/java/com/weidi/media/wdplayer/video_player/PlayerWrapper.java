@@ -1506,7 +1506,7 @@ public class PlayerWrapper {
         mThreadHandler.sendEmptyMessage(MSG_PREPARE);
     }
 
-    private void startPlayback() {
+    private synchronized void startPlayback() {
         Log.d(TAG, "startPlayback() start");
         Log.d(TAG, "startPlayback()                  mPath: " + mCurPath);
         if (!mIsAddedView
