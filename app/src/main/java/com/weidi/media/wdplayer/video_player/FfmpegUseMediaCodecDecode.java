@@ -189,16 +189,36 @@ public class FfmpegUseMediaCodecDecode {
     public void releaseMediaCodec() {
         Log.i(TAG, "releaseMediaCodec() start");
         mType = null;
-        if (mVideoWrapper != null) {
-            MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
+        /*if (mVideoWrapper != null && mVideoWrapper.decoderMediaCodec != null) {
+            mVideoWrapper.decoderMediaCodec.release();
             mVideoWrapper.decoderMediaCodec = null;
             mVideoWrapper = null;
         }
+        Log.i(TAG, "releaseMediaCodec() 1");
         if (mExoAudioTrack != null) {
             MediaUtils.releaseAudioTrack(mExoAudioTrack.mAudioTrack);
             mExoAudioTrack.mAudioTrack = null;
             mExoAudioTrack = null;
         }
+        Log.i(TAG, "releaseMediaCodec() 2");
+        if (mAudioWrapper != null && mAudioWrapper.decoderMediaCodec != null) {
+            mAudioWrapper.decoderMediaCodec.release();
+            mAudioWrapper.decoderMediaCodec = null;
+            mAudioWrapper = null;
+        }*/
+
+        if (mVideoWrapper != null) {
+            MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
+            mVideoWrapper.decoderMediaCodec = null;
+            mVideoWrapper = null;
+        }
+        Log.i(TAG, "releaseMediaCodec() 1");
+        if (mExoAudioTrack != null) {
+            MediaUtils.releaseAudioTrack(mExoAudioTrack.mAudioTrack);
+            mExoAudioTrack.mAudioTrack = null;
+            mExoAudioTrack = null;
+        }
+        Log.i(TAG, "releaseMediaCodec() 2");
         if (mAudioWrapper != null) {
             MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
             mAudioWrapper.decoderMediaCodec = null;
@@ -384,6 +404,7 @@ public class FfmpegUseMediaCodecDecode {
                 && mAudioWrapper.decoderMediaCodec != null) {
             // mAudioWrapper.decoderMediaCodec.flush();
             Log.e(TAG, "initAudioMediaCodec() audio clear");
+            mAudioWrapper.decoderMediaCodec.release();
             mAudioWrapper.clear();
             mAudioWrapper.decoderMediaCodec = null;
             mAudioWrapper = null;
@@ -707,6 +728,7 @@ public class FfmpegUseMediaCodecDecode {
                 && mVideoWrapper.decoderMediaCodec != null) {
             // mVideoWrapper.decoderMediaCodec.flush();
             Log.e(TAG, "initVideoMediaCodec() video clear");
+            mVideoWrapper.decoderMediaCodec.release();
             mVideoWrapper.clear();
             mVideoWrapper.decoderMediaCodec = null;
             mVideoWrapper = null;

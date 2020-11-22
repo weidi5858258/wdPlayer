@@ -254,10 +254,10 @@ public class MainActivity extends AppCompatActivity {
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 1);
                         if (softSolutionForAudio == 1) {
-                            MyToast.show("使用音频软解");
+                            MyToast.show("使用音频软解码");
                             sp.edit().putInt(HARD_SOLUTION_AUDIO, 0).commit();
                         } else if (softSolutionForAudio == 0) {
-                            MyToast.show("使用音频硬解");
+                            MyToast.show("使用音频硬解码");
                             sp.edit().putInt(HARD_SOLUTION_AUDIO, 1).commit();
                         }
                         break;
@@ -265,10 +265,10 @@ public class MainActivity extends AppCompatActivity {
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         int softSolution = sp.getInt(HARD_SOLUTION, 1);
                         if (softSolution == 1) {
-                            MyToast.show("使用音视频软解");
+                            MyToast.show("使用音视频软解码");
                             sp.edit().putInt(HARD_SOLUTION, 0).commit();
                         } else if (softSolution == 0) {
-                            MyToast.show("使用音视频硬解");
+                            MyToast.show("使用音视频硬解码");
                             sp.edit().putInt(HARD_SOLUTION, 1).commit();
                         }
                         break;

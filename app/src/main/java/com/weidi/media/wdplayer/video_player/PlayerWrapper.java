@@ -151,6 +151,7 @@ public class PlayerWrapper {
     private static final int MSG_VOLUME_HIDE_LAYOUT = 17;
     private static final int MSG_DOWNLOAD = 18;
     private static final int MSG_LOAD_CONTENTS = 19;
+    private static final int MSG_ADD_VIEW = 20;
 
     private HashMap<String, Long> mPathTimeMap = new HashMap<>();
     private ArrayList<String> mCouldPlaybackPathList = new ArrayList<>();
@@ -496,7 +497,8 @@ public class PlayerWrapper {
         Log.i(TAG, "setDataSource() mPrePath:\n" + mPrePath);
         Log.i(TAG, "setDataSource() mCurPath:\n" + mCurPath);
 
-        addView();
+        mUiHandler.removeMessages(MSG_ADD_VIEW);
+        mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
     }
 
     public void setType(String type) {
@@ -1011,7 +1013,8 @@ public class PlayerWrapper {
         }
         if (mPrePath != null) {
             Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
-            addView();
+            mUiHandler.removeMessages(MSG_ADD_VIEW);
+            mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
             return true;
         } else if (IS_PHONE || IS_WATCH) {
             if (!mIsAddedView || !mRootView.isShown()) {
@@ -1285,6 +1288,9 @@ public class PlayerWrapper {
                 break;
             case MSG_VOLUME_HIDE_LAYOUT:
                 mVolumeLayout.setVisibility(View.INVISIBLE);
+                break;
+            case MSG_ADD_VIEW:
+                addView();
                 break;
             default:
                 break;
@@ -2622,6 +2628,9 @@ public class PlayerWrapper {
         } else {
             mIsLive = false;
         }
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+            mIjkPlayer.mIsLive = mIsLive;
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW               mMediaDuration: " +
                 mMediaDuration);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                   videoWidth: " +
@@ -3059,10 +3068,10 @@ public class PlayerWrapper {
     private void clickFive() {
         int softSolution = mSP.getInt(HARD_SOLUTION, 1);
         if (softSolution == 1) {
-            MyToast.show("使用音视频软解");
+            MyToast.show("使用音视频软解码");
             mSP.edit().putInt(HARD_SOLUTION, 0).commit();
         } else if (softSolution == 0) {
-            MyToast.show("使用音视频硬解");
+            MyToast.show("使用音视频硬解码");
             mSP.edit().putInt(HARD_SOLUTION, 1).commit();
         }
     }
@@ -3105,10 +3114,10 @@ public class PlayerWrapper {
         } else {
             int softSolutionForAudio = mSP.getInt(HARD_SOLUTION_AUDIO, 1);
             if (softSolutionForAudio == 1) {
-                MyToast.show("使用音频软解");
+                MyToast.show("使用音频软解码");
                 mSP.edit().putInt(HARD_SOLUTION_AUDIO, 0).commit();
             } else if (softSolutionForAudio == 0) {
-                MyToast.show("使用音频硬解");
+                MyToast.show("使用音频硬解码");
                 mSP.edit().putInt(HARD_SOLUTION_AUDIO, 1).commit();
             }
         }

@@ -181,10 +181,10 @@ public class WearMainActivity extends WearableActivity {
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         int softSolution = sp.getInt(HARD_SOLUTION, 1);
                         if (softSolution == 1) {
-                            MyToast.show("使用软解");
+                            MyToast.show("使用软解码");
                             sp.edit().putInt(HARD_SOLUTION, 0).commit();
                         } else if (softSolution == 0) {
-                            MyToast.show("使用硬解");
+                            MyToast.show("使用硬解码");
                             sp.edit().putInt(HARD_SOLUTION, 1).commit();
                         }
                         break;

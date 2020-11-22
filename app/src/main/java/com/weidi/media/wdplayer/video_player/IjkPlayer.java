@@ -80,6 +80,7 @@ public class IjkPlayer implements WdPlayer {
     private Surface mSurface = null;
     private long mPositionMs;
     public boolean mIsLocal = true;
+    public boolean mIsLive = false;
     private boolean mHasPlayed = true;
 
 
@@ -383,8 +384,15 @@ public class IjkPlayer implements WdPlayer {
             case Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED:
                 if (mCallback != null && mIjkMediaPlayer != null) {
                     long position = mIjkMediaPlayer.getCurrentPosition();
-                    if (position > 0) {
-                        mCallback.onProgressUpdated(position / 1000);
+                    if (!mIsLive) {
+                        if (position > 0) {
+                            mCallback.onProgressUpdated(position / 1000);
+                        } else {
+                            mUiHandler.removeMessages(Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED);
+                            mUiHandler.sendEmptyMessageDelayed(
+                                    Callback.MSG_ON_TRANSACT_PROGRESS_UPDATED, 10);
+                            return;
+                        }
                     }
 
                     /*Log.i(TAG, "videoBytes: " + mIjkMediaPlayer.getVideoCachedBytes() +

@@ -20,8 +20,8 @@
         4次.(手机)进入本地音乐节目,(手表)进入本地视频节目\n
         5次.使用player_ffmpeg_mediacodec\n
         6次.使用player_ijkplayer\n
-        7次.是否使用音频硬解码(针对player_ffmpeg_mediacodec)\n
-        8次.使用硬解还是软解\n
+        7次.是否使用音&#160;&#160;&#160;&#160;频硬解码(针对player_ffmpeg_mediacodec)\n
+        8次.是否使用音视频硬解码\n
         9次.退出应用\n
         \n
         敲击播放界面的次数操作:\n
@@ -29,7 +29,7 @@
         2次.播放或暂停\n
         3次.缓冲\n
         4次.竖屏时不变,横屏时三种情况之间不断切换\n
-        5次.使用硬解还是软解\n
+        5次.是否使用音视频硬解码\n
         6次.帧模式(针对player_ffmpeg_mediacodec)\n
         7次.是否使用音频硬解码(针对player_ffmpeg_mediacodec)\n
         8次.关闭音频,播放视频(针对player_ffmpeg_mediacodec)\n

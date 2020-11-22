@@ -2894,9 +2894,7 @@ namespace alexander_media_mediacodec {
                         || audioWrapper->father->isPausedForCache
                         || audioWrapper->father->isPausedForSeek
                         || !audioWrapper->father->isHandling
-                        || !videoWrapper->father->isHandling
-                            ) //
-                    {
+                        || !videoWrapper->father->isHandling) {
                         LOGD("handleAudioOutputBuffer() audioWrapper->father->isStarted return\n");
                         return 0;
                     }
@@ -3261,9 +3259,9 @@ namespace alexander_media_mediacodec {
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
         AVPacket *srcAVPacket = av_packet_alloc();
-        /*av_init_packet(srcAVPacket);
+        av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
-        srcAVPacket->size = 0;*/
+        srcAVPacket->size = 0;
 
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
@@ -3513,7 +3511,8 @@ namespace alexander_media_mediacodec {
 
             // region 缓冲处理
 
-            if (wrapper->isReading
+            if (!isLocal
+                && wrapper->isReading
                 && wrapper->isHandling
                 && !wrapper->isHandleList1Full
                 && wrapper->list1->size() == 0
