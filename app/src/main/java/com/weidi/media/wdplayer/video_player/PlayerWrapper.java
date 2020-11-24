@@ -2605,9 +2605,9 @@ public class PlayerWrapper {
         mPositionTimeTV.setText("00:00:00");
         mDurationTimeTV.setText("00:00:00");
 
-        mPositionSeekBar.setProgress(0);
-        mPositionSeekBar.setPadding(0, 0, 0, 0);
-        mPositionSeekBar.setThumbOffset(0);
+        //mPositionSeekBar.setProgress(0);
+        //mPositionSeekBar.setPadding(0, 0, 0, 0);
+        //mPositionSeekBar.setThumbOffset(0);
 
         mDataCacheLayout.setVisibility(View.GONE);
         // 左边进度值

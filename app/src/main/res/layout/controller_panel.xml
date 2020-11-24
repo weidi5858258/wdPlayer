@@ -10,6 +10,9 @@
     android:orientation="vertical">
 
     <!--android:max="3840"-->
+    <!--android:paddingStart="0dp"
+    android:paddingEnd="0dp"
+    android:thumbOffset="0dip"-->
     <SeekBar
         android:id="@+id/progress_bar"
         android:layout_width="match_parent"
@@ -18,7 +21,6 @@
         android:max="100"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
-        android:thumbOffset="0dip"
         android:progress="1"
         android:progressBackgroundTint="@color/white"
         android:secondaryProgress="1"
