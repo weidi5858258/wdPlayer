@@ -208,6 +208,7 @@ public class JniPlayerActivity extends Activity {
     private static final boolean DEBUG = true;
 
     public static final String CONTENT_PATH = "content_path";
+    public static final String CONTENT_TYPE = "content_type";
     public static final String COMMAND_NO_FINISH = "command_no_finish";
 
     public static boolean isAliveJniPlayerActivity = false;
@@ -265,10 +266,12 @@ public class JniPlayerActivity extends Activity {
             return;
         }
 
-        // 在本应用开启当前Activity时能得到这个路径,从其他应用打开时为null
+        // 在本应用内开启当前Activity时能得到这个路径,从其他应用打开时为null
         mPath = intent.getStringExtra(CONTENT_PATH);
-        if (TextUtils.isEmpty(mPath)) {
-            Log.d(TAG, "internalCreate()  mPath: null");
+        mType = intent.getStringExtra(CONTENT_TYPE);
+        Log.d(TAG, "internalCreate()  mPath: " + mPath);
+        Log.d(TAG, "internalCreate()  mType: " + mType);
+        if (TextUtils.isEmpty(mPath) && TextUtils.isEmpty(mType)) {
             /***
              1.
              uri : content://media/external/video/media/272775
@@ -344,17 +347,16 @@ public class JniPlayerActivity extends Activity {
                             public void onRequestPermissionsResult() {
                                 if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                                         == PackageManager.PERMISSION_GRANTED) {
-                                    doSomething(intent);
+                                    doSomething();
                                 }
                                 finish();
                             }
                         });
+                return;
             }
-
-            return;
         }
 
-        doSomething(intent);
+        doSomething();
 
         finish();
     }
@@ -399,10 +401,10 @@ public class JniPlayerActivity extends Activity {
         }
     }
 
-    private void doSomething(Intent intent) {
+    private void doSomething() {
         if (!isRunService(this, PLAYERSERVICE)) {
             Log.d(TAG, "internalCreate() PlayerService is not alive");
-            intent = new Intent();
+            Intent intent = new Intent();
             intent.setClass(this, PlayerService.class);
             intent.setAction(PlayerService.COMMAND_ACTION);
             intent.putExtra(PlayerService.COMMAND_PATH, mPath);
@@ -414,7 +416,7 @@ public class JniPlayerActivity extends Activity {
             EventBusUtils.post(
                     PlayerService.class,
                     PlayerService.COMMAND_SHOW_WINDOW,
-                    new Object[]{mPath, intent.getType()});
+                    new Object[]{mPath, mType});
         }
     }
 

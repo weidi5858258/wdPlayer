@@ -6,6 +6,8 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.app.UiModeManager;
 import android.content.Context;
@@ -19,6 +21,7 @@ import android.graphics.PixelFormat;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -125,6 +128,8 @@ import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_AUDIO;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_VIDEO;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
+import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PATH;
+import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_TYPE;
 
 /***
  /Users/alexander/mydev/workspace_android/wdPlayer/gradle/wrapper/gradle-wrapper.properties
@@ -195,6 +200,7 @@ public class PlayerWrapper {
     private View mRootView;
     private View mMediaPlayerRootLayout;
 
+    private AlarmManager mAlarmManager;
     private AudioManager mAudioManager;
     private AudioFocusRequest mAudioFocusRequest;
     private int minVolume;
@@ -329,6 +335,7 @@ public class PlayerWrapper {
         }
 
         mBatteryManager = (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
+        mAlarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
         mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
 
@@ -702,6 +709,7 @@ public class PlayerWrapper {
 
         sendMessageForLoadContents();
 
+        // createAlarmTask();
         // Test
         /*new Thread(new Runnable() {
             @Override
@@ -802,6 +810,19 @@ public class PlayerWrapper {
             onPause();
             mWindowManager.removeView(mRootView);
         }
+    }
+
+    public void createAlarmTask() {
+        long anHour = 30 * 1000;
+        long triggerAtTime = SystemClock.elapsedRealtime() + anHour;
+        Intent intent = new Intent(mContext, JniPlayerActivity.class);
+        //intent.setData(Uri.parse("/storage/37C8-3904/myfiles/music/冷漠、云菲菲\\ -\\ 伤心城市.mp3"));
+        //intent.setType("audio/");
+        intent.putExtra(CONTENT_PATH, "/storage/37C8-3904/myfiles/music/冷漠、云菲菲 - 伤心城市.mp3");
+        intent.putExtra(CONTENT_PATH, "/storage/emulated/0/Music/谭咏麟 - 水中花.mp3");
+        intent.putExtra(CONTENT_TYPE, "audio/");
+        PendingIntent pendingIntent = PendingIntent.getActivity(mContext, 0, intent, 0);
+        mAlarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pendingIntent);
     }
 
     private ArrayList<Integer> mColorsHasUsedList;
@@ -2073,7 +2094,7 @@ public class PlayerWrapper {
     // 电视机专用
     public void handlePortraitScreenWithTV() {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW handlePortraitScreenWithTV");
-        if (mVideoWidth == 0 || mVideoHeight == 0 || !mIsAddedView) {
+        if (/*mVideoWidth == 0 || mVideoHeight == 0 || */!mIsAddedView) {
             return;
         }
 
@@ -2636,10 +2657,10 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                   videoWidth: " +
                 mVideoWidth + " videoHeight: " + mVideoHeight);
 
-        if (!mIsH264) {
-            mDurationTimeTV.setText(DateUtils.formatElapsedTime(mMediaDuration));
-        } else {
+        if (mIsH264) {
             mDurationTimeTV.setText(String.valueOf(mMediaDuration));
+        } else {
+            mDurationTimeTV.setText(DateUtils.formatElapsedTime(mMediaDuration));
         }
 
         if (mIsVideo) {

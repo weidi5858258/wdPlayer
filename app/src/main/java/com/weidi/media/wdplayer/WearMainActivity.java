@@ -1,6 +1,8 @@
 package com.weidi.media.wdplayer;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +13,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
@@ -20,6 +23,7 @@ import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavoriteWear
 import com.weidi.media.wdplayer.business.contents.LiveActivityForWear;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear;
 import com.weidi.media.wdplayer.business.contents.LocalVideoActivityForWear;
+import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.utils.MyToast;
 
@@ -32,6 +36,8 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PATH;
+import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_TYPE;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 //import android.support.wearable.activity.WearableActivity;
@@ -136,6 +142,18 @@ public class WearMainActivity extends WearableActivity {
     }
 
     /////////////////////////////////////////////////////////////////////////
+
+    public void createAlarmTask() {
+        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        long anHour = 30 * 1000;
+        long triggerAtTime = SystemClock.elapsedRealtime() + anHour;
+        Intent intent = new Intent(this, JniPlayerActivity.class);
+        intent.putExtra(CONTENT_PATH, "/storage/37C8-3904/myfiles/music/冷漠、云菲菲 - 伤心城市.mp3");
+        intent.putExtra(CONTENT_PATH, "/storage/emulated/0/Music/谭咏麟 - 水中花.mp3");
+        intent.putExtra(CONTENT_TYPE, "audio/");
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, 0);
+        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, triggerAtTime, pendingIntent);
+    }
 
     private int clickCounts = 0;
 
