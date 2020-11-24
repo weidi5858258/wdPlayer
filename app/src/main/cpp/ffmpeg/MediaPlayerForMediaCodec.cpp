@@ -2143,7 +2143,7 @@ namespace alexander_media_mediacodec {
                      因此走到这里时发送一个字符串给上层,然后执行mPrePath = null;这样就能再次播放了.
                      */
                     LOGI("%s\n", "readData() break for readFrame < 0");
-                    onInfo("AVERROR_EOF");
+                    // onInfo("AVERROR_EOF");
                     break;// for (;;) end
                 }
             }// 文件已读完
@@ -2181,7 +2181,16 @@ namespace alexander_media_mediacodec {
             if (wrapper->useMediaCodec) {
                 readFrame = av_bsf_send_packet(wrapper->avbsfContext, srcAVPacket);
                 if (readFrame < 0) {
-                    LOGE("readData() video av_bsf_send_packet failure\n");
+                    if (wrapper->type == TYPE_AUDIO) {
+                        LOGE("readData() audio av_bsf_send_packet failure\n");
+                        //audioWrapper->father->useMediaCodec = false;
+                    } else {
+                        LOGE("readData() video av_bsf_send_packet failure\n");
+                        //audioWrapper->father->useMediaCodec = false;
+                        //videoWrapper->father->useMediaCodec = false;
+                    }
+                    stop();
+                    //continue;
                     break;
                 }
                 while (av_bsf_receive_packet(wrapper->avbsfContext, srcAVPacket) == 0) {
@@ -3353,6 +3362,10 @@ namespace alexander_media_mediacodec {
                         LOGD("handleData() wait() Seek  audio end\n");
                     } else {
                         LOGW("handleData() wait() Seek  video end\n");
+                    }
+                    if (audioWrapper->father->list1->size() > 0
+                        && videoWrapper->father->list1->size() > 0) {
+                        onPlayed();
                     }
                 } else if (isPausedForUser) {
                     if (wrapper->type == TYPE_AUDIO) {

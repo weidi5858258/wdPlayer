@@ -30,6 +30,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.RemoteException;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.text.format.DateUtils;
@@ -54,6 +55,7 @@ import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
@@ -2571,6 +2573,14 @@ public class PlayerWrapper {
     }
 
     private void onReady() {
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                Log.i(TAG, "onReady() onState STATE_PREPARING");
+                mIDmrPlayerAppCallback.onState(mIid, STATE_PREPARING);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
         // 是否显示控制面板
         if (mIsVideo) {
             if (!mIsLocal) {
@@ -2589,6 +2599,8 @@ public class PlayerWrapper {
         } else if (mIsAudio) {
             mControllerPanelLayout.setVisibility(View.VISIBLE);
         }
+        mPresentationTime = 0;
+        mMediaDuration = 0;
         setControllerPanelBackgroundColor();
         mPositionTimeTV.setText("00:00:00");
         mDurationTimeTV.setText("00:00:00");
@@ -2717,6 +2729,15 @@ public class PlayerWrapper {
         // 开始播放设置为false,表示初始化状态
         edit.putBoolean(PLAYBACK_NORMAL_FINISH, false);
         edit.commit();
+
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                Log.i(TAG, "onReady() onState STATE_PREPARED");
+                mIDmrPlayerAppCallback.onState(mIid, STATE_PREPARED);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void onPlayed() {
@@ -2727,6 +2748,14 @@ public class PlayerWrapper {
         } else {
             if (mIsVideo) {
                 MyToast.show("Play");
+            }
+        }
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                Log.i(TAG, "onPlayed() onState STATE_PLAYING");
+                mIDmrPlayerAppCallback.onState(mIid, STATE_PLAYING);
+            } catch (RemoteException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -2743,10 +2772,28 @@ public class PlayerWrapper {
                 }
             }
         }
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                Log.i(TAG, "onPaused() onState STATE_PAUSED");
+                mIDmrPlayerAppCallback.onState(mIid, STATE_PAUSED);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void onFinished() {
         Log.i(TAG, "onFinished()");
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                Log.i(TAG, "onFinished() onState STATE_STOPPED");
+                mIDmrPlayerAppCallback.onState(mIid, STATE_STOPPED);
+                //Log.i(TAG, "onFinished() onCompletion");
+                //mIDmrPlayerAppCallback.onCompletion(mIid);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
         mIsFinished = true;
         if (mFfmpegUseMediaCodecDecode != null) {
             mFfmpegUseMediaCodecDecode.releaseMediaCodec();
@@ -2795,7 +2842,7 @@ public class PlayerWrapper {
     private void onError(Message msg) {
         mIsFinished = true;
         mHasError = false;
-        String errorInfo = null;
+        String errorInfo = "error";
         if (msg.obj != null) {
             errorInfo = (String) msg.obj;
         }
@@ -2842,6 +2889,13 @@ public class PlayerWrapper {
                 break;
             default:
                 break;
+        }
+        if (mIDmrPlayerAppCallback != null) {
+            try {
+                mIDmrPlayerAppCallback.onError(mIid, error, errorInfo);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -3753,6 +3807,97 @@ public class PlayerWrapper {
             sb.append(tmp);
         }
         return sb.toString();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    public static final int STATE_IDLE = 0;
+    public static final int STATE_PREPARING = 1;
+    public static final int STATE_PLAY_START = 3;
+
+    public static final int STATE_PREPARED = 2;
+    public static final int STATE_PLAYING = 4;
+    public static final int STATE_PAUSED = 5;
+    public static final int STATE_STOPPED = 6;
+    public static final int STATE_SEEKING = 7;
+
+    private int mIid = -1;
+    private IDmrPlayerAppCallback mIDmrPlayerAppCallback = null;
+
+    public void registerCallback(int iid, IDmrPlayerAppCallback cb) {
+        mIid = iid;
+        mIDmrPlayerAppCallback = cb;
+    }
+
+    public void unregisterCallback(int iid, IDmrPlayerAppCallback cb) {
+        mIid = -1;
+        mIDmrPlayerAppCallback = null;
+    }
+
+    public void setIID(int iid) {
+        mIid = iid;
+    }
+
+    public void playForDlna(int iid) {
+        if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
+            if (mWdPlayer.isRunning() && !mWdPlayer.isPlaying()) {
+                mWdPlayer.play();
+                try {
+                    Log.i(TAG, "playForDlna() onState STATE_PLAYING");
+                    mIDmrPlayerAppCallback.onState(iid, STATE_PLAYING);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void pauseForDlna(int iid) {
+        if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
+            if (mWdPlayer.isRunning() && mWdPlayer.isPlaying()) {
+                mWdPlayer.pause();
+                try {
+                    Log.i(TAG, "pauseForDlna() onState STATE_PAUSED");
+                    mIDmrPlayerAppCallback.onState(iid, STATE_PAUSED);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void stopForDlna(int iid) {
+        if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
+            if (mWdPlayer.isRunning()) {
+                mWdPlayer.release();
+                try {
+                    Log.i(TAG, "stopForDlna() onState STATE_STOPPED");
+                    mIDmrPlayerAppCallback.onState(iid, STATE_STOPPED);
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void seekToForDlna(int iid, int msec) {
+        if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
+            mWdPlayer.seekTo(msec / 1000);
+            try {
+                Log.i(TAG, "seekToForDlna() onState STATE_SEEKING");
+                mIDmrPlayerAppCallback.onState(iid, STATE_SEEKING);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public int getCurrentPositionForDlna(int iid) {
+        return (int) mPresentationTime * 1000;
+    }
+
+    public int getDurationForDlna(int iid) {
+        return (int) mMediaDuration * 1000;
     }
 
 }

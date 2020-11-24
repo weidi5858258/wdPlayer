@@ -17,6 +17,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.RemoteException;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
@@ -27,10 +28,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 
+import com.sonyericsson.dlna.dmr.player.IDmrPlayerApp;
+import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.WearMainActivity;
+
+import java.util.Map;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -51,7 +56,7 @@ public class PlayerService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         Log.i(TAG, "onBind() intent: " + intent);
-        return null;
+        return mBinder;
     }
 
     @Override
@@ -503,5 +508,96 @@ public class PlayerService extends Service {
             }
         }
     }
+
+    /////////////////////////////////////////////////////////////////
+
+    private static final int SUCCESS = 0;
+
+    private final IDmrPlayerApp.Stub mBinder = new IDmrPlayerApp.Stub() {
+
+        @Override
+        public void registerCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
+            Log.i(TAG, "registerCallback() iid:" + iid + " cb: " + cb);
+            mPlayerWrapper.registerCallback(iid, cb);
+        }
+
+        @Override
+        public void unregisterCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
+            Log.i(TAG, "unregisterCallback() iid:" + iid + " cb: " + cb);
+            mPlayerWrapper.unregisterCallback(iid, cb);
+        }
+
+        @Override
+        public int setDataSource(int iid, String uri) throws RemoteException {
+            return SUCCESS;
+        }
+
+        @Override
+        public int setDataSourceMetadata(final int iid, String uri, Map metadata) throws RemoteException {
+            Log.i(TAG, "setDataSourceMetadata()\niid: " + iid + "\nuri: " + uri
+                    + "\nmetadata: " + metadata);
+            mPlayerWrapper.setIID(iid);
+            mPlayerWrapper.setType("video/");
+            mPlayerWrapper.setDataSource(uri);
+            return SUCCESS;
+        }
+
+        @SuppressWarnings("unchecked")
+        private int setDataSourceCommon(int iid, String uri, Map metadata) {
+            Log.i(TAG, "setDataSourceCommon() iid: " + iid);
+            return SUCCESS;
+        }
+
+        @Override
+        public int stop(int iid) throws RemoteException {
+            Log.i(TAG, "stop() iid: " + iid);
+            mPlayerWrapper.stopForDlna(iid);
+            return SUCCESS;
+        }
+
+        @Override
+        public int start(int iid) throws RemoteException {
+            Log.i(TAG, "start() iid: " + iid);
+            mPlayerWrapper.playForDlna(iid);
+            return SUCCESS;
+        }
+
+
+        @Override
+        public int pause(int iid) throws RemoteException {
+            Log.i(TAG, "pause() iid: " + iid);
+            mPlayerWrapper.pauseForDlna(iid);
+            return SUCCESS;
+        }
+
+        @Override
+        public int seekTo(int iid, int msec) throws RemoteException {
+            Log.i(TAG, "seekTo() iid: " + iid + " msec: " + msec);
+            mPlayerWrapper.seekToForDlna(iid, msec);
+            return SUCCESS;
+        }
+
+        @Override
+        public int getCurrentPosition(int iid) throws RemoteException {
+            return mPlayerWrapper.getCurrentPositionForDlna(iid);
+        }
+
+        @Override
+        public int getDuration(int iid) throws RemoteException {
+            return mPlayerWrapper.getDurationForDlna(iid);
+        }
+
+        @Override
+        public int setPlaySpeed(int iid, String speedSpec) throws RemoteException {
+            Log.i(TAG, "setPlaySpeed() iid: " + iid + " speedSpec: " + speedSpec);
+            return SUCCESS;
+        }
+
+        @Override
+        public String availablePlaySpeed(int iid) throws RemoteException {
+            Log.i(TAG, "availablePlaySpeed() iid: " + iid);
+            return "1";
+        }
+    };
 
 }
