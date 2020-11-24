@@ -3390,7 +3390,8 @@ namespace alexander_media_mediacodec {
             if (wrapper->list1->size() > 0) {
                 AVPacket *tempAVPacket = &wrapper->list1->front();
                 av_packet_ref(srcAVPacket, tempAVPacket);
-                av_packet_unref(tempAVPacket);
+                if (tempAVPacket->buf != nullptr)
+                    av_packet_unref(tempAVPacket);
                 wrapper->list1->pop_front();
                 wrapper->handleFramesCount++;
                 wrapper->allowDecode = true;
@@ -3577,7 +3578,8 @@ namespace alexander_media_mediacodec {
                     LOGE("handleData() wait() Cache audio end   主动暂停\n");
                     if (wrapper->isPausedForSeek) {
                         if (wrapper->allowDecode) {
-                            av_packet_unref(srcAVPacket);
+                            if (srcAVPacket->buf != nullptr)
+                                av_packet_unref(srcAVPacket);
                         }
                         continue;
                     }
@@ -3598,7 +3600,8 @@ namespace alexander_media_mediacodec {
                     LOGE("handleData() wait() Cache video end   主动暂停\n");
                     if (wrapper->isPausedForSeek) {
                         if (wrapper->allowDecode) {
-                            av_packet_unref(srcAVPacket);
+                            if (srcAVPacket->buf != nullptr)
+                                av_packet_unref(srcAVPacket);
                         }
                         continue;
                     }
@@ -3654,18 +3657,22 @@ namespace alexander_media_mediacodec {
                 if (wrapper->useMediaCodec) {
                     audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
                     if (isLive && preAudioPts > audioPts) {
-                        av_packet_unref(srcAVPacket);
+                        if (srcAVPacket->buf != nullptr)
+                            av_packet_unref(srcAVPacket);
                         continue;
                     }
 
                     //LOGD("handleData() audio feedInputBufferAndDrainOutputBuffer start\n");
-                    feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
-                            0x0001,
-                            srcAVPacket->data,
-                            srcAVPacket->size,
-                            (long long int) srcAVPacket->pts);
+                    if (srcAVPacket->data != nullptr) {
+                        feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
+                                0x0001,
+                                srcAVPacket->data,
+                                srcAVPacket->size,
+                                (long long int) srcAVPacket->pts);
+                    }
                     //LOGD("handleData() audio feedInputBufferAndDrainOutputBuffer end\n");
-                    av_packet_unref(srcAVPacket);
+                    if (srcAVPacket->buf != nullptr)
+                        av_packet_unref(srcAVPacket);
                     preAudioPts = audioPts;
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
@@ -3680,7 +3687,8 @@ namespace alexander_media_mediacodec {
                 if (wrapper->useMediaCodec) {
                     videoPts = srcAVPacket->pts * av_q2d(stream->time_base);
                     if (isLive && preVideoPts > videoPts) {
-                        av_packet_unref(srcAVPacket);
+                        if (srcAVPacket->buf != nullptr)
+                            av_packet_unref(srcAVPacket);
                         continue;
                     }
 
@@ -3692,13 +3700,16 @@ namespace alexander_media_mediacodec {
                         LOGW("handleData() video AVPacket key frame: %d\n", srcAVPacket->size);
                     }*/
                     //LOGW("handleData() video feedInputBufferAndDrainOutputBuffer start\n");
-                    feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
-                            0x0002,
-                            srcAVPacket->data,
-                            srcAVPacket->size,
-                            (long long int) srcAVPacket->pts);
+                    if (srcAVPacket->data != nullptr) {
+                        feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
+                                0x0002,
+                                srcAVPacket->data,
+                                srcAVPacket->size,
+                                (long long int) srcAVPacket->pts);
+                    }
                     //LOGW("handleData() video feedInputBufferAndDrainOutputBuffer end\n");
-                    av_packet_unref(srcAVPacket);
+                    if (srcAVPacket->buf != nullptr)
+                        av_packet_unref(srcAVPacket);
 
                     if (!feedAndDrainRet && wrapper->isHandling) {
                         LOGE("handleData() video feedInputBufferAndDrainOutputBuffer failure\n");
@@ -3716,7 +3727,8 @@ namespace alexander_media_mediacodec {
             // region 软解码过程
 
             ret = avcodec_send_packet(wrapper->avCodecContext, srcAVPacket);
-            av_packet_unref(srcAVPacket);
+            if (srcAVPacket->buf != nullptr)
+                av_packet_unref(srcAVPacket);
             switch (ret) {
                 case AVERROR(EAGAIN):
                     if (wrapper->type == TYPE_AUDIO) {

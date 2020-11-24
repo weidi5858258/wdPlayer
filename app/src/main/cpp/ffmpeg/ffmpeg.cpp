@@ -974,19 +974,19 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                                           jint code, jobject jniObject) {
     jint handleRet = 0;
     jobject intArrayObject = env->GetObjectField(jniObject, valueIntArray_jfieldID);
-    jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
-    if (intArrayObject != nullptr && objectArrayObject != nullptr) {
+    //jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
+    if (intArrayObject != nullptr/* && objectArrayObject != nullptr*/) {
         jint *intArray = reinterpret_cast<jint *>(env->GetIntArrayElements(
                 static_cast<jintArray>(intArrayObject), nullptr));
-        jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
+        // jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
 
         int roomIndex = intArray[0];
         int roomSize = intArray[1];
 
         // ByteBuffer room
-        jobject element0 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
+        // jobject element0 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
         // MediaCodec.BufferInfo roomInfo
-        jobject element1 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
+        // jobject element1 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
 
         switch (code) {
             case DO_SOMETHING_CODE_handleAudioOutputBuffer:
@@ -1053,10 +1053,10 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         }
 
         // release
-        env->DeleteLocalRef(element0);
-        env->DeleteLocalRef(element1);
+        // env->DeleteLocalRef(element0);
+        // env->DeleteLocalRef(element1);
         env->DeleteLocalRef(intArrayObject);
-        env->DeleteLocalRef(objectArrayObject);
+        // env->DeleteLocalRef(objectArrayObject);
     }
 
     return handleRet;

@@ -2795,9 +2795,13 @@ public class PlayerWrapper {
             }
         }
         mIsFinished = true;
-        if (mFfmpegUseMediaCodecDecode != null) {
+        // A/RefBase: decStrong() called on 0xc9ba2580 too many times
+        // A/RefBase: decWeak called on 0xc9ba2580 too many times
+        // A/libc: Fatal signal 6 (SIGABRT), code -6 (SI_TKILL) in tid 14063 (.media.wdplayer),
+        // pid 14063 (.media.wdplayer)
+        /*if (mFfmpegUseMediaCodecDecode != null) {
             mFfmpegUseMediaCodecDecode.releaseMediaCodec();
-        }
+        }*/
 
         if (mHasError) {
             mHasError = false;
