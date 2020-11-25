@@ -208,21 +208,24 @@ public class FfmpegUseMediaCodecDecode {
         }*/
 
         if (mVideoWrapper != null) {
+            Log.i(TAG, "releaseMediaCodec 1");
+            //mVideoWrapper.decoderMediaCodec.flush();
             MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
             mVideoWrapper.decoderMediaCodec = null;
             mVideoWrapper = null;
         }
-        Log.i(TAG, "releaseMediaCodec() 1");
-        if (mExoAudioTrack != null) {
-            MediaUtils.releaseAudioTrack(mExoAudioTrack.mAudioTrack);
-            mExoAudioTrack.mAudioTrack = null;
-            mExoAudioTrack = null;
-        }
-        Log.i(TAG, "releaseMediaCodec() 2");
         if (mAudioWrapper != null) {
+            Log.i(TAG, "releaseMediaCodec 2");
+            //mAudioWrapper.decoderMediaCodec.flush();
             MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
             mAudioWrapper.decoderMediaCodec = null;
             mAudioWrapper = null;
+        }
+        if (mExoAudioTrack != null) {
+            Log.i(TAG, "releaseAudioTrack 3");
+            MediaUtils.releaseAudioTrack(mExoAudioTrack.mAudioTrack);
+            mExoAudioTrack.mAudioTrack = null;
+            mExoAudioTrack = null;
         }
         Log.i(TAG, "releaseMediaCodec() end");
     }

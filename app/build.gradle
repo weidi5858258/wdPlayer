@@ -99,6 +99,8 @@ dependencies {
     implementation project(':ijkplayer-java')
     implementation project(":weidi_library")
 
+    implementation 'com.iqiyi.xcrash:xcrash-android-lib:3.0.0'
+
     // 手表
     implementation 'com.google.android.support:wearable:2.8.1'
     implementation 'com.google.android.gms:play-services-wearable:17.0.0'

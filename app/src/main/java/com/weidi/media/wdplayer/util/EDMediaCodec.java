@@ -12,7 +12,10 @@ public class EDMediaCodec {
     private static final String TAG =
             "player_alexander";
 
-    private static final int TIME_OUT = 10000;
+    /***
+     -1表示一直等，0表示不等。
+     */
+    private static final int TIME_OUT = 11000;// 10000
 
     public enum TYPE {
         TYPE_VIDEO,
@@ -131,7 +134,7 @@ public class EDMediaCodec {
             room.put(data, offset, size);
 
             if (size <= 0) {
-                presentationTimeUs = 0L;
+                //presentationTimeUs = 0L;
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
             }
 
@@ -200,6 +203,11 @@ public class EDMediaCodec {
 
             try {
                 // 房间号
+                /***
+                 A/RefBase: decStrong() called on 0x796cdfd540 too many times
+                 A/libc: Fatal signal 6 (SIGABRT), code -6 in tid 7127 (AsyncTask #4),
+                 pid 6967 (.media.wdplayer)
+                 */
                 int roomIndex = codec.dequeueOutputBuffer(roomInfo, TIME_OUT);
                 /*if (type == TYPE.TYPE_AUDIO) {
                     //Log.d(TAG, "drainOutputBuffer() Audio roomIndex: " + roomIndex);
@@ -265,6 +273,7 @@ public class EDMediaCodec {
 
                 // 根据房间号找到房间
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    //Log.i(TAG, "drainOutputBuffer() roomIndex: " + roomIndex);
                     room = codec.getOutputBuffer(roomIndex);
                 } else {
                     room = codec.getOutputBuffers()[roomIndex];
