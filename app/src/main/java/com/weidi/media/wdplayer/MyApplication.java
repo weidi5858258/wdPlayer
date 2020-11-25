@@ -16,7 +16,7 @@ public class MyApplication extends WeidiApplication {
     @Override
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
-        xcrash.XCrash.init(this);
+        //xcrash.XCrash.init(this);
     }
 
     @Override

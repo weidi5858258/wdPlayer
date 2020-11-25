@@ -1533,6 +1533,8 @@ public class PlayerWrapper {
     private void startForGetMediaFormat() {
         mThreadHandler.removeMessages(MSG_PREPARE);
         mThreadHandler.sendEmptyMessage(MSG_PREPARE);
+        //mThreadHandler.removeMessages(MSG_PREPARE);
+        //mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
     }
 
     private synchronized void startPlayback() {

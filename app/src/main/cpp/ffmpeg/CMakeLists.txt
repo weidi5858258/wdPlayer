@@ -6,6 +6,9 @@
 cmake_minimum_required(VERSION 3.4.1)
 add_definitions(-std=c++11)
 
+set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Release)
+
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
@@ -28,7 +31,7 @@ add_library(ffmpeg
         # SimpleVideoPlayer2.cpp
 
         ffmpeg.cpp
-        MediaPlayer.cpp
+        # MediaPlayer.cpp
         OnlyVideoPlayer.cpp
         OnlyAudioPlayer.cpp
         AudioVideoPlayer.cpp

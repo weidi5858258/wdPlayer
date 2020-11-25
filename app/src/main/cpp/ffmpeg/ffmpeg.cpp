@@ -5,7 +5,7 @@
 #include <libavcodec/jni.h>
 #include <string>
 #include "ffmpeg.h"
-#include "MediaPlayer.h"
+//#include "MediaPlayer.h"
 #include "OnlyVideoPlayer.h"
 #include "OnlyAudioPlayer.h"
 #include "AudioVideoPlayer.h"
@@ -743,7 +743,7 @@ static jint onTransact_setSurface(JNIEnv *env, jobject ffmpegObject,
     const char *filePath = env->GetStringUTFChars(path, 0);
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::setJniParameters(env, filePath, surfaceObject);
+            //alexander_media::setJniParameters(env, filePath, surfaceObject);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -784,7 +784,8 @@ static jint onTransact_initPlayer(JNIEnv *env, jobject thiz,
                                   jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jint) alexander_media::initPlayer();
+            //return (jint) alexander_media::initPlayer();
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jint) alexander_only_video::initPlayer();
@@ -814,7 +815,7 @@ static jint onTransact_readData(JNIEnv *env, jobject thiz,
                                 jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::readData(NULL);
+            //alexander_media::readData(NULL);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -872,7 +873,7 @@ static jint onTransact_audioHandleData(JNIEnv *env, jobject thiz,
     int type = TYPE_AUDIO;
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::handleData(&type);
+            //alexander_media::handleData(&type);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -910,7 +911,7 @@ static jint onTransact_videoHandleData(JNIEnv *env, jobject thiz,
     int type = TYPE_VIDEO;
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::handleData(&type);
+            //alexander_media::handleData(&type);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1066,7 +1067,7 @@ static jint onTransact_play(JNIEnv *env, jobject thiz,
                             jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::play();
+            //alexander_media::play();
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1103,7 +1104,7 @@ static jint onTransact_pause(JNIEnv *env, jobject thiz,
                              jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::pause();
+            //alexander_media::pause();
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1140,7 +1141,7 @@ static jint onTransact_stop(JNIEnv *env, jobject thiz,
                             jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::stop();
+            //alexander_media::stop();
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1177,7 +1178,7 @@ static jint onTransact_release(JNIEnv *env, jobject thiz,
                                jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::release();
+            //alexander_media::release();
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1214,7 +1215,8 @@ static jboolean onTransact_isRunning(JNIEnv *env, jobject thiz,
                                      jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jboolean) alexander_media::isRunning();
+            //return (jboolean) alexander_media::isRunning();
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jboolean) alexander_only_video::isRunning();
@@ -1246,7 +1248,8 @@ static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
                                      jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jboolean) alexander_media::isPlaying();
+            //return (jboolean) alexander_media::isPlaying();
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jboolean) alexander_only_video::isPlaying();
@@ -1278,7 +1281,8 @@ static jint onTransact_isPausedForUser(JNIEnv *env, jobject thiz,
                                        jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jboolean) alexander_media::isPausedForUser();
+            //return (jboolean) alexander_media::isPausedForUser();
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jboolean) alexander_only_video::isPausedForUser();
@@ -1312,7 +1316,7 @@ static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
 
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::stepAdd((int64_t) addStep);
+            //alexander_media::stepAdd((int64_t) addStep);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1351,7 +1355,7 @@ static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
 
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            alexander_media::stepSubtract((int64_t) subtractStep);
+            //alexander_media::stepSubtract((int64_t) subtractStep);
             break;
         }
         case USE_MODE_ONLY_VIDEO: {
@@ -1390,7 +1394,8 @@ static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
 
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jint) alexander_media::seekTo((int64_t) timestamp);
+            //return (jint) alexander_media::seekTo((int64_t) timestamp);
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jint) alexander_only_video::seekTo((int64_t) timestamp);
@@ -1421,7 +1426,8 @@ static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
                                     jint code, jobject jniObject) {
     switch (use_mode) {
         case USE_MODE_MEDIA: {
-            return (jlong) alexander_media::getDuration();
+            //return (jlong) alexander_media::getDuration();
+            break;
         }
         case USE_MODE_ONLY_VIDEO: {
             return (jlong) alexander_only_video::getDuration();

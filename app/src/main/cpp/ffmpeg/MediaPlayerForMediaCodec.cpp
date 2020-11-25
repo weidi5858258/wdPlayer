@@ -2148,7 +2148,9 @@ namespace alexander_media_mediacodec {
                 }
             }// 文件已读完
 
-            if (srcAVPacket->buf == nullptr) {
+            if (srcAVPacket == nullptr
+                || srcAVPacket->buf == nullptr
+                || srcAVPacket->data == nullptr) {
                 continue;
             }
 
@@ -3199,14 +3201,18 @@ namespace alexander_media_mediacodec {
                 av_usleep(100000);
             }
             LOGD("handleDataClose() audio isVideoHandling end\n");
+            LOGD("handleDataClose() audio avcodec_flush_buffers start\n");
             if (!audioDisable
                 && audioWrapper->father->avCodecContext != nullptr) {
                 avcodec_flush_buffers(audioWrapper->father->avCodecContext);
             }
+            LOGD("handleDataClose() audio avcodec_flush_buffers end\n");
+            LOGD("handleDataClose() video avcodec_flush_buffers start\n");
             if (!videoDisable
                 && videoWrapper->father->avCodecContext != nullptr) {
                 avcodec_flush_buffers(videoWrapper->father->avCodecContext);
             }
+            LOGD("handleDataClose() video avcodec_flush_buffers end\n");
             closeAudio();
             closeVideo();
             closeOther();
@@ -3295,6 +3301,12 @@ namespace alexander_media_mediacodec {
 
         bool feedAndDrainRet = false;
         int ret = 0;
+
+        if (wrapper->type == TYPE_AUDIO) {
+            LOGD("handleData() start\n");
+        } else {
+            LOGW("handleData() start\n");
+        }
         for (;;) {
             if (!wrapper->isHandling) {
                 // for (;;) end
@@ -3644,7 +3656,11 @@ namespace alexander_media_mediacodec {
 
             // endregion
 
-            if (!wrapper->allowDecode) {
+            if (!wrapper->allowDecode
+                || !srcAVPacket
+                || !srcAVPacket->buf
+                || !srcAVPacket->data
+                || srcAVPacket->size <= 0) {
                 continue;
             }
 
@@ -3832,31 +3848,20 @@ namespace alexander_media_mediacodec {
 
             // endregion
         }//for(;;) end
+        if (wrapper->type == TYPE_AUDIO) {
+            LOGD("handleData() end\n");
+        } else {
+            LOGW("handleData() end\n");
+        }
 
-        if (wrapper->type == TYPE_AUDIO) {
-            LOGD("handleData() end 1\n");
-        } else {
-            LOGW("handleData() end 1\n");
-        }
-        /*if (srcAVPacket != nullptr) {
-            // av_packet_unref(srcAVPacket);
-            // app crash 上面的copyAVPacket调用却没事,why
-            // av_packet_free(&srcAVPacket);
-            srcAVPacket = nullptr;
-        }*/
-        if (wrapper->type == TYPE_AUDIO) {
-            LOGD("handleData() end 2\n");
-        } else {
-            LOGW("handleData() end 2\n");
-        }
         if (srcAVPacket != nullptr) {
             av_packet_free(&srcAVPacket);
             srcAVPacket = nullptr;
         }
         if (wrapper->type == TYPE_AUDIO) {
-            LOGD("handleData() end 3\n");
+            LOGD("handleData() end 1\n");
         } else {
-            LOGW("handleData() end 3\n");
+            LOGW("handleData() end 1\n");
         }
         if (wrapper->type == TYPE_AUDIO) {
             if (preAudioAVFrame != nullptr) {
@@ -3872,9 +3877,9 @@ namespace alexander_media_mediacodec {
             }
         }
         if (wrapper->type == TYPE_AUDIO) {
-            LOGD("handleData() end 4\n");
+            LOGD("handleData() end 2\n");
         } else {
-            LOGW("handleData() end 4\n");
+            LOGW("handleData() end 2\n");
         }
         handleDataClose(wrapper);
 
@@ -4041,17 +4046,22 @@ namespace alexander_media_mediacodec {
                 av_packet_unref(&avPacket);
             }
         }
+        LOGW("closeVideo() delete list1\n");
         delete (videoWrapper->father->list1);
+        LOGW("closeVideo() delete list2\n");
         delete (videoWrapper->father->list2);
         videoWrapper->father->list1 = nullptr;
         videoWrapper->father->list2 = nullptr;
         if (videoWrapper->father->avbsfContext != nullptr) {
+            LOGW("closeVideo() av_bsf_free\n");
             av_bsf_free(&videoWrapper->father->avbsfContext);
             videoWrapper->father->avbsfContext = nullptr;
         }
 
+        LOGW("closeVideo() av_free father\n");
         av_free(videoWrapper->father);
         videoWrapper->father = nullptr;
+        LOGW("closeVideo() av_free videoWrapper\n");
         av_free(videoWrapper);
         videoWrapper = nullptr;
 

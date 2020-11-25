@@ -246,7 +246,7 @@ public class FFMPEG implements WdPlayer {
         Log.i(TAG, "write()" +
                 " offsetInBytes: " + offsetInBytes +
                 " sizeInBytes: " + sizeInBytes);*/
-        if (mAudioTrack != null) {
+        if (mAudioTrack != null && audioData != null && sizeInBytes > 0) {
             mAudioTrack.write(audioData, offsetInBytes, sizeInBytes);
         }
     }
