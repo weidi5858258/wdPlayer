@@ -103,54 +103,57 @@ extern "C" {
 // 子类都要用到的部分
 struct Wrapper {
     int type = TYPE_UNKNOW;
-    AVCodecContext *avCodecContext = NULL;
+    AVCodecContext *avCodecContext = nullptr;
     // 有些东西需要通过它去得到(自己千万千万千万不要去释放内存)
-    AVCodecParameters *avCodecParameters = NULL;
-    AVStream *avStream = NULL;
+    AVCodecParameters *avCodecParameters = nullptr;
+    AVStream *avStream = nullptr;
     // 解码器
-    AVCodec *decoderAVCodec = NULL;
+    AVCodec *decoderAVCodec = nullptr;
     // 编码器(没用到,因为是播放,所以不需要编码)
-    AVCodec *encoderAVCodec = NULL;
+    AVCodec *encoderAVCodec = nullptr;
     AVCodecID avCodecId;
 
-    bool useMediaCodec = false;
+    // 默认为0,即false
+    bool useMediaCodec;
     const AVBitStreamFilter *avBitStreamFilter = nullptr;
     AVBSFContext *avbsfContext = nullptr;
 
-    unsigned char *outBuffer1 = NULL;
-    unsigned char *outBuffer2 = NULL;
-    unsigned char *outBuffer3 = NULL;
-    size_t outBufferSize = 0;
+    unsigned char *outBuffer1 = nullptr;
+    unsigned char *outBuffer2 = nullptr;
+    unsigned char *outBuffer3 = nullptr;
+    // 默认为0
+    size_t outBufferSize;
 
-    int streamIndex = -1;
+    // 默认为0
+    int streamIndex;
     // 总共读取了多少个AVPacket
-    int readFramesCount = 0;
+    int readFramesCount;
     // 总共处理了多少个AVPacket
-    int handleFramesCount = 0;
+    int handleFramesCount;
 
     // 不能这样定义
-    // std::list<AVPacket*> *list1 = NULL;
-    std::list<AVPacket> *list1 = NULL;
-    std::list<AVPacket> *list2 = NULL;
+    // std::list<AVPacket*> *list1 = nullptr;
+    std::list<AVPacket> *list1 = nullptr;
+    std::list<AVPacket> *list2 = nullptr;
     // 队列中最多保存多少个AVPacket
-    int list1LimitCounts = 0;
-    int list2LimitCounts = 0;
-    bool isReadList1Full = false;
-    bool isHandleList1Full = false;
+    int list1LimitCounts;
+    int list2LimitCounts;
+    bool isReadList1Full;
+    bool isHandleList1Full;
 
-    bool isStarted = false;
-    bool isReading = false;
-    bool isHandling = false;
-    bool isSleeping = false;
+    bool isStarted;
+    bool isReading;
+    bool isHandling;
+    bool isSleeping;
     // 因为user所以pause
-    bool isPausedForUser = false;
+    bool isPausedForUser;
     // 因为cache所以pause
-    bool isPausedForCache = false;
+    bool isPausedForCache;
     // 因为seek所以pause
-    bool isPausedForSeek = false;
+    bool isPausedForSeek;
     // seek的初始化条件有没有完成,true表示完成
-    bool needToSeek = false;
-    bool allowDecode = false;
+    bool needToSeek;
+    bool allowDecode;
 
     // 播放异常处理
     // int64_t startHandleTime = av_gettime_relative();
@@ -159,9 +162,9 @@ struct Wrapper {
     // endHandleTime - startHandleTime >= 1000000;
 
     // 单位: 秒
-    int64_t duration = 0;
+    int64_t duration;
     // 单位: 秒 seekTo到某个时间点
-    int64_t timestamp = 0;
+    int64_t timestamp;
     // 跟线程有关
     pthread_mutex_t readLockMutex;
     pthread_cond_t readLockCondition;
@@ -169,27 +172,27 @@ struct Wrapper {
     pthread_cond_t handleLockCondition;
 
     // 存储压缩数据(视频对应H.264等码流数据,音频对应AAC/MP3等码流数据)
-    // AVPacket *avPacket = NULL;
+    // AVPacket *avPacket = nullptr;
     // 视频使用到sws_scale函数时需要定义这些变量,音频也要用到
-    // unsigned char *srcData[4] = {NULL}, dstData[4] = {NULL};
+    // unsigned char *srcData[4] = {nullptr}, dstData[4] = {nullptr};
 };
 
 struct AudioWrapper {
-    struct Wrapper *father = NULL;
-    SwrContext *swrContext = NULL;
+    struct Wrapper *father = nullptr;
+    SwrContext *swrContext = nullptr;
     // 存储非压缩数据(视频对应RGB/YUV像素数据,音频对应PCM采样数据)
-    AVFrame *decodedAVFrame = NULL;
+    AVFrame *decodedAVFrame = nullptr;
     // 从音频源或视频源中得到
     // 采样率
-    int srcSampleRate = 0;
-    int dstSampleRate = 0;// 取值于srcSampleRate
+    int srcSampleRate;
+    int dstSampleRate;// 取值于srcSampleRate
     // 声道数
-    int srcNbChannels = 0;
-    int dstNbChannels = 0;// 由dstChannelLayout去获到
-    int srcNbSamples = 0;// 用不到
-    int dstNbSamples = 0;// 用不到
+    int srcNbChannels;
+    int dstNbChannels;// 由dstChannelLayout去获到
+    int srcNbSamples;// 用不到
+    int dstNbSamples;// 用不到
     // 由srcNbChannels能得到srcChannelLayout,也能由srcChannelLayout得到srcNbChannels
-    int srcChannelLayout = 0;
+    int srcChannelLayout;
     // 双声道输出
     int dstChannelLayout = AV_CH_LAYOUT_STEREO;
     // 从音频源或视频源中得到(采样格式)
@@ -199,8 +202,8 @@ struct AudioWrapper {
 };
 
 struct VideoWrapper {
-    struct Wrapper *father = NULL;
-    SwsContext *swsContext = NULL;
+    struct Wrapper *father = nullptr;
+    SwsContext *swsContext = nullptr;
     // 从视频源中得到
     enum AVPixelFormat srcAVPixelFormat = AV_PIX_FMT_NONE;
     // 从原来的像素格式转换为想要的视频格式(可能应用于不需要播放视频的场景)
@@ -208,19 +211,19 @@ struct VideoWrapper {
     enum AVPixelFormat dstAVPixelFormat = AV_PIX_FMT_RGBA;
     // 一个视频没有解码之前读出的数据是压缩数据,把压缩数据解码后就是原始数据
     // 解码后的原始数据(像素格式可能不是我们想要的,如果是想要的,那么没必要再调用sws_scale函数了)
-    AVFrame *decodedAVFrame = NULL;
+    AVFrame *decodedAVFrame = nullptr;
     // 解码后的原始数据(像素格式是我们想要的)
-    AVFrame *rgbAVFrame = NULL;
+    AVFrame *rgbAVFrame = nullptr;
     // 从视频源中得到的宽高
-    int srcWidth = 0, srcHeight = 0;
-    size_t srcArea = 0;
+    int srcWidth, srcHeight;
+    size_t srcArea;
     // 想要播放的窗口大小,可以直接使用srcWidth和srcHeight
     int dstWidth = 720, dstHeight = 360;
-    size_t dstArea = 0;
+    size_t dstArea;
     // 使用到sws_scale函数时需要定义这些变量
     int srcLineSize[4] = {0}, dstLineSize[4] = {0};
 
-    AVCodecParserContext *avCodecParserContext = NULL;
+    AVCodecParserContext *avCodecParserContext = nullptr;
 };
 
 #endif //USEFRAGMENTS_WRAPPER_H

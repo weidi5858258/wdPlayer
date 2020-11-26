@@ -552,110 +552,59 @@ namespace alexander_media_mediacodec {
     }
 
     void initAudio() {
-        if (audioWrapper != nullptr && audioWrapper->father != nullptr) {
-            av_free(audioWrapper->father);
-            audioWrapper->father = nullptr;
-        }
-        if (audioWrapper != nullptr) {
-            av_free(audioWrapper);
-            audioWrapper = nullptr;
-        }
-
-        // 这里是先有儿子,再有父亲了.其实应该先构造父亲,再把父亲信息传给儿子.
+        struct Wrapper *wrapper = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
+        memset(wrapper, 0, sizeof(struct Wrapper));
         audioWrapper = (struct AudioWrapper *) av_mallocz(sizeof(struct AudioWrapper));
         memset(audioWrapper, 0, sizeof(struct AudioWrapper));
-        audioWrapper->father = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
-        memset(audioWrapper->father, 0, sizeof(struct Wrapper));
+        audioWrapper->father = wrapper;
 
-        audioWrapper->father->type = TYPE_AUDIO;
+        wrapper->type = TYPE_AUDIO;
         if (isLocal) {
-            audioWrapper->father->list1LimitCounts = MAX_AVPACKET_COUNT_AUDIO_LOCAL;
-            audioWrapper->father->list2LimitCounts = MAX_AVPACKET_COUNT_AUDIO_LOCAL;
+            wrapper->list1LimitCounts = MAX_AVPACKET_COUNT_AUDIO_LOCAL;
+            wrapper->list2LimitCounts = MAX_AVPACKET_COUNT_AUDIO_LOCAL;
         } else {
-            audioWrapper->father->list1LimitCounts = MAX_AVPACKET_COUNT_AUDIO_HTTP;
-            audioWrapper->father->list2LimitCounts = MAX_AVPACKET_COUNT;
+            wrapper->list1LimitCounts = MAX_AVPACKET_COUNT_AUDIO_HTTP;
+            wrapper->list2LimitCounts = MAX_AVPACKET_COUNT;
         }
-        LOGD("initAudio() list1LimitCounts: %d\n", audioWrapper->father->list1LimitCounts);
-        LOGD("initAudio() list2LimitCounts: %d\n", audioWrapper->father->list2LimitCounts);
-        audioWrapper->father->streamIndex = -1;
-        audioWrapper->father->readFramesCount = 0;
-        audioWrapper->father->handleFramesCount = 0;
-        audioWrapper->father->isStarted = false;
-        audioWrapper->father->isReading = true;
-        audioWrapper->father->isHandling = true;
-        audioWrapper->father->isSleeping = false;
-        audioWrapper->father->isPausedForUser = false;
-        audioWrapper->father->isPausedForCache = false;
-        audioWrapper->father->isPausedForSeek = false;
-        audioWrapper->father->needToSeek = false;
-        audioWrapper->father->allowDecode = false;
-        audioWrapper->father->isHandleList1Full = false;
-        audioWrapper->father->list1 = new std::list<AVPacket>();
-        audioWrapper->father->list2 = new std::list<AVPacket>();
-        audioWrapper->father->useMediaCodec = false;
-        audioWrapper->father->avBitStreamFilter = nullptr;
-        audioWrapper->father->avbsfContext = nullptr;
-
-        audioWrapper->father->duration = -1;
-        audioWrapper->father->timestamp = -1;
-        audioWrapper->father->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
-        audioWrapper->father->readLockCondition = PTHREAD_COND_INITIALIZER;
-        audioWrapper->father->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
-        audioWrapper->father->handleLockCondition = PTHREAD_COND_INITIALIZER;
+        LOGD("initAudio() list1LimitCounts: %d\n", wrapper->list1LimitCounts);
+        LOGD("initAudio() list2LimitCounts: %d\n", wrapper->list2LimitCounts);
+        wrapper->streamIndex = -1;
+        wrapper->isReading = true;
+        wrapper->isHandling = true;
+        wrapper->list1 = new std::list<AVPacket>();
+        wrapper->list2 = new std::list<AVPacket>();
+        wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
+        wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
+        wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
+        wrapper->handleLockCondition = PTHREAD_COND_INITIALIZER;
     }
 
     void initVideo() {
-        if (videoWrapper != nullptr && videoWrapper->father != nullptr) {
-            av_free(videoWrapper->father);
-            videoWrapper->father = nullptr;
-        }
-        if (videoWrapper != nullptr) {
-            av_free(videoWrapper);
-            videoWrapper = nullptr;
-        }
-
+        struct Wrapper *wrapper = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
+        memset(wrapper, 0, sizeof(struct Wrapper));
         videoWrapper = (struct VideoWrapper *) av_mallocz(sizeof(struct VideoWrapper));
         memset(videoWrapper, 0, sizeof(struct VideoWrapper));
-        videoWrapper->father = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
-        memset(videoWrapper->father, 0, sizeof(struct Wrapper));
+        videoWrapper->father = wrapper;
 
-        videoWrapper->father->type = TYPE_VIDEO;
+        wrapper->type = TYPE_VIDEO;
         if (isLocal) {
-            videoWrapper->father->list1LimitCounts = MAX_AVPACKET_COUNT_VIDEO_LOCAL;
-            videoWrapper->father->list2LimitCounts = MAX_AVPACKET_COUNT_VIDEO_LOCAL;
+            wrapper->list1LimitCounts = MAX_AVPACKET_COUNT_VIDEO_LOCAL;
+            wrapper->list2LimitCounts = MAX_AVPACKET_COUNT_VIDEO_LOCAL;
         } else {
-            videoWrapper->father->list1LimitCounts = MAX_AVPACKET_COUNT_VIDEO_HTTP;
-            videoWrapper->father->list2LimitCounts = MAX_AVPACKET_COUNT;
+            wrapper->list1LimitCounts = MAX_AVPACKET_COUNT_VIDEO_HTTP;
+            wrapper->list2LimitCounts = MAX_AVPACKET_COUNT;
         }
-        LOGW("initVideo() list1LimitCounts: %d\n", videoWrapper->father->list1LimitCounts);
-        LOGW("initVideo() list2LimitCounts: %d\n", videoWrapper->father->list2LimitCounts);
-        videoWrapper->father->streamIndex = -1;
-        videoWrapper->father->readFramesCount = 0;
-        videoWrapper->father->handleFramesCount = 0;
-        videoWrapper->father->isStarted = false;
-        videoWrapper->father->isReading = true;
-        videoWrapper->father->isHandling = true;
-        videoWrapper->father->isSleeping = false;
-        videoWrapper->father->isPausedForUser = false;
-        videoWrapper->father->isPausedForCache = false;
-        videoWrapper->father->isPausedForSeek = false;
-        videoWrapper->father->needToSeek = false;
-        videoWrapper->father->allowDecode = false;
-        videoWrapper->father->isHandleList1Full = false;
-        videoWrapper->father->list1 = new std::list<AVPacket>();
-        videoWrapper->father->list2 = new std::list<AVPacket>();
-        videoWrapper->father->useMediaCodec = false;
-        videoWrapper->father->avBitStreamFilter = nullptr;
-        videoWrapper->father->avbsfContext = nullptr;
-        videoWrapper->srcWidth = 0;
-        videoWrapper->srcHeight = 0;
-
-        videoWrapper->father->duration = -1;
-        videoWrapper->father->timestamp = -1;
-        videoWrapper->father->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
-        videoWrapper->father->readLockCondition = PTHREAD_COND_INITIALIZER;
-        videoWrapper->father->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
-        videoWrapper->father->handleLockCondition = PTHREAD_COND_INITIALIZER;
+        LOGW("initVideo() list1LimitCounts: %d\n", wrapper->list1LimitCounts);
+        LOGW("initVideo() list2LimitCounts: %d\n", wrapper->list2LimitCounts);
+        wrapper->streamIndex = -1;
+        wrapper->isReading = true;
+        wrapper->isHandling = true;
+        wrapper->list1 = new std::list<AVPacket>();
+        wrapper->list2 = new std::list<AVPacket>();
+        wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
+        wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
+        wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
+        wrapper->handleLockCondition = PTHREAD_COND_INITIALIZER;
     }
 
     // *.mp4
@@ -3953,10 +3902,15 @@ namespace alexander_media_mediacodec {
                 av_packet_unref(&avPacket);
             }
         }
-        delete (audioWrapper->father->list1);
-        delete (audioWrapper->father->list2);
-        audioWrapper->father->list1 = nullptr;
-        audioWrapper->father->list2 = nullptr;
+        if (audioWrapper->father->list1 != nullptr) {
+            delete (audioWrapper->father->list1);
+            audioWrapper->father->list1 = nullptr;
+        }
+        if (audioWrapper->father->list2 != nullptr) {
+            delete (audioWrapper->father->list2);
+            audioWrapper->father->list2 = nullptr;
+        }
+
         if (audioWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&audioWrapper->father->avbsfContext);
             audioWrapper->father->avbsfContext = nullptr;
@@ -4046,12 +4000,17 @@ namespace alexander_media_mediacodec {
                 av_packet_unref(&avPacket);
             }
         }
-        LOGW("closeVideo() delete list1\n");
-        delete (videoWrapper->father->list1);
-        LOGW("closeVideo() delete list2\n");
-        delete (videoWrapper->father->list2);
-        videoWrapper->father->list1 = nullptr;
-        videoWrapper->father->list2 = nullptr;
+        if (videoWrapper->father->list1 != nullptr) {
+            LOGW("closeVideo() delete list1\n");
+            delete (videoWrapper->father->list1);
+            videoWrapper->father->list1 = nullptr;
+        }
+        if (videoWrapper->father->list2 != nullptr) {
+            LOGW("closeVideo() delete list2\n");
+            delete (videoWrapper->father->list2);
+            videoWrapper->father->list2 = nullptr;
+        }
+
         if (videoWrapper->father->avbsfContext != nullptr) {
             LOGW("closeVideo() av_bsf_free\n");
             av_bsf_free(&videoWrapper->father->avbsfContext);
