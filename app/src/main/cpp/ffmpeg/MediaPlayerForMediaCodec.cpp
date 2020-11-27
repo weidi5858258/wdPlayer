@@ -283,6 +283,14 @@ namespace alexander_media_mediacodec {
     // true时表示一帧一帧的看画面
     static bool isFrameByFrameMode = false;
 
+    static std::list<AVPacket> video_list1;
+    static std::list<AVPacket> video_list2;
+    static std::list<AVPacket> audio_list1;
+    static std::list<AVPacket> audio_list2;
+
+    static AVPacket readAVPacket;
+    static AVPacket handleAVPacket;
+
     ///////////////////////////////////////////////////////
 
     // true表示只下载,不播放
@@ -549,6 +557,9 @@ namespace alexander_media_mediacodec {
         needToDownload = false;
         videoDisable = false;
         audioDisable = false;
+
+        av_init_packet(&readAVPacket);
+        av_init_packet(&handleAVPacket);
     }
 
     void initAudio() {
@@ -571,8 +582,10 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        wrapper->list1 = new std::list<AVPacket>();
-        wrapper->list2 = new std::list<AVPacket>();
+        //wrapper->list1 = new std::list<AVPacket>();
+        //wrapper->list2 = new std::list<AVPacket>();
+        wrapper->list1 = &audio_list1;
+        wrapper->list2 = &audio_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
         wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -599,8 +612,10 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        wrapper->list1 = new std::list<AVPacket>();
-        wrapper->list2 = new std::list<AVPacket>();
+        //wrapper->list1 = new std::list<AVPacket>();
+        //wrapper->list2 = new std::list<AVPacket>();
+        wrapper->list1 = &video_list1;
+        wrapper->list2 = &video_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
         wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1650,7 +1665,11 @@ namespace alexander_media_mediacodec {
                  iter != audioWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                }
             }
             audioWrapper->father->list2->clear();
             onLoadProgressUpdated(MSG_ON_TRANSACT_AUDIO_PRODUCER, 0);
@@ -1661,7 +1680,11 @@ namespace alexander_media_mediacodec {
                  iter != videoWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                }
             }
             videoWrapper->father->list2->clear();
             onLoadProgressUpdated(MSG_ON_TRANSACT_VIDEO_PRODUCER, 0);
@@ -1947,10 +1970,11 @@ namespace alexander_media_mediacodec {
             return nullptr;
         }
 
-        AVPacket *srcAVPacket = av_packet_alloc();
+        /*AVPacket *srcAVPacket = av_packet_alloc();
         av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
-        srcAVPacket->size = 0;
+        srcAVPacket->size = 0;*/
+        AVPacket *srcAVPacket = &readAVPacket;
 
         // seekTo
         if (timeStamp > 0) {
@@ -2189,11 +2213,11 @@ namespace alexander_media_mediacodec {
         }
         pthread_mutex_unlock(&readLockMutex);
         LOGI("readData() end 4\n");
-        if (srcAVPacket != nullptr) {
+        /*if (srcAVPacket != nullptr) {
             //av_packet_unref(srcAVPacket);
             av_packet_free(&srcAVPacket);
             srcAVPacket = nullptr;
-        }
+        }*/
         LOGI("readData() end 5\n");
         isReading = false;
 
@@ -3228,10 +3252,11 @@ namespace alexander_media_mediacodec {
         }
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        AVPacket *srcAVPacket = av_packet_alloc();
+        /*AVPacket *srcAVPacket = av_packet_alloc();
         av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
-        srcAVPacket->size = 0;
+        srcAVPacket->size = 0;*/
+        AVPacket *srcAVPacket = &handleAVPacket;
 
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
@@ -3282,7 +3307,11 @@ namespace alexander_media_mediacodec {
                              iter != wrapper->list1->end();
                              iter++) {
                             AVPacket avPacket = *iter;
-                            av_packet_unref(&avPacket);
+                            if (avPacket.buf != nullptr
+                                && avPacket.data != nullptr
+                                && avPacket.size > 0) {
+                                av_packet_unref(&avPacket);
+                            }
                         }
                         wrapper->list1->clear();
                         if (wrapper->type == TYPE_AUDIO) {
@@ -3803,10 +3832,10 @@ namespace alexander_media_mediacodec {
             LOGW("handleData() end\n");
         }
 
-        if (srcAVPacket != nullptr) {
+        /*if (srcAVPacket != nullptr) {
             av_packet_free(&srcAVPacket);
             srcAVPacket = nullptr;
-        }
+        }*/
         if (wrapper->type == TYPE_AUDIO) {
             LOGD("handleData() end 1\n");
         } else {
@@ -3884,32 +3913,48 @@ namespace alexander_media_mediacodec {
 
         if (audioWrapper->father->list1->size() != 0) {
             LOGD("closeAudio() list1 is not empty, %d\n", audioWrapper->father->list1->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = audioWrapper->father->list1->begin();
                  iter != audioWrapper->father->list1->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            audioWrapper->father->list1->clear();
+            LOGD("closeAudio() list1 size: %d\n", size);
         }
         if (audioWrapper->father->list2->size() != 0) {
             LOGD("closeAudio() list2 is not empty, %d\n", audioWrapper->father->list2->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = audioWrapper->father->list2->begin();
                  iter != audioWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            audioWrapper->father->list2->clear();
+            LOGD("closeAudio() list2 size: %d\n", size);
         }
-        if (audioWrapper->father->list1 != nullptr) {
+        /*if (audioWrapper->father->list1 != nullptr) {
             delete (audioWrapper->father->list1);
             audioWrapper->father->list1 = nullptr;
         }
         if (audioWrapper->father->list2 != nullptr) {
             delete (audioWrapper->father->list2);
             audioWrapper->father->list2 = nullptr;
-        }
+        }*/
 
         if (audioWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&audioWrapper->father->avbsfContext);
@@ -3982,25 +4027,41 @@ namespace alexander_media_mediacodec {
 
         if (videoWrapper->father->list1->size() != 0) {
             LOGW("closeVideo() list1 is not empty, %d\n", videoWrapper->father->list1->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = videoWrapper->father->list1->begin();
                  iter != videoWrapper->father->list1->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            videoWrapper->father->list1->clear();
+            LOGW("closeVideo() list1 size: %d\n", size);
         }
         if (videoWrapper->father->list2->size() != 0) {
             LOGW("closeVideo() list2 is not empty, %d\n", videoWrapper->father->list2->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = videoWrapper->father->list2->begin();
                  iter != videoWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            videoWrapper->father->list2->clear();
+            LOGW("closeVideo() list2 size: %d\n", size);
         }
-        if (videoWrapper->father->list1 != nullptr) {
+        /*if (videoWrapper->father->list1 != nullptr) {
             LOGW("closeVideo() delete list1\n");
             delete (videoWrapper->father->list1);
             videoWrapper->father->list1 = nullptr;
@@ -4009,7 +4070,7 @@ namespace alexander_media_mediacodec {
             LOGW("closeVideo() delete list2\n");
             delete (videoWrapper->father->list2);
             videoWrapper->father->list2 = nullptr;
-        }
+        }*/
 
         if (videoWrapper->father->avbsfContext != nullptr) {
             LOGW("closeVideo() av_bsf_free\n");
