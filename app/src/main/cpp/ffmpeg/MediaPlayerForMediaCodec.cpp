@@ -289,7 +289,8 @@ namespace alexander_media_mediacodec {
     static std::list<AVPacket> audio_list2;
 
     static AVPacket readAVPacket;
-    static AVPacket handleAVPacket;
+    static AVPacket handleVideoAVPacket;
+    static AVPacket handleAudioAVPacket;
 
     ///////////////////////////////////////////////////////
 
@@ -559,7 +560,7 @@ namespace alexander_media_mediacodec {
         audioDisable = false;
 
         av_init_packet(&readAVPacket);
-        av_init_packet(&handleAVPacket);
+        av_init_packet(&handleVideoAVPacket);
     }
 
     void initAudio() {
@@ -3256,7 +3257,7 @@ namespace alexander_media_mediacodec {
         av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
         srcAVPacket->size = 0;*/
-        AVPacket *srcAVPacket = &handleAVPacket;
+        AVPacket *srcAVPacket = nullptr;
 
         // decodedAVFrame为解码后的数据
         // flags: 0, pts: 118803601, pkt_pos: 376, pkt_duration: 0, pkt_size: 104689
@@ -3266,9 +3267,11 @@ namespace alexander_media_mediacodec {
         AVFrame *preAudioAVFrame = nullptr;
         AVFrame *preVideoAVFrame = nullptr;
         if (wrapper->type == TYPE_AUDIO) {
+            srcAVPacket = &handleAudioAVPacket;
             decodedAVFrame = audioWrapper->decodedAVFrame;
             preAudioAVFrame = av_frame_alloc();
         } else {
+            srcAVPacket = &handleVideoAVPacket;
             decodedAVFrame = videoWrapper->decodedAVFrame;
             preVideoAVFrame = av_frame_alloc();
         }
