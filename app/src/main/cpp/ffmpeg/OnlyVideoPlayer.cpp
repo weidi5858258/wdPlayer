@@ -17,6 +17,12 @@ extern int64_t timeStamp;
 extern ANativeWindow *pANativeWindow;
 extern bool isWatch;
 
+extern AVPacket readVideoAVPacket;
+extern AVPacket handleVideoAVPacket;
+
+extern std::list<AVPacket> video_list1;
+extern std::list<AVPacket> video_list2;
+
 namespace alexander_only_video {
 
     static char inFilePath[2048];
@@ -83,20 +89,17 @@ namespace alexander_only_video {
         // 注册设备的函数,如用获取摄像头数据或音频等,需要此函数先注册
         // avdevice_register_all();
         LOGW("initAV() version: %s\n", av_version_info());
+
+        av_init_packet(&readVideoAVPacket);
+        av_init_packet(&handleVideoAVPacket);
     }
 
     void initVideo() {
-        if (videoWrapper != nullptr && videoWrapper->father != nullptr) {
-            av_free(videoWrapper->father);
-            videoWrapper->father = nullptr;
-        }
-        if (videoWrapper != nullptr) {
-            av_free(videoWrapper);
-            videoWrapper = nullptr;
-        }
-
         struct Wrapper *wrapper = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
         memset(wrapper, 0, sizeof(struct Wrapper));
+        videoWrapper = (struct VideoWrapper *) av_mallocz(sizeof(struct VideoWrapper));
+        memset(videoWrapper, 0, sizeof(struct VideoWrapper));
+        videoWrapper->father = wrapper;
 
         wrapper->type = TYPE_VIDEO;
         if (isLocal) {
@@ -108,31 +111,15 @@ namespace alexander_only_video {
         }
         LOGW("initVideo() list1LimitCounts: %d\n", wrapper->list1LimitCounts);
         LOGW("initVideo() list2LimitCounts: %d\n", wrapper->list2LimitCounts);
-        wrapper->duration = -1;
-        wrapper->timestamp = -1;
         wrapper->streamIndex = -1;
-        wrapper->isStarted = false;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        wrapper->isPausedForUser = false;
-        wrapper->isPausedForCache = false;
-        wrapper->isPausedForSeek = false;
-        wrapper->needToSeek = false;
-        wrapper->isHandleList1Full = false;
-        wrapper->list1 = new std::list<AVPacket>();
-        wrapper->list2 = new std::list<AVPacket>();
+        wrapper->list1 = &video_list1;
+        wrapper->list2 = &video_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
         wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->handleLockCondition = PTHREAD_COND_INITIALIZER;
-
-        if (videoWrapper != NULL) {
-            av_free(videoWrapper);
-            videoWrapper = NULL;
-        }
-        videoWrapper = (struct VideoWrapper *) av_mallocz(sizeof(struct VideoWrapper));
-        memset(videoWrapper, 0, sizeof(struct VideoWrapper));
-        videoWrapper->father = wrapper;
     }
 
     int openAndFindAVFormatContext() {
@@ -417,9 +404,9 @@ namespace alexander_only_video {
         LOGI("seekToImpl() av_seek_frame end\n");
     }
 
-    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket, AVPacket *copyAVPacket) {
-        av_packet_ref(copyAVPacket, srcAVPacket);
-        av_packet_unref(srcAVPacket);
+    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket) {
+        //av_packet_ref(copyAVPacket, srcAVPacket);
+        //av_packet_unref(srcAVPacket);
 
         //LOGW("readDataImpl()     size: %d\n",copyAVPacket->size);// 10810(ok)
         //LOGW("readDataImpl() duration: %ld\n",(long)copyAVPacket->duration);// 48000
@@ -431,7 +418,7 @@ namespace alexander_only_video {
         pthread_mutex_lock(&wrapper->readLockMutex);
         pktCounts++;
         // 存数据
-        wrapper->list2->push_back(*copyAVPacket);
+        wrapper->list2->push_back(*srcAVPacket);
         size_t list2Size = wrapper->list2->size();
         pthread_mutex_unlock(&wrapper->readLockMutex);
 
@@ -474,8 +461,8 @@ namespace alexander_only_video {
         seek_flags |= AVSEEK_FLAG_BYTE;
         seek_interval = 10;
 
-        AVPacket *srcAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = av_packet_alloc();
+        AVPacket *srcAVPacket = &readVideoAVPacket;
+        //AVPacket *copyAVPacket = av_packet_alloc();
 
         // seekTo
         if (timeStamp > 0) {
@@ -546,15 +533,15 @@ namespace alexander_only_video {
 
             if (srcAVPacket->stream_index == videoWrapper->father->streamIndex) {
                 if (videoWrapper->father->isReading) {
-                    readDataImpl(videoWrapper->father, srcAVPacket, copyAVPacket);
+                    readDataImpl(videoWrapper->father, srcAVPacket);
                 }
             }
         }// for(;;) end
 
-        if (srcAVPacket != NULL) {
+        /*if (srcAVPacket != NULL) {
             av_packet_unref(srcAVPacket);
             srcAVPacket = NULL;
-        }
+        }*/
 
         isReading = false;
 
@@ -696,8 +683,8 @@ namespace alexander_only_video {
         LOGW("handleData() ANativeWindow_setBuffersGeometry() end\n");
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        AVPacket *srcAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = av_packet_alloc();
+        //AVPacket *tempAVPacket = av_packet_alloc();
+        AVPacket *copyAVPacket = &handleVideoAVPacket;
         // decodedAVFrame为解码后的数据
         AVFrame *decodedAVFrame = videoWrapper->decodedAVFrame;
 
@@ -749,10 +736,10 @@ namespace alexander_only_video {
 
             allowDecode = false;
             if (wrapper->list1->size() > 0) {
-                srcAVPacket = &wrapper->list1->front();
+                AVPacket *tempAVPacket = &wrapper->list1->front();
                 // 内容copy
-                av_packet_ref(copyAVPacket, srcAVPacket);
-                av_packet_unref(srcAVPacket);
+                av_packet_ref(copyAVPacket, tempAVPacket);
+                av_packet_unref(tempAVPacket);
                 wrapper->list1->pop_front();
                 allowDecode = true;
             }
@@ -900,16 +887,16 @@ namespace alexander_only_video {
             ///////////////////////////////////////////////////////////////////
         }//for(;;) end
 
-        if (srcAVPacket != NULL) {
-            av_packet_unref(srcAVPacket);
+        /*if (tempAVPacket != NULL) {
+            av_packet_unref(tempAVPacket);
             // app crash 上面的copyAVPacket调用却没事,why
             // av_packet_free(&srcAVPacket);
-            srcAVPacket = NULL;
+            tempAVPacket = NULL;
         }
         if (copyAVPacket != NULL) {
             av_packet_free(&copyAVPacket);
             copyAVPacket = NULL;
-        }
+        }*/
 
         handleDataClose(wrapper);
 
@@ -965,28 +952,44 @@ namespace alexander_only_video {
 
         if (videoWrapper->father->list1->size() != 0) {
             LOGW("closeVideo() list1 is not empty, %d\n", videoWrapper->father->list1->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = videoWrapper->father->list1->begin();
                  iter != videoWrapper->father->list1->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            videoWrapper->father->list1->clear();
+            LOGW("closeVideo() list1 size: %d\n", size);
         }
         if (videoWrapper->father->list2->size() != 0) {
             LOGW("closeVideo() list2 is not empty, %d\n", videoWrapper->father->list2->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = videoWrapper->father->list2->begin();
                  iter != videoWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            videoWrapper->father->list2->clear();
+            LOGW("closeVideo() list2 size: %d\n", size);
         }
-        delete (videoWrapper->father->list1);
+        /*delete (videoWrapper->father->list1);
         delete (videoWrapper->father->list2);
         videoWrapper->father->list1 = NULL;
-        videoWrapper->father->list2 = NULL;
+        videoWrapper->father->list2 = NULL;*/
 
         avformat_free_context(avFormatContext);
         avFormatContext = NULL;

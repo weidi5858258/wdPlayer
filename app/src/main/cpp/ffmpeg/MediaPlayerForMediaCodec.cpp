@@ -252,6 +252,16 @@ bool isWatchForCloseAudio = false;
 
 ANativeWindow *pANativeWindow = nullptr;
 
+AVPacket readVideoAVPacket;
+AVPacket readAudioAVPacket;
+AVPacket handleVideoAVPacket;
+AVPacket handleAudioAVPacket;
+
+std::list<AVPacket> video_list1;
+std::list<AVPacket> video_list2;
+std::list<AVPacket> audio_list1;
+std::list<AVPacket> audio_list2;
+
 extern int use_mode;
 
 namespace alexander_media_mediacodec {
@@ -282,15 +292,6 @@ namespace alexander_media_mediacodec {
 
     // true时表示一帧一帧的看画面
     static bool isFrameByFrameMode = false;
-
-    static std::list<AVPacket> video_list1;
-    static std::list<AVPacket> video_list2;
-    static std::list<AVPacket> audio_list1;
-    static std::list<AVPacket> audio_list2;
-
-    static AVPacket readAVPacket;
-    static AVPacket handleVideoAVPacket;
-    static AVPacket handleAudioAVPacket;
 
     ///////////////////////////////////////////////////////
 
@@ -559,8 +560,10 @@ namespace alexander_media_mediacodec {
         videoDisable = false;
         audioDisable = false;
 
-        av_init_packet(&readAVPacket);
+        av_init_packet(&readVideoAVPacket);
+        av_init_packet(&readAudioAVPacket);
         av_init_packet(&handleVideoAVPacket);
+        av_init_packet(&handleAudioAVPacket);
     }
 
     void initAudio() {
@@ -583,8 +586,6 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        //wrapper->list1 = new std::list<AVPacket>();
-        //wrapper->list2 = new std::list<AVPacket>();
         wrapper->list1 = &audio_list1;
         wrapper->list2 = &audio_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -613,8 +614,6 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        //wrapper->list1 = new std::list<AVPacket>();
-        //wrapper->list2 = new std::list<AVPacket>();
         wrapper->list1 = &video_list1;
         wrapper->list2 = &video_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1975,7 +1974,7 @@ namespace alexander_media_mediacodec {
         av_init_packet(srcAVPacket);
         srcAVPacket->data = nullptr;
         srcAVPacket->size = 0;*/
-        AVPacket *srcAVPacket = &readAVPacket;
+        AVPacket *srcAVPacket = &readVideoAVPacket;
 
         // seekTo
         if (timeStamp > 0) {

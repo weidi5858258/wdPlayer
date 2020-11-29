@@ -15,6 +15,12 @@ extern int64_t timeStamp;
 extern double audioPts;
 extern double preAudioPts;
 
+extern AVPacket readAudioAVPacket;
+extern AVPacket handleAudioAVPacket;
+
+extern std::list<AVPacket> audio_list1;
+extern std::list<AVPacket> audio_list2;
+
 namespace alexander_only_audio {
 
     static char inFilePath[2048];
@@ -61,12 +67,18 @@ namespace alexander_only_audio {
         avformat_network_init();
         LOGD("initAV() version: %s\n", av_version_info());
         LOGD("initAV() end\n");
+
+        av_init_packet(&readAudioAVPacket);
+        av_init_packet(&handleAudioAVPacket);
     }
 
     void initAudio() {
         LOGD("initAudio() start\n");
         struct Wrapper *wrapper = (struct Wrapper *) av_mallocz(sizeof(struct Wrapper));
         memset(wrapper, 0, sizeof(struct Wrapper));
+        audioWrapper = (struct AudioWrapper *) av_mallocz(sizeof(struct AudioWrapper));
+        memset(audioWrapper, 0, sizeof(struct AudioWrapper));
+        audioWrapper->father = wrapper;
 
         wrapper->type = TYPE_AUDIO;
         if (isLocal) {
@@ -78,32 +90,17 @@ namespace alexander_only_audio {
         }
         LOGD("initAudio() list1LimitCounts: %d\n", wrapper->list1LimitCounts);
         LOGD("initAudio() list2LimitCounts: %d\n", wrapper->list2LimitCounts);
+        wrapper->streamIndex = -1;
         wrapper->duration = -1;
         wrapper->timestamp = -1;
-        wrapper->streamIndex = -1;
-        wrapper->isStarted = false;
         wrapper->isReading = true;
         wrapper->isHandling = true;
-        wrapper->isPausedForUser = false;
-        wrapper->isPausedForCache = false;
-        wrapper->isPausedForSeek = false;
-        wrapper->needToSeek = false;
-        wrapper->isReadList1Full = false;
-        wrapper->list1 = new std::list<AVPacket>();
-        wrapper->list2 = new std::list<AVPacket>();
+        wrapper->list1 = &audio_list1;
+        wrapper->list2 = &audio_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->readLockCondition = PTHREAD_COND_INITIALIZER;
         wrapper->handleLockMutex = PTHREAD_MUTEX_INITIALIZER;
         wrapper->handleLockCondition = PTHREAD_COND_INITIALIZER;
-
-        if (audioWrapper != NULL) {
-            av_free(audioWrapper);
-            audioWrapper = NULL;
-        }
-        audioWrapper = (struct AudioWrapper *) av_mallocz(sizeof(struct AudioWrapper));
-        memset(audioWrapper, 0, sizeof(struct AudioWrapper));
-        audioWrapper->father = wrapper;
-
         LOGD("initAudio() end\n");
     }
 
@@ -520,13 +517,13 @@ namespace alexander_only_audio {
         LOGI("seekToImpl() av_seek_frame end\n");
     }
 
-    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket, AVPacket *copyAVPacket) {
-        av_packet_ref(copyAVPacket, srcAVPacket);
-        av_packet_unref(srcAVPacket);
+    int readDataImpl(Wrapper *wrapper, AVPacket *srcAVPacket) {
+        //av_packet_ref(copyAVPacket, srcAVPacket);
+        //av_packet_unref(srcAVPacket);
 
         pthread_mutex_lock(&wrapper->readLockMutex);
         // 存数据
-        wrapper->list2->push_back(*copyAVPacket);
+        wrapper->list2->push_back(*srcAVPacket);
         size_t list2Size = wrapper->list2->size();
         pthread_mutex_unlock(&wrapper->readLockMutex);
 
@@ -556,8 +553,7 @@ namespace alexander_only_audio {
         preProgress = 0;
         isReading = true;
 
-        AVPacket *srcAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = av_packet_alloc();
+        AVPacket *srcAVPacket = &readAudioAVPacket;
 
         // seekTo
         if (timeStamp > 0) {
@@ -608,7 +604,7 @@ namespace alexander_only_audio {
                     if (readFrame == 0) {
                         while ((readFrame = av_bsf_receive_packet(
                                 audioWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                            readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                            readDataImpl(audioWrapper->father, srcAVPacket);
                         }
                     }
                     audioHasSentNullPacket = true;
@@ -646,10 +642,10 @@ namespace alexander_only_audio {
 
                     while (av_bsf_receive_packet(
                             audioWrapper->father->avbsfContext, srcAVPacket) == 0) {
-                        readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                        readDataImpl(audioWrapper->father, srcAVPacket);
                     }
                 } else {
-                    readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                    readDataImpl(audioWrapper->father, srcAVPacket);
                 }
                 continue;
             }
@@ -663,15 +659,10 @@ namespace alexander_only_audio {
                 if (readFrame == 0) {
                     while ((readFrame = av_bsf_receive_packet(
                             audioWrapper->father->avbsfContext, srcAVPacket)) == 0) {
-                        readDataImpl(audioWrapper->father, srcAVPacket, copyAVPacket);
+                        readDataImpl(audioWrapper->father, srcAVPacket);
                     }
                 }
             }
-        }
-
-        if (srcAVPacket != NULL) {
-            av_packet_unref(srcAVPacket);
-            srcAVPacket = NULL;
         }
 
         isReading = false;
@@ -794,8 +785,8 @@ namespace alexander_only_audio {
         }
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        AVPacket *srcAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = av_packet_alloc();
+        //AVPacket *tempAVPacket = av_packet_alloc();
+        AVPacket *copyAVPacket = &handleAudioAVPacket;
         // decodedAVFrame为解码后的数据
         AVFrame *decodedAVFrame = audioWrapper->decodedAVFrame;
 
@@ -850,10 +841,10 @@ namespace alexander_only_audio {
 
             allowDecode = false;
             if (wrapper->list1->size() > 0) {
-                srcAVPacket = &wrapper->list1->front();
+                AVPacket *tempAVPacket = &wrapper->list1->front();
                 // 内容copy
-                av_packet_ref(copyAVPacket, srcAVPacket);
-                av_packet_unref(srcAVPacket);
+                av_packet_ref(copyAVPacket, tempAVPacket);
+                av_packet_unref(tempAVPacket);
                 wrapper->list1->pop_front();
                 allowDecode = true;
             }
@@ -1018,16 +1009,16 @@ namespace alexander_only_audio {
             // endregion
         }//for(;;) end
 
-        if (srcAVPacket != NULL) {
-            av_packet_unref(srcAVPacket);
+        /*if (tempAVPacket != NULL) {
+            av_packet_unref(tempAVPacket);
             // app crash 上面的copyAVPacket调用却没事,why
             // av_packet_free(&srcAVPacket);
-            srcAVPacket = NULL;
+            tempAVPacket = NULL;
         }
         if (copyAVPacket != NULL) {
             av_packet_free(&copyAVPacket);
             copyAVPacket = NULL;
-        }
+        }*/
 
         handleDataClose(wrapper);
 
@@ -1074,28 +1065,44 @@ namespace alexander_only_audio {
 
         if (audioWrapper->father->list1->size() != 0) {
             LOGD("closeAudio() list1 is not empty, %d\n", audioWrapper->father->list1->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = audioWrapper->father->list1->begin();
                  iter != audioWrapper->father->list1->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            audioWrapper->father->list1->clear();
+            LOGD("closeAudio() list1 size: %d\n", size);
         }
         if (audioWrapper->father->list2->size() != 0) {
             LOGD("closeAudio() list2 is not empty, %d\n", audioWrapper->father->list2->size());
+            int size = 0;
             std::list<AVPacket>::iterator iter;
             for (iter = audioWrapper->father->list2->begin();
                  iter != audioWrapper->father->list2->end();
                  iter++) {
                 AVPacket avPacket = *iter;
-                av_packet_unref(&avPacket);
+                if (avPacket.buf != nullptr
+                    && avPacket.data != nullptr
+                    && avPacket.size > 0) {
+                    av_packet_unref(&avPacket);
+                    size++;
+                }
             }
+            audioWrapper->father->list2->clear();
+            LOGD("closeAudio() list2 size: %d\n", size);
         }
-        delete (audioWrapper->father->list1);
+        /*delete (audioWrapper->father->list1);
         delete (audioWrapper->father->list2);
         audioWrapper->father->list1 = NULL;
-        audioWrapper->father->list2 = NULL;
+        audioWrapper->father->list2 = NULL;*/
         if (audioWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&audioWrapper->father->avbsfContext);
             audioWrapper->father->avbsfContext = nullptr;
