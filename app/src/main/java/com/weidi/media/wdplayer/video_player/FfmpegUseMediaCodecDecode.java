@@ -464,8 +464,8 @@ public class FfmpegUseMediaCodecDecode {
                 break;
             // 86076
             case AV_CODEC_ID_OPUS:
-                audioMime = MediaFormat.MIMETYPE_AUDIO_OPUS;
-                codecName = "OMX.google.opus.decoder";
+                //audioMime = MediaFormat.MIMETYPE_AUDIO_OPUS;
+                //codecName = "OMX.google.opus.decoder";
                 break;
 
             // 下面几种在我的手机上不支持

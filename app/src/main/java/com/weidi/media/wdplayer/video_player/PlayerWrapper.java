@@ -1636,7 +1636,7 @@ public class PlayerWrapper {
             mWdPlayer.onTransact(DO_SOMETHING_CODE_setMode, jniObject);
 
             if (IS_PHONE) {
-                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 15000);
+                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 16000);
             }
             Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
