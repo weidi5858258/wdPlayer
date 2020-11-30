@@ -9,10 +9,11 @@
     <string name="hello_world_wdPlayer">欢迎使用wdPlayer</string>
     <string name="handle_info">
         \n
-        播放器选择:\n
-        player_fm&#160;&#160;-> player_ffmpeg_mediacodec\n
-        player_ijk&#160;&#160;&#160;-> player_ijkplayer\n
-        player_mc&#160;-> player_mediacodec(测试使用)\n
+        播放器选择(在内容页的输入框中输入下面内容):\n
+        player_fm&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_ffmpeg_mediacodec\n
+        player_ijk&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_ijkplayer\n
+        player_mc&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_mediacodec(测试使用)\n
+        time_out 15000&#160;-> 设置MediaCodec解码超时时间(单位:毫秒)\n
         \n
         敲击当前文字界面的次数操作:\n
         2次.进入在线视频节目\n

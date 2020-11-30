@@ -59,6 +59,7 @@ import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
+import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.NetworkUtils;
 import com.weidi.utils.MyToast;
@@ -101,6 +102,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
+import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -1632,6 +1634,11 @@ public class PlayerWrapper {
                 }
             }
             mWdPlayer.onTransact(DO_SOMETHING_CODE_setMode, jniObject);
+
+            if (IS_PHONE) {
+                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 15000);
+            }
+            Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
 
         if (mAudioFocusRequest != null) {

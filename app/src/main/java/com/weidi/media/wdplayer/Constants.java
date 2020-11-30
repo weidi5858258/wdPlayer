@@ -22,6 +22,8 @@ public interface Constants {
     // 另一个的意思是由底层传给java层一些参数然后创建MediaFormat
     String PLAYBACK_USE_EXOPLAYER_OR_FFMPEG = "playback_use_exoplayer_or_ffmpeg";
 
+    String MEDIACODEC_TIME_OUT = "mediacodec_time_out";
+
     // 针对PLAYER_IJKPLAYER和PLAYER_FFMPEG_MEDIACODEC是否进行硬解
     // 针对音频部分和视频部分,为0时表示使用软解,为1时表示使用硬解
     String HARD_SOLUTION = "hard_solution";

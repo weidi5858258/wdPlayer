@@ -26,6 +26,7 @@ import com.weidi.utils.MyToast;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
@@ -378,6 +379,19 @@ public class LiveActivity extends Activity {
             mPreferences.edit().putString(PLAYBACK_USE_EXOPLAYER_OR_FFMPEG, "use_ffmpeg").commit();
             mAddressET.setText("");
             MyToast.show(PLAYER_MEDIACODEC);
+        } else if (text.startsWith("time_out ")) {// time_out
+            String temp[] = text.split(" ");
+            if (temp.length >= 2) {
+                try {
+                    String time_out_str = temp[1];
+                    int time_out = Integer.valueOf(time_out_str);
+                    mPreferences.edit().putInt(MEDIACODEC_TIME_OUT, time_out).commit();
+                    mAddressET.setText("");
+                    MyToast.show(MEDIACODEC_TIME_OUT);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
