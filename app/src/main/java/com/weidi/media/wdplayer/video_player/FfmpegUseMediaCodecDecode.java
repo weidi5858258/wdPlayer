@@ -3,6 +3,7 @@ package com.weidi.media.wdplayer.video_player;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.text.TextUtils;
 import android.util.Log;
@@ -844,8 +845,9 @@ public class FfmpegUseMediaCodecDecode {
         }
         if (bitrate > 0) {
             mediaFormat.setInteger(MediaFormat.KEY_BIT_RATE, bitrate);
-            /*mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE,
-                    MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ);*/
+            // 表示完全不控制码率，尽最大可能保证图像质量
+            mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE,
+                    MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ);
         }
         /*mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);*/

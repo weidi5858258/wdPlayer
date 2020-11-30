@@ -1005,7 +1005,6 @@ namespace alexander_audio_video {
         }
 
         AVPacket *srcAVPacket = nullptr;
-        //AVPacket *copyAVPacket = av_packet_alloc();
 
         // seekTo
         if (timeStamp > 0) {
@@ -1173,11 +1172,6 @@ namespace alexander_audio_video {
                 }
             }
         }// for(;;) end
-
-        /*if (srcAVPacket != NULL) {
-            av_packet_unref(srcAVPacket);
-            srcAVPacket = NULL;
-        }*/
 
         if (wrapper->type == TYPE_AUDIO) {
             isAudioReading = false;
@@ -1949,7 +1943,6 @@ namespace alexander_audio_video {
         }
 
         AVStream *stream = nullptr;
-        //AVPacket *tempAVPacket = av_packet_alloc();
         AVPacket *srcAVPacket = nullptr;
         // decodedAVFrame为解码后的数据
         AVFrame *decodedAVFrame = NULL;
@@ -2414,17 +2407,6 @@ namespace alexander_audio_video {
             ///////////////////////////////////////////////////////////////////
         }//for(;;) end
 
-        /*if (tempAVPacket != NULL) {
-            av_packet_unref(tempAVPacket);
-            // app crash 上面的copyAVPacket调用却没事,why
-            // av_packet_free(&srcAVPacket);
-            tempAVPacket = NULL;
-        }
-        if (copyAVPacket != NULL) {
-            av_packet_free(&copyAVPacket);
-            copyAVPacket = NULL;
-        }*/
-
         handleDataClose(wrapper);
 
         return NULL;
@@ -2507,10 +2489,7 @@ namespace alexander_audio_video {
             audioWrapper->father->list2->clear();
             LOGD("closeAudio() list2 size: %d\n", size);
         }
-        /*delete (audioWrapper->father->list1);
-        delete (audioWrapper->father->list2);
-        audioWrapper->father->list1 = NULL;
-        audioWrapper->father->list2 = NULL;*/
+
         if (audioWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&audioWrapper->father->avbsfContext);
             audioWrapper->father->avbsfContext = nullptr;
@@ -2610,10 +2589,7 @@ namespace alexander_audio_video {
             videoWrapper->father->list2->clear();
             LOGW("closeVideo() list2 size: %d\n", size);
         }
-        /*delete (videoWrapper->father->list1);
-        delete (videoWrapper->father->list2);
-        videoWrapper->father->list1 = NULL;
-        videoWrapper->father->list2 = NULL;*/
+
         if (videoWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&videoWrapper->father->avbsfContext);
             videoWrapper->father->avbsfContext = nullptr;

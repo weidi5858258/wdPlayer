@@ -3871,6 +3871,7 @@ public class PlayerWrapper {
     public void stopForDlna(int iid) {
         if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
             if (mWdPlayer.isRunning()) {
+                mPrePath = null;
                 mWdPlayer.release();
                 try {
                     Log.i(TAG, "stopForDlna() onState STATE_STOPPED");

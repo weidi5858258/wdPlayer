@@ -785,8 +785,7 @@ namespace alexander_only_audio {
         }
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        //AVPacket *tempAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = &handleAudioAVPacket;
+        AVPacket *srcAVPacket = &handleAudioAVPacket;
         // decodedAVFrame为解码后的数据
         AVFrame *decodedAVFrame = audioWrapper->decodedAVFrame;
 
@@ -843,7 +842,7 @@ namespace alexander_only_audio {
             if (wrapper->list1->size() > 0) {
                 AVPacket *tempAVPacket = &wrapper->list1->front();
                 // 内容copy
-                av_packet_ref(copyAVPacket, tempAVPacket);
+                av_packet_ref(srcAVPacket, tempAVPacket);
                 av_packet_unref(tempAVPacket);
                 wrapper->list1->pop_front();
                 allowDecode = true;
@@ -921,7 +920,7 @@ namespace alexander_only_audio {
             // region 硬解码过程
 
             if (wrapper->useMediaCodec) {
-                audioPts = copyAVPacket->pts * av_q2d(stream->time_base);
+                audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
                 if (mediaDuration < 0 && preAudioPts > audioPts) {
                     continue;
                 }
@@ -929,10 +928,10 @@ namespace alexander_only_audio {
 
                 feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                         0x0001,
-                        copyAVPacket->data,
-                        copyAVPacket->size,
-                        (long long) copyAVPacket->pts);
-                av_packet_unref(copyAVPacket);
+                        srcAVPacket->data,
+                        srcAVPacket->size,
+                        (long long) srcAVPacket->pts);
+                av_packet_unref(srcAVPacket);
 
                 if (!feedAndDrainRet && wrapper->isHandling) {
                     LOGE("handleData() audio feedInputBufferAndDrainOutputBuffer failure\n");
@@ -946,8 +945,8 @@ namespace alexander_only_audio {
 
             // region 软解码过程
 
-            ret = avcodec_send_packet(wrapper->avCodecContext, copyAVPacket);
-            av_packet_unref(copyAVPacket);
+            ret = avcodec_send_packet(wrapper->avCodecContext, srcAVPacket);
+            av_packet_unref(srcAVPacket);
             switch (ret) {
                 case AVERROR(EAGAIN):
                     LOGE("handleData() audio avcodec_send_packet   ret: %d\n", ret);// -11
@@ -1008,17 +1007,6 @@ namespace alexander_only_audio {
 
             // endregion
         }//for(;;) end
-
-        /*if (tempAVPacket != NULL) {
-            av_packet_unref(tempAVPacket);
-            // app crash 上面的copyAVPacket调用却没事,why
-            // av_packet_free(&srcAVPacket);
-            tempAVPacket = NULL;
-        }
-        if (copyAVPacket != NULL) {
-            av_packet_free(&copyAVPacket);
-            copyAVPacket = NULL;
-        }*/
 
         handleDataClose(wrapper);
 
@@ -1099,10 +1087,7 @@ namespace alexander_only_audio {
             audioWrapper->father->list2->clear();
             LOGD("closeAudio() list2 size: %d\n", size);
         }
-        /*delete (audioWrapper->father->list1);
-        delete (audioWrapper->father->list2);
-        audioWrapper->father->list1 = NULL;
-        audioWrapper->father->list2 = NULL;*/
+
         if (audioWrapper->father->avbsfContext != nullptr) {
             av_bsf_free(&audioWrapper->father->avbsfContext);
             audioWrapper->father->avbsfContext = nullptr;

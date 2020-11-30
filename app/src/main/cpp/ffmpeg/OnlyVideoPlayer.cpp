@@ -462,7 +462,6 @@ namespace alexander_only_video {
         seek_interval = 10;
 
         AVPacket *srcAVPacket = &readVideoAVPacket;
-        //AVPacket *copyAVPacket = av_packet_alloc();
 
         // seekTo
         if (timeStamp > 0) {
@@ -537,11 +536,6 @@ namespace alexander_only_video {
                 }
             }
         }// for(;;) end
-
-        /*if (srcAVPacket != NULL) {
-            av_packet_unref(srcAVPacket);
-            srcAVPacket = NULL;
-        }*/
 
         isReading = false;
 
@@ -683,8 +677,7 @@ namespace alexander_only_video {
         LOGW("handleData() ANativeWindow_setBuffersGeometry() end\n");
 
         AVStream *stream = avFormatContext->streams[wrapper->streamIndex];
-        //AVPacket *tempAVPacket = av_packet_alloc();
-        AVPacket *copyAVPacket = &handleVideoAVPacket;
+        AVPacket *srcAVPacket = &handleVideoAVPacket;
         // decodedAVFrame为解码后的数据
         AVFrame *decodedAVFrame = videoWrapper->decodedAVFrame;
 
@@ -738,7 +731,7 @@ namespace alexander_only_video {
             if (wrapper->list1->size() > 0) {
                 AVPacket *tempAVPacket = &wrapper->list1->front();
                 // 内容copy
-                av_packet_ref(copyAVPacket, tempAVPacket);
+                av_packet_ref(srcAVPacket, tempAVPacket);
                 av_packet_unref(tempAVPacket);
                 wrapper->list1->pop_front();
                 allowDecode = true;
@@ -813,8 +806,8 @@ namespace alexander_only_video {
             }
 
             // 解码过程
-            ret = avcodec_send_packet(wrapper->avCodecContext, copyAVPacket);
-            av_packet_unref(copyAVPacket);
+            ret = avcodec_send_packet(wrapper->avCodecContext, srcAVPacket);
+            av_packet_unref(srcAVPacket);
             switch (ret) {
                 case AVERROR(EAGAIN):
                     LOGE("handleData() video avcodec_send_packet   ret: %d\n", ret);
@@ -886,17 +879,6 @@ namespace alexander_only_video {
 
             ///////////////////////////////////////////////////////////////////
         }//for(;;) end
-
-        /*if (tempAVPacket != NULL) {
-            av_packet_unref(tempAVPacket);
-            // app crash 上面的copyAVPacket调用却没事,why
-            // av_packet_free(&srcAVPacket);
-            tempAVPacket = NULL;
-        }
-        if (copyAVPacket != NULL) {
-            av_packet_free(&copyAVPacket);
-            copyAVPacket = NULL;
-        }*/
 
         handleDataClose(wrapper);
 
@@ -986,10 +968,6 @@ namespace alexander_only_video {
             videoWrapper->father->list2->clear();
             LOGW("closeVideo() list2 size: %d\n", size);
         }
-        /*delete (videoWrapper->father->list1);
-        delete (videoWrapper->father->list2);
-        videoWrapper->father->list1 = NULL;
-        videoWrapper->father->list2 = NULL;*/
 
         avformat_free_context(avFormatContext);
         avFormatContext = NULL;
