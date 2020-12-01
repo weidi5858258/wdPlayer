@@ -102,6 +102,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
+import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -1650,10 +1651,13 @@ public class PlayerWrapper {
             Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
 
-        if (mAudioFocusRequest != null) {
-            abandonAudioFocusRequest();
+        boolean needTwoPlayer = mSP.getBoolean(NEED_TWO_PLAYER, false);
+        if (mPlayerService != null && !needTwoPlayer) {
+            if (mAudioFocusRequest != null) {
+                abandonAudioFocusRequest();
+            }
+            requestAudioFocus();
         }
-        requestAudioFocus();
 
         // 音视频存在于同一个文件
         long position = 0;
