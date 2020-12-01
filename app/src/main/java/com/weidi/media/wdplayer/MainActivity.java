@@ -332,6 +332,8 @@ public class MainActivity extends AppCompatActivity {
         view.requestFocus();
         view.setOnClickListener(mOnClickListener);
         findViewById(R.id.playback_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.use_local_player_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.use_remote_player_btn).setOnClickListener(mOnClickListener);
 
         if (IS_TV) {
             setTvView();
@@ -635,6 +637,12 @@ public class MainActivity extends AppCompatActivity {
                                 new Object[]{mediaPath, mediaType});
                     }
                 }
+                break;
+            case R.id.use_local_player_btn:
+                PlayerService.mUseLocalPlayer = true;
+                break;
+            case R.id.use_remote_player_btn:
+                PlayerService.mUseLocalPlayer = false;
                 break;
             default:
                 break;

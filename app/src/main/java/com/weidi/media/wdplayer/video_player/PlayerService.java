@@ -429,13 +429,13 @@ public class PlayerService extends Service {
         }
         mPlayerWrapper.setService(this);
 
-        /*new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
                 bindRemotePlayerService();
                 return null;
             }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);*/
+        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     /////////////////////////////////////////////////////////////////
