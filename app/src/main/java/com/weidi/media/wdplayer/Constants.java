@@ -13,6 +13,7 @@ public interface Constants {
     String PLAYBACK_IS_MUTE = "playback_is_mute";
     // 保存窗口位置
     String PLAYBACK_WINDOW_POSITION = "playback_window_position";
+    String PLAYBACK_WINDOW_POSITION_REMOTE = "playback_window_position_remote";
     String PLAYBACK_WINDOW_POSITION_TAG = "@@@@@@@@@@";
     // 显示控制面板(true表示显示,false表示隐藏)
     String PLAYBACK_SHOW_CONTROLLERPANELLAYOUT = "playback_show_controllerpanellayout";
@@ -23,6 +24,8 @@ public interface Constants {
     String PLAYBACK_USE_EXOPLAYER_OR_FFMPEG = "playback_use_exoplayer_or_ffmpeg";
 
     String MEDIACODEC_TIME_OUT = "mediacodec_time_out";
+
+    String NEED_TWO_PLAYER = "need_two_player";
 
     // 针对PLAYER_IJKPLAYER和PLAYER_FFMPEG_MEDIACODEC是否进行硬解
     // 针对音频部分和视频部分,为0时表示使用软解,为1时表示使用硬解

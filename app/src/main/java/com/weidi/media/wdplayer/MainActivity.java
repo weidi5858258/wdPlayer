@@ -19,6 +19,7 @@ import android.os.PowerManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -61,6 +62,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
+import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
@@ -114,6 +116,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         Log.i(TAG, "onDestroy()");
         super.onDestroy();
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    PlayerService.mUseLocalPlayer = true;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    PlayerService.mUseLocalPlayer = false;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                    break;
+                default:
+                    break;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override
@@ -273,9 +298,18 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case 9:
-                        finish();
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        boolean needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
+                        if (needTwoPlayer) {
+                            MyToast.show("禁用同时使用两个播放器");
+                            sp.edit().putBoolean(NEED_TWO_PLAYER, false).commit();
+                        } else {
+                            MyToast.show("启用同时使用两个播放器");
+                            sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
+                        }
                         break;
                     case 10:
+                        finish();
                         break;
                     case 20:
                         if (IS_PHONE) {

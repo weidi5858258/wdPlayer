@@ -21,7 +21,6 @@ import android.graphics.PixelFormat;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -110,6 +109,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLAYOUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_REMOTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
@@ -284,7 +284,8 @@ public class PlayerWrapper {
     private int mDataCacheLayoutHeight;
 
     private Context mContext;
-    private PlayerService mService;
+    private PlayerService mPlayerService;
+    private RemotePlayerService mRemotePlayerService;
 
     /***
      Configuration.UI_MODE_TYPE_NORMAL     手机
@@ -324,15 +325,23 @@ public class PlayerWrapper {
 
     // 必须首先被调用
     public void setService(Service service) {
-        mService = null;
+        mPlayerService = null;
+        mRemotePlayerService = null;
         whatIsDevice = -1;
-        if (!(service instanceof PlayerService)) {
-            throw new IllegalArgumentException("!(service instanceof PlayerService)");
+        if (!(service instanceof PlayerService) && !(service instanceof RemotePlayerService)) {
+            throw new IllegalArgumentException(
+                    "!(service instanceof PlayerService) or " +
+                            "!(service instanceof RemotePlayerService)");
         }
 
-        PlayerService playerService = (PlayerService) service;
-        mService = playerService;
-        mContext = playerService.getApplicationContext();
+        if (service instanceof PlayerService) {
+            PlayerService playerService = (PlayerService) service;
+            mPlayerService = playerService;
+        } else if (service instanceof RemotePlayerService) {
+            RemotePlayerService remotePlayerService = (RemotePlayerService) service;
+            mRemotePlayerService = remotePlayerService;
+        }
+        mContext = service.getApplicationContext();
 
         if (mSP == null) {
             mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -1956,7 +1965,7 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             if (statusBarHeight != 0) {
                 updateRootViewLayout(mScreenWidth, mScreenHeight - statusBarHeight);
             } else {
@@ -1978,13 +1987,22 @@ public class PlayerWrapper {
 
         int x = 0;
         int y = 0;
-        String position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
-        if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
-            String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
-            y = Integer.parseInt(positions[1]);
-            /*if (IS_WATCH) {
-                y = 65;
-            }*/
+        String position = null;
+        if (mPlayerService != null) {
+            position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
+            if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
+                String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
+                y = Integer.parseInt(positions[1]);
+                /*if (IS_WATCH) {
+                    y = 65;
+                }*/
+            }
+        } else if (mRemotePlayerService != null) {
+            position = mSP.getString(PLAYBACK_WINDOW_POSITION_REMOTE, null);
+            if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
+                String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
+                y = Integer.parseInt(positions[1]);
+            }
         }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW x: " + x + " y: " + y);
 
@@ -2066,7 +2084,7 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
                     updateRootViewLayout(
@@ -2117,11 +2135,21 @@ public class PlayerWrapper {
 
         int x = 0;
         int y = 0;
-        String position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
-        if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
-            String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
-            x = Integer.parseInt(positions[0]);
-            y = Integer.parseInt(positions[1]);
+        String position = null;
+        if (mPlayerService != null) {
+            position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
+            if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
+                String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
+                x = Integer.parseInt(positions[0]);
+                y = Integer.parseInt(positions[1]);
+            }
+        } else if (mRemotePlayerService != null) {
+            position = mSP.getString(PLAYBACK_WINDOW_POSITION_REMOTE, null);
+            if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
+                String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
+                x = Integer.parseInt(positions[0]);
+                y = Integer.parseInt(positions[1]);
+            }
         }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW x: " + x + " y: " + y);
 
@@ -2184,7 +2212,7 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
                     updateRootViewLayout(mScreenWidth, mNeedVideoHeight, x, y);
@@ -2250,7 +2278,7 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             updateRootViewLayout(mScreenWidth, relativeParams.height);
         }
     }
@@ -2309,7 +2337,7 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 frameParams.setMargins(0, getStatusBarHeight(), 0, 0);
             } else {
@@ -2320,7 +2348,7 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 updateRootViewLayout(mScreenWidth, mNeedVideoHeight + pauseRlHeight);
             } else {
@@ -2957,7 +2985,7 @@ public class PlayerWrapper {
 
     private int getPauseRlHeight() {
         int pauseRlHeight = 0;
-        if (mService != null) {
+        if (mPlayerService != null || mRemotePlayerService != null) {
             RelativeLayout pause_rl = mRootView.findViewById(R.id.pause_rl);
             pauseRlHeight = pause_rl.getHeight();
             SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
@@ -3712,7 +3740,11 @@ public class PlayerWrapper {
                     sb.append(tempX);
                     sb.append(PLAYBACK_WINDOW_POSITION_TAG);
                     sb.append(tempY);
-                    mSP.edit().putString(PLAYBACK_WINDOW_POSITION, sb.toString()).commit();
+                    if (mPlayerService != null) {
+                        mSP.edit().putString(PLAYBACK_WINDOW_POSITION, sb.toString()).commit();
+                    } else if (mRemotePlayerService != null) {
+                        mSP.edit().putString(PLAYBACK_WINDOW_POSITION_REMOTE, sb.toString()).commit();
+                    }
                     Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW : " + sb.toString());
                     break;
                 default:

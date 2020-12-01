@@ -7,12 +7,10 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -39,38 +37,33 @@ import com.weidi.media.wdplayer.WearMainActivity;
 
 import java.util.Map;
 
-import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 /***
- Created by root on 19-8-5.
+ Created by root on 20-12-01.
  */
 
-public class PlayerService extends Service {
+public class RemotePlayerService extends Service {
 
     /*private static final String TAG =
             FloatingService.class.getSimpleName();*/
-    private static final String TAG = "LocalPlayerService";
+    private static final String TAG = "RemotePlayerService";
     private static final boolean DEBUG = true;
 
     @Override
     public IBinder onBind(Intent intent) {
         Log.i(TAG, "onBind() intent: " + intent);
-        // 被dlna绑定
+        // 被PlayerService绑定(PlayerService启动时就绑定)
         return mBinder;
     }
 
     @Override
     public boolean onUnbind(Intent intent) {
         Log.i(TAG, "onUnbind() intent: " + intent);
-        // 不解绑
-        /*if (mRemoteVideoPlayer != null) {
-            unbindService(mRemoteVideoConnection);
-        }*/
-        // 被dlna解绑
+        // 被PlayerService解绑(实际不绑定,一直绑定)
         return super.onUnbind(intent);
     }
 
@@ -101,7 +94,6 @@ public class PlayerService extends Service {
     private PlayerWrapper mPlayerWrapper;
     private String mType = null;
     private String mPath = null;
-    public static boolean mUseLocalPlayer = true;
 
     private WindowManager mWindowManager;
     private View mView;
@@ -116,7 +108,7 @@ public class PlayerService extends Service {
         mUiHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message msg) {
-                PlayerService.this.uiHandleMessage(msg);
+                RemotePlayerService.this.uiHandleMessage(msg);
             }
         };
     }
@@ -354,21 +346,9 @@ public class PlayerService extends Service {
 
         switch (msg.what) {
             case COMMAND_SHOW_WINDOW:
-                SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-                boolean needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
-                if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                    if (mPlayerWrapper != null) {
-                        mPlayerWrapper.setType(mType);
-                        mPlayerWrapper.setDataSource(mPath);
-                    }
-                    return;
-                }
-
-                try {
-                    mRemoteVideoPlayer.setDataSource(-1, mType);
-                    mRemoteVideoPlayer.setDataSourceMetadata(-1, mPath, null);
-                } catch (RemoteException e) {
-                    e.printStackTrace();
+                if (mPlayerWrapper != null) {
+                    mPlayerWrapper.setType(mType);
+                    mPlayerWrapper.setDataSource(mPath);
                 }
                 break;
             case COMMAND_HIDE_WINDOW:
@@ -428,14 +408,6 @@ public class PlayerService extends Service {
             mPlayerWrapper = new PlayerWrapper();
         }
         mPlayerWrapper.setService(this);
-
-        /*new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                bindRemotePlayerService();
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);*/
     }
 
     /////////////////////////////////////////////////////////////////
@@ -540,32 +512,25 @@ public class PlayerService extends Service {
 
     private static final int SUCCESS = 0;
 
-    private IDmrPlayerApp mRemoteVideoPlayer;
-
     private final IDmrPlayerApp.Stub mBinder = new IDmrPlayerApp.Stub() {
-
-        private boolean needTwoPlayer = false;
 
         @Override
         public void registerCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
             Log.i(TAG, "registerCallback() iid:" + iid + " cb: " + cb);
             mPlayerWrapper.registerCallback(iid, cb);
-            if (mRemoteVideoPlayer != null) {
-                mRemoteVideoPlayer.registerCallback(iid, cb);
-            }
         }
 
         @Override
         public void unregisterCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
             Log.i(TAG, "unregisterCallback() iid:" + iid + " cb: " + cb);
             mPlayerWrapper.unregisterCallback(iid, cb);
-            if (mRemoteVideoPlayer != null) {
-                mRemoteVideoPlayer.unregisterCallback(iid, cb);
-            }
         }
 
         @Override
-        public int setDataSource(int iid, String uri) throws RemoteException {
+        public int setDataSource(int iid, String type) throws RemoteException {
+            if (iid < 0) {
+                mType = type;
+            }
             return SUCCESS;
         }
 
@@ -575,17 +540,16 @@ public class PlayerService extends Service {
                     "\niid: " + iid +
                     "\nuri: " + uri +
                     "\nmetadata: " + metadata);
-
-            SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-            needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
-
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.setIID(iid);
-                mPlayerWrapper.setType("video/");
-                mPlayerWrapper.setDataSource(uri);
-            } else {
-                mRemoteVideoPlayer.setDataSourceMetadata(iid, uri, metadata);
+            if (iid < 0) {
+                mPath = uri;
+                mUiHandler.removeMessages(COMMAND_SHOW_WINDOW);
+                mUiHandler.sendEmptyMessage(COMMAND_SHOW_WINDOW);
+                return SUCCESS;
             }
+
+            mPlayerWrapper.setIID(iid);
+            mPlayerWrapper.setType("video/");
+            mPlayerWrapper.setDataSource(uri);
             return SUCCESS;
         }
 
@@ -598,63 +562,39 @@ public class PlayerService extends Service {
         @Override
         public int stop(int iid) throws RemoteException {
             Log.i(TAG, "stop() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.stopForDlna(iid);
-            } else {
-                mRemoteVideoPlayer.stop(iid);
-            }
+            mPlayerWrapper.stopForDlna(iid);
             return SUCCESS;
         }
 
         @Override
         public int start(int iid) throws RemoteException {
             Log.i(TAG, "start() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.playForDlna(iid);
-            } else {
-                mRemoteVideoPlayer.start(iid);
-            }
+            mPlayerWrapper.playForDlna(iid);
             return SUCCESS;
         }
 
         @Override
         public int pause(int iid) throws RemoteException {
             Log.i(TAG, "pause() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.pauseForDlna(iid);
-            } else {
-                mRemoteVideoPlayer.pause(iid);
-            }
+            mPlayerWrapper.pauseForDlna(iid);
             return SUCCESS;
         }
 
         @Override
         public int seekTo(int iid, int msec) throws RemoteException {
             Log.i(TAG, "seekTo() iid: " + iid + " msec: " + msec);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.seekToForDlna(iid, msec);
-            } else {
-                mRemoteVideoPlayer.seekTo(iid, msec);
-            }
+            mPlayerWrapper.seekToForDlna(iid, msec);
             return SUCCESS;
         }
 
         @Override
         public int getCurrentPosition(int iid) throws RemoteException {
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                return mPlayerWrapper.getCurrentPositionForDlna(iid);
-            } else {
-                return mRemoteVideoPlayer.getCurrentPosition(iid);
-            }
+            return mPlayerWrapper.getCurrentPositionForDlna(iid);
         }
 
         @Override
         public int getDuration(int iid) throws RemoteException {
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                return mPlayerWrapper.getDurationForDlna(iid);
-            } else {
-                return mRemoteVideoPlayer.getDuration(iid);
-            }
+            return mPlayerWrapper.getDurationForDlna(iid);
         }
 
         @Override
@@ -668,31 +608,6 @@ public class PlayerService extends Service {
             Log.i(TAG, "availablePlaySpeed() iid: " + iid);
             return "1";
         }
-    };
-
-    private void bindRemotePlayerService() {
-        Log.v(TAG, "######## bindService(RemotePlayerService) ########");
-        Intent intent = new Intent();
-        ComponentName cn = new ComponentName(
-                "com.weidi.media.wdplayer",
-                "com.weidi.media.wdplayer.video_player.RemotePlayerService");
-        intent.setComponent(cn);
-        bindService(intent, mRemoteVideoConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    private ServiceConnection mRemoteVideoConnection = new ServiceConnection() {
-
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            Log.i(TAG, "onServiceConnected() " + className.getClassName());
-            mRemoteVideoPlayer = IDmrPlayerApp.Stub.asInterface(service);
-            Log.i(TAG, "onServiceConnected() mRemoteVideoPlayer: " + mRemoteVideoPlayer);
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            Log.i(TAG, "onServiceDisconnected() " + className.getClassName());
-            mRemoteVideoPlayer = null;
-        }
-
     };
 
 }

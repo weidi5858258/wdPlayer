@@ -723,6 +723,7 @@ public class FfmpegUseMediaCodecDecode {
             SharedPreferences sp =
                     mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
             int softSolution = sp.getInt(HARD_SOLUTION, 1);
+            Log.w(TAG, "initVideoMediaCodec() softSolution: " + softSolution);
             if (softSolution == 0) {
                 return false;
             }
