@@ -46,7 +46,7 @@ public class FfmpegUseMediaCodecDecode {
     private Context mContext = null;
     private Surface mSurface = null;
 
-    public boolean mUseMediaCodecForAudio = true;
+    //public boolean mUseMediaCodecForAudio = true;
     public AudioWrapper mAudioWrapper = null;
     public VideoWrapper mVideoWrapper = null;
     private ExoAudioTrack mExoAudioTrack = null;
@@ -646,14 +646,14 @@ public class FfmpegUseMediaCodecDecode {
             return false;
         }
 
-        if (!mUseMediaCodecForAudio) {
+        /*if (!mUseMediaCodecForAudio) {
             if (mAudioWrapper.decoderMediaCodec != null) {
                 MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
                 mAudioWrapper.decoderMediaCodec = null;
             }
             Log.d(TAG, "initAudioMediaCodec() end with return false");
             return false;
-        }
+        }*/
 
         if (mAudioWrapper.decoderMediaFormat.containsKey("csd-0")) {
             ByteBuffer buffer = mAudioWrapper.decoderMediaFormat.getByteBuffer("csd-0");

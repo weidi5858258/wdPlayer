@@ -397,8 +397,11 @@ public class PlayerService extends Service {
         } else {
             layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         }
-        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        layoutParams.gravity = Gravity.TOP + Gravity.LEFT;
+        // 创建非模态,不可碰触
+        layoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+        //layoutParams.gravity = Gravity.TOP + Gravity.LEFT;
+        layoutParams.gravity = Gravity.TOP + Gravity.START;
         layoutParams.width = 1;
         layoutParams.height = 1;
         layoutParams.x = 0;
