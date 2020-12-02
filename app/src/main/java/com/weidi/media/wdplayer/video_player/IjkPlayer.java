@@ -19,6 +19,7 @@ import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE_REMOTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 
@@ -81,6 +82,7 @@ public class IjkPlayer implements WdPlayer {
     private long mPositionMs;
     public boolean mIsLocal = true;
     public boolean mIsLive = false;
+    public boolean mIsLocalPlayer = true;
     private boolean mHasPlayed = true;
 
 
@@ -450,7 +452,12 @@ public class IjkPlayer implements WdPlayer {
                     if (mContext != null) {
                         SharedPreferences sp = mContext.getSharedPreferences(
                                 PREFERENCES_NAME, Context.MODE_PRIVATE);
-                        boolean isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                        boolean isMute = false;
+                        if (mIsLocalPlayer) {
+                            isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                        } else {
+                            isMute = sp.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+                        }
                         if (!isMute) {
                             setVolume(FFMPEG.VOLUME_NORMAL);
                         } else {

@@ -166,9 +166,7 @@ public class FfmpegUseMediaCodecDecode {
     }
 
     public FfmpegUseMediaCodecDecode() {
-        if (mFFMPEG == null) {
-            mFFMPEG = FFMPEG.getDefault();
-        }
+        mFFMPEG = FFMPEG.getDefault();
     }
 
     public void setContext(Context context) {

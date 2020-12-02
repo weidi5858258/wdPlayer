@@ -19,6 +19,7 @@ import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.threadpool.ThreadPool;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE_REMOTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 
 
@@ -219,7 +220,12 @@ public class FFMPEG implements WdPlayer {
             if (mContext != null) {
                 SharedPreferences sp =
                         mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-                boolean isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                boolean isMute = false;
+                if (mIsLocalPlayer) {
+                    isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                } else {
+                    isMute = sp.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+                }
                 if (!isMute) {
                     setVolume(VOLUME_NORMAL);
                 } else {
@@ -261,6 +267,7 @@ public class FFMPEG implements WdPlayer {
     private Surface mSurface;
     private String mPath;
     public boolean mIsSeparatedAudioVideo;
+    public boolean mIsLocalPlayer = true;
 
     @Override
     public void setContext(Context context) {

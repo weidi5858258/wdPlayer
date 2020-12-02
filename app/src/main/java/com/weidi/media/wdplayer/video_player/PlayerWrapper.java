@@ -105,6 +105,7 @@ import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE_REMOTE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLAYOUT;
@@ -198,6 +199,7 @@ public class PlayerWrapper {
     private boolean mIsVideo = false;
     private boolean mIsAudio = false;
     private boolean mIsFinished = true;
+    private boolean mIsLocalPlayer = true;
     private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
     private WindowManager mWindowManager;
@@ -343,9 +345,11 @@ public class PlayerWrapper {
         if (service instanceof PlayerService) {
             PlayerService playerService = (PlayerService) service;
             mPlayerService = playerService;
+            mIsLocalPlayer = true;
         } else if (service instanceof RemotePlayerService) {
             RemotePlayerService remotePlayerService = (RemotePlayerService) service;
             mRemotePlayerService = remotePlayerService;
+            mIsLocalPlayer = false;
         }
 
         mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -571,20 +575,16 @@ public class PlayerWrapper {
             }
         };
 
-        if (mFfmpegUseMediaCodecDecode == null) {
-            mFfmpegUseMediaCodecDecode = new FfmpegUseMediaCodecDecode();
-        }
-        if (mFFMPEGPlayer == null) {
-            mFFMPEGPlayer = FFMPEG.getDefault();
-        }
-        if (mIjkPlayer == null) {
-            mIjkPlayer = new IjkPlayer();
-        }
+        mFfmpegUseMediaCodecDecode = new FfmpegUseMediaCodecDecode();
+        mFFMPEGPlayer = FFMPEG.getDefault();
+        mIjkPlayer = new IjkPlayer();
         mFfmpegUseMediaCodecDecode.setContext(mContext);
         mFFMPEGPlayer.setContext(mContext);
         mFFMPEGPlayer.setHandler(mUiHandler);
+        mFFMPEGPlayer.mIsLocalPlayer = mIsLocalPlayer;
         mIjkPlayer.setContext(mContext);
         mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
+        mIjkPlayer.mIsLocalPlayer = mIsLocalPlayer;
         mFFMPEGPlayer.setFfmpegUseMediaCodecDecode(mFfmpegUseMediaCodecDecode);
         if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
@@ -2007,7 +2007,7 @@ public class PlayerWrapper {
         int x = 0;
         int y = 0;
         String position = null;
-        if (mPlayerService != null) {
+        if (mIsLocalPlayer) {
             position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
             if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
                 String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
@@ -2016,7 +2016,7 @@ public class PlayerWrapper {
                     y = 65;
                 }*/
             }
-        } else if (mRemotePlayerService != null) {
+        } else {
             position = mSP.getString(PLAYBACK_WINDOW_POSITION_REMOTE, null);
             if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
                 String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
@@ -2155,14 +2155,14 @@ public class PlayerWrapper {
         int x = 0;
         int y = 0;
         String position = null;
-        if (mPlayerService != null) {
+        if (mIsLocalPlayer) {
             position = mSP.getString(PLAYBACK_WINDOW_POSITION, null);
             if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
                 String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
                 x = Integer.parseInt(positions[0]);
                 y = Integer.parseInt(positions[1]);
             }
-        } else if (mRemotePlayerService != null) {
+        } else {
             position = mSP.getString(PLAYBACK_WINDOW_POSITION_REMOTE, null);
             if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
                 String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
@@ -2458,7 +2458,11 @@ public class PlayerWrapper {
                 mVolumeMute.setVisibility(View.INVISIBLE);
                 mWdPlayer.setVolume(VOLUME_NORMAL);
                 mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                if (mIsLocalPlayer) {
+                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+                } else {
+                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE_REMOTE, false).commit();
+                }
                 MyToast.show("帧模式已关闭");
             }
             mPlayIB.setVisibility(View.VISIBLE);
@@ -2534,7 +2538,11 @@ public class PlayerWrapper {
             mWdPlayer.setVolume(VOLUME_MUTE);
         }
         mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
-        mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+        if (mIsLocalPlayer) {
+            mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+        } else {
+            mSP.edit().putBoolean(PLAYBACK_IS_MUTE_REMOTE, true).commit();
+        }
     }
 
     private void buttonLongClickForVolumeMute() {
@@ -2547,7 +2555,11 @@ public class PlayerWrapper {
             mWdPlayer.setVolume(VOLUME_NORMAL);
         }
         mFfmpegUseMediaCodecDecode.setVolume(VOLUME_NORMAL);
-        mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+        if (mIsLocalPlayer) {
+            mSP.edit().putBoolean(PLAYBACK_IS_MUTE, false).commit();
+        } else {
+            mSP.edit().putBoolean(PLAYBACK_IS_MUTE_REMOTE, false).commit();
+        }
     }
 
     private void buttonClickForRepeatOff() {
@@ -2683,7 +2695,12 @@ public class PlayerWrapper {
         mDownloadTV.setBackgroundColor(
                 ContextCompat.getColor(mContext, android.R.color.transparent));
         // 声音图标
-        boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
+        boolean isMute = false;
+        if (mIsLocalPlayer) {
+            isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
+        } else {
+            isMute = mSP.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+        }
         if (!isMute) {
             mVolumeNormal.setVisibility(View.VISIBLE);
             mVolumeMute.setVisibility(View.INVISIBLE);
@@ -3226,7 +3243,11 @@ public class PlayerWrapper {
                 mVolumeMute.setVisibility(View.VISIBLE);
                 mWdPlayer.setVolume(VOLUME_MUTE);
                 mFfmpegUseMediaCodecDecode.setVolume(VOLUME_MUTE);
-                mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+                if (mIsLocalPlayer) {
+                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE, true).commit();
+                } else {
+                    mSP.edit().putBoolean(PLAYBACK_IS_MUTE_REMOTE, true).commit();
+                }
                 // 显示控制面板
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.VISIBLE);
@@ -3634,7 +3655,12 @@ public class PlayerWrapper {
 
     public void playPlayerWithTelephonyCall() {
         if (mWdPlayer != null && mWdPlayer.isRunning()) {
-            boolean isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
+            boolean isMute = false;
+            if (mIsLocalPlayer) {
+                isMute = mSP.getBoolean(PLAYBACK_IS_MUTE, false);
+            } else {
+                isMute = mSP.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+            }
             if (!isMute) {
                 mWdPlayer.setVolume(VOLUME_NORMAL);
                 mVolumeNormal.setVisibility(View.VISIBLE);
@@ -3739,11 +3765,11 @@ public class PlayerWrapper {
                     sb.append(tempX);
                     sb.append(PLAYBACK_WINDOW_POSITION_TAG);
                     sb.append(tempY);
-                    if (mPlayerService != null) {
+                    if (mIsLocalPlayer) {
                         mSP.edit().putString(PLAYBACK_WINDOW_POSITION, sb.toString()).commit();
                         Log.i(TAG,
                                 "Callback.MSG_ON_CHANGE_WINDOW PlayerService: " + sb.toString());
-                    } else if (mRemotePlayerService != null) {
+                    } else {
                         mSP.edit().putString(PLAYBACK_WINDOW_POSITION_REMOTE, sb.toString()).commit();
                         Log.i(TAG,
                                 "Callback.MSG_ON_CHANGE_WINDOW RemotePlayerService: " + sb.toString());

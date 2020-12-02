@@ -429,13 +429,18 @@ public class PlayerService extends Service {
         }
         mPlayerWrapper.setService(this);
 
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                bindRemotePlayerService();
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        UiModeManager uiModeManager =
+                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        int whatIsDevice = uiModeManager.getCurrentModeType();
+        if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    bindRemotePlayerService();
+                    return null;
+                }
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
     }
 
     /////////////////////////////////////////////////////////////////

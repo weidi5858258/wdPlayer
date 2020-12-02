@@ -11,6 +11,7 @@ public interface Constants {
     String PLAYBACK_MEDIA_TYPE = "playback_media_type";
     // true表示静音
     String PLAYBACK_IS_MUTE = "playback_is_mute";
+    String PLAYBACK_IS_MUTE_REMOTE = "playback_is_mute_remote";
     // 保存窗口位置
     String PLAYBACK_WINDOW_POSITION = "playback_window_position";
     String PLAYBACK_WINDOW_POSITION_REMOTE = "playback_window_position_remote";

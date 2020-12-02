@@ -58,7 +58,7 @@
             android:layout_marginStart="@dimen/dimen_16_dp"
             android:layout_marginEnd="@dimen/dimen_16_dp"
             android:layout_marginTop="@dimen/dimen_16_dp"
-            android:text="UseLocalPlayer"
+            android:text="Use_Local_Player"
             android:textColor="@color/white"
             android:textSize="18sp" />
 
@@ -70,7 +70,7 @@
             android:layout_marginStart="@dimen/dimen_16_dp"
             android:layout_marginEnd="@dimen/dimen_16_dp"
             android:layout_marginTop="@dimen/dimen_16_dp"
-            android:text="UseRemotePlayer"
+            android:text="Use_Remote_Player"
             android:textColor="@color/white"
             android:textSize="18sp" />
 
