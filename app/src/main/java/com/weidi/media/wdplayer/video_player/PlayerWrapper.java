@@ -971,6 +971,16 @@ public class PlayerWrapper {
                     sb.append("    ");
                 }
             }
+
+            boolean needTwoPlayer = mSP.getBoolean(NEED_TWO_PLAYER, false);
+            if (needTwoPlayer) {
+                if (mIsLocalPlayer) {
+                    sb.append("[LP] ");
+                } else {
+                    sb.append("[RP] ");
+                }
+            }
+
             sb.append("[");
             sb.append(mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY));
             sb.append("]");
