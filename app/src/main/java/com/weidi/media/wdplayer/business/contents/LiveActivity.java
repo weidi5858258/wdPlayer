@@ -12,6 +12,7 @@ import android.os.Message;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 
@@ -30,7 +31,6 @@ import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
@@ -91,6 +91,29 @@ public class LiveActivity extends Activity {
         Log.i(TAG, "onDestroy()");
         internalDestroy();
         super.onDestroy();
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    PlayerService.mUseLocalPlayer = true;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    PlayerService.mUseLocalPlayer = false;
+                    break;
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                    break;
+                default:
+                    break;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     @Override

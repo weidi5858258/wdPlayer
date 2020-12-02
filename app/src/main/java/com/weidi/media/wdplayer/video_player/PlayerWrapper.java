@@ -326,15 +326,20 @@ public class PlayerWrapper {
 
     // 必须首先被调用
     public void setService(Service service) {
-        mPlayerService = null;
-        mRemotePlayerService = null;
-        whatIsDevice = -1;
-        if (!(service instanceof PlayerService) && !(service instanceof RemotePlayerService)) {
+        if (service == null) {
+            throw new NullPointerException("setService() service is null");
+        }
+        if (!(service instanceof PlayerService)
+                && !(service instanceof RemotePlayerService)) {
             throw new IllegalArgumentException(
                     "!(service instanceof PlayerService) or " +
                             "!(service instanceof RemotePlayerService)");
         }
+        mPlayerService = null;
+        mRemotePlayerService = null;
+        whatIsDevice = -1;
 
+        mContext = service.getApplicationContext();
         if (service instanceof PlayerService) {
             PlayerService playerService = (PlayerService) service;
             mPlayerService = playerService;
@@ -342,11 +347,8 @@ public class PlayerWrapper {
             RemotePlayerService remotePlayerService = (RemotePlayerService) service;
             mRemotePlayerService = remotePlayerService;
         }
-        mContext = service.getApplicationContext();
 
-        if (mSP == null) {
-            mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        }
+        mSP = mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
 
         mBatteryManager = (BatteryManager) mContext.getSystemService(Context.BATTERY_SERVICE);
         mAlarmManager = (AlarmManager) mContext.getSystemService(Context.ALARM_SERVICE);
@@ -480,6 +482,17 @@ public class PlayerWrapper {
             mSurfaceView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
+                    if (mPlayerService != null) {
+                        if (PlayerService.mUseLocalPlayer) {
+                            MyToast.show("使用远程窗口");
+                            PlayerService.mUseLocalPlayer = false;
+                        } else {
+                            MyToast.show("使用本地窗口");
+                            PlayerService.mUseLocalPlayer = true;
+                        }
+                        return true;
+                    }
+
                     if (isFrameByFrameMode) {
                         return true;
                     }
@@ -1474,7 +1487,9 @@ public class PlayerWrapper {
                 mDownloadClickCounts = 0;
                 break;
             case MSG_LOAD_CONTENTS:
-                loadContents();
+                if (mPlayerService != null) {
+                    loadContents();
+                }
                 break;
             default:
                 break;
@@ -3506,26 +3521,6 @@ public class PlayerWrapper {
         }
     }
 
-    private static int length(String s) {
-        if (s == null) {
-            return 0;
-        }
-        char[] c = s.toCharArray();
-        int len = 0;
-        for (int i = 0; i < c.length; i++) {
-            len++;
-            if (!isLetter(c[i])) {
-                len++;
-            }
-        }
-        return len;
-    }
-
-    private static boolean isLetter(char c) {
-        int k = 0x80;
-        return c / k == 0 ? true : false;
-    }
-
     private boolean isFrameByFrameMode = false;
     private static final int NEED_CLICK_COUNTS = 10;
     private int clickCounts = 0;
@@ -3746,10 +3741,13 @@ public class PlayerWrapper {
                     sb.append(tempY);
                     if (mPlayerService != null) {
                         mSP.edit().putString(PLAYBACK_WINDOW_POSITION, sb.toString()).commit();
+                        Log.i(TAG,
+                                "Callback.MSG_ON_CHANGE_WINDOW PlayerService: " + sb.toString());
                     } else if (mRemotePlayerService != null) {
                         mSP.edit().putString(PLAYBACK_WINDOW_POSITION_REMOTE, sb.toString()).commit();
+                        Log.i(TAG,
+                                "Callback.MSG_ON_CHANGE_WINDOW RemotePlayerService: " + sb.toString());
                     }
-                    Log.i(TAG, "Callback.MSG_ON_CHANGE_WINDOW : " + sb.toString());
                     break;
                 default:
                     break;
