@@ -2868,9 +2868,8 @@ public class PlayerWrapper {
             }
         }
         mIsFinished = true;
-        if (mFfmpegUseMediaCodecDecode != null) {
-            mFfmpegUseMediaCodecDecode.releaseMediaCodec();
-        }
+        mFfmpegUseMediaCodecDecode.releaseMediaCodec();
+        mFFMPEGPlayer.releaseAudioTrack();
 
         if (mHasError) {
             mHasError = false;

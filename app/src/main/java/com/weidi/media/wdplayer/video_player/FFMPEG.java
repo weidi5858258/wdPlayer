@@ -243,6 +243,14 @@ public class FFMPEG implements WdPlayer {
         Log.e(TAG, "createAudioTrack() mAudioTrack is null");
     }
 
+    /***
+     No pending exception expected:
+     java.lang.IllegalStateException:
+     Unable to retrieve AudioTrack pointer for write()
+     JNI DETECTED ERROR IN APPLICATION: JNI CallVoidMethodV called with pending exception
+     java.lang.IllegalStateException:
+     Unable to retrieve AudioTrack pointer for write()
+     */
     // 供jni层调用
     private void write(byte[] audioData, int offsetInBytes, int sizeInBytes) {
         //Log.i(TAG, "audioData.length: " + audioData.length);
@@ -252,7 +260,10 @@ public class FFMPEG implements WdPlayer {
         Log.i(TAG, "write()" +
                 " offsetInBytes: " + offsetInBytes +
                 " sizeInBytes: " + sizeInBytes);*/
-        if (mAudioTrack != null && audioData != null && sizeInBytes > 0) {
+        if (mAudioTrack != null
+                /*&& mAudioTrack.getState() != AudioTrack.PLAYSTATE_STOPPED*/
+                && audioData != null
+                && sizeInBytes > 0) {
             mAudioTrack.write(audioData, offsetInBytes, sizeInBytes);
         }
     }
@@ -268,6 +279,12 @@ public class FFMPEG implements WdPlayer {
     private String mPath;
     public boolean mIsSeparatedAudioVideo;
     public boolean mIsLocalPlayer = true;
+
+    // 在结束时调用,不然调用时机不对,会产生IllegalStateException异常的
+    public void releaseAudioTrack() {
+        MediaUtils.releaseAudioTrack(mAudioTrack);
+        mAudioTrack = null;
+    }
 
     @Override
     public void setContext(Context context) {
@@ -409,8 +426,6 @@ public class FFMPEG implements WdPlayer {
             mFfmpegUseMediaCodecDecode.destroy();
         }
         onTransact(DO_SOMETHING_CODE_release, null);
-        MediaUtils.releaseAudioTrack(mAudioTrack);
-        mAudioTrack = null;
     }
 
     @Override
