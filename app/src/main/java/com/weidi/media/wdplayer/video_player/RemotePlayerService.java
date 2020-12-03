@@ -353,12 +353,12 @@ public class RemotePlayerService extends Service {
                 break;
             case COMMAND_HIDE_WINDOW:
                 if (mPlayerWrapper != null) {
-                    mPlayerWrapper.removeView();
+                    mPlayerWrapper.removeView(false);
                 }
                 break;
             case COMMAND_STOP_SERVICE:
                 if (mPlayerWrapper != null) {
-                    mPlayerWrapper.removeView();
+                    mPlayerWrapper.removeView(false);
                 }
                 stopSelf();
                 break;

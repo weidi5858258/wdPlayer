@@ -46,7 +46,8 @@ public class FfmpegUseMediaCodecDecode {
     private Context mContext = null;
     private Surface mSurface = null;
 
-    //public boolean mUseMediaCodecForAudio = true;
+    public boolean mUseMediaCodecForVideo = true;
+    public boolean mUseMediaCodecForAudio = true;
     public AudioWrapper mAudioWrapper = null;
     public VideoWrapper mVideoWrapper = null;
     private ExoAudioTrack mExoAudioTrack = null;
@@ -392,6 +393,10 @@ public class FfmpegUseMediaCodecDecode {
             return false;
         }
 
+        if (!mUseMediaCodecForAudio) {
+            return false;
+        }
+
         if (mContext != null) {
             SharedPreferences sp =
                     mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -714,6 +719,10 @@ public class FfmpegUseMediaCodecDecode {
         }
         if (mSurface == null) {
             Log.e(TAG, "initVideoMediaCodec() mSurface is null");
+            return false;
+        }
+
+        if (!mUseMediaCodecForVideo) {
             return false;
         }
 

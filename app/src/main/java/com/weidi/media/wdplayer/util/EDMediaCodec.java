@@ -15,7 +15,7 @@ public class EDMediaCodec {
     /***
      -1表示一直等，0表示不等。
      */
-    public static int TIME_OUT = 18000;// 10000(10ms)
+    public static int TIME_OUT = 16000;// 10000(10ms)
 
     public enum TYPE {
         TYPE_VIDEO,

@@ -2507,7 +2507,17 @@ namespace alexander_media_mediacodec {
         needToResetVideoPts = false;
         hope_to_get_a_good_result();*/
 
-        onError(0x101, "需要重新开始播放");
+        /***
+         哗哩哗哩
+         A视频在播放过程中(不需要是哗哩哗哩的视频,视频硬解码),
+         然后通过哗哩哗哩投屏播放B视频(某些视频),那么A视频就会出错.
+         在B视频播放过程中,A视频重新播放也会出错,直到B视频退出才能正常播放.
+         GRM: MtkOmxVdec will not kick MtkOmxVdec, as they belong to android player
+         MtkOmxVdec: Decoder No Enough Resource!
+         .RemotePlayerService E/ACodec: [OMX.MTK.VIDEO.DECODER.AVC] ERROR(0x80001000)
+         .RemotePlayerService E/ACodec: signalError(omxError 0x80001000, internalError -2147483648)
+         */
+        onError(0x102, "需要重新开始播放");
         stop();
     }
 
@@ -2829,6 +2839,7 @@ namespace alexander_media_mediacodec {
         // region 渲染画面
 
         // 3.lock锁定下一个即将要绘制的Surface
+        // LOGW("handleVideoDataImpl() ANativeWindow_lock\n");
         ANativeWindow_lock(pANativeWindow, &mANativeWindow_Buffer, nullptr);
 
         // 把decodedAVFrame的数据经过格式转换后保存到rgbAVFrame中
@@ -2865,6 +2876,7 @@ namespace alexander_media_mediacodec {
 
         // 6.unlock绘制
         ANativeWindow_unlockAndPost(pANativeWindow);
+        // LOGW("handleVideoDataImpl() ANativeWindow_unlockAndPost\n");
 
         // endregion
     }

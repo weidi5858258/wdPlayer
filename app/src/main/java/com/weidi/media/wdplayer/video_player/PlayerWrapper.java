@@ -192,6 +192,7 @@ public class PlayerWrapper {
     private boolean mNeedToSyncProgressBar = true;
     private boolean mIsScreenPress = false;
     private boolean mHasError = false;
+    private int mErrorCode;
     // 单位秒
     private long mMediaDuration;
     private boolean mIsLocal = true;
@@ -783,9 +784,7 @@ public class PlayerWrapper {
             mPowerWakeLock.acquire();
         }
 
-        if (mSurfaceHolder == null) {
-            mSurfaceHolder = mSurfaceView.getHolder();
-        }
+        mSurfaceHolder = mSurfaceView.getHolder();
         // 没有图像出来,就是由于没有设置PixelFormat.RGBA_8888
         // 这里要写
         mSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
@@ -818,6 +817,7 @@ public class PlayerWrapper {
 
     private void onRelease() {
         if (mWdPlayer != null && mWdPlayer.isRunning()) {
+            Log.i(TAG, "onRelease()");
             mWdPlayer.release();
         }
     }
@@ -839,14 +839,27 @@ public class PlayerWrapper {
         mWindowManager.addView(mRootView, mLayoutParams);
     }
 
-    public synchronized void removeView() {
+    public synchronized void removeView(boolean needToRemoveCallback) {
         Log.i(TAG, "removeView() mIsAddedView: " + mIsAddedView);
         mPrePath = null;
         if (mIsAddedView) {
             mIsAddedView = false;
             onPause();
+            Log.i(TAG, "removeView()");
+            // removeView(false) ---> removeView(...) ---> onRelease() ---> onFinished() --->
+            // removeView(true)
             mWindowManager.removeView(mRootView);
         }
+        if (needToRemoveCallback) {
+            if (mSurfaceHolder != null) {
+                Log.i(TAG, "removeCallback()");
+                // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
+                mSurfaceHolder.removeCallback(mSurfaceCallback);
+                mSurfaceHolder = null;
+            }
+        }
+        abandonAudioFocusRequest();
+        System.gc();
     }
 
     public void createAlarmTask() {
@@ -1681,7 +1694,7 @@ public class PlayerWrapper {
             mWdPlayer.onTransact(DO_SOMETHING_CODE_setMode, jniObject);
 
             if (IS_PHONE) {
-                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 18000);
+                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 16000);
             }
             Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
@@ -1771,6 +1784,7 @@ public class PlayerWrapper {
     private void abandonAudioFocusRequest() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && mAudioFocusRequest != null) {
+            Log.i(TAG, "abandonAudioFocusRequest()");
             mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
             mAudioFocusRequest = null;
         }
@@ -2219,6 +2233,7 @@ public class PlayerWrapper {
             mNeedVideoHeight = (mScreenWidth * mVideoHeight) / mVideoWidth;
             if (mNeedVideoHeight > mScreenHeight) {
                 mNeedVideoHeight = mScreenHeight;
+                mNeedVideoWidth = (mNeedVideoHeight * mVideoWidth) / mVideoHeight;
             }
         } else {
             mNeedVideoWidth = mScreenWidth;
@@ -2239,7 +2254,8 @@ public class PlayerWrapper {
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
         if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-            frameParams.setMargins(0, getStatusBarHeight(), 0, 0);
+            //frameParams.setMargins(0, getStatusBarHeight(), 0, 0);
+            frameParams.setMargins(0, mScreenHeight - mControllerPanelLayoutHeight, 0, 0);
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
@@ -2247,9 +2263,21 @@ public class PlayerWrapper {
             /*mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(R.color.lightgray));*/
         }
-        frameParams.width = mScreenWidth;
+        frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
+
+        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
+        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
+                mDataCacheLayoutHeight);
+        if (mDataCacheLayoutHeight > 0) {
+            relativeParams =
+                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
+            relativeParams.setMargins(0, 0, 0, 0);
+            relativeParams.width = mNeedVideoWidth;
+            relativeParams.height = mDataCacheLayoutHeight;
+            mDataCacheLayout.setLayoutParams(relativeParams);
+        }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
@@ -2499,7 +2527,7 @@ public class PlayerWrapper {
         mIsDownloading = false;
         isFrameByFrameMode = false;
         // 表示用户主动关闭,不需要再继续播放
-        removeView();
+        removeView(false);
     }
 
     private void buttonClickForVolume() {
@@ -2831,6 +2859,13 @@ public class PlayerWrapper {
                 e.printStackTrace();
             }
         }
+
+        if (mHasError) {
+            mHasError = false;
+            if (!mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo) {
+                mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = true;
+            }
+        }
     }
 
     private void onPlayed() {
@@ -2892,25 +2927,32 @@ public class PlayerWrapper {
         mFFMPEGPlayer.releaseAudioTrack();
 
         if (mHasError) {
-            mHasError = false;
             Log.d(TAG, "onFinished() restart playback");
-            // 重新开始播放
-            startForGetMediaFormat();
-        } else {
-            Log.i(TAG, "Safe Exit");
-            MyToast.show("Safe Exit");
-
-            // 播放结束
-            if (!needToPlaybackOtherVideo()) {
-                removeView();
-                if (mSurfaceHolder != null) {
-                    mSurfaceHolder.removeCallback(mSurfaceCallback);
-                    mSurfaceHolder = null;
-                }
-                abandonAudioFocusRequest();
-                mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
-                System.gc();
+            switch (mErrorCode) {
+                case Callback.ERROR_MEDIA_CODEC:
+                    mUiHandler.removeMessages(MSG_ADD_VIEW);
+                    mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
+                    break;
+                case Callback.ERROR_TIME_OUT:
+                    mHasError = false;
+                    // 重新开始播放
+                    // startForGetMediaFormat();
+                    mThreadHandler.removeMessages(MSG_PREPARE);
+                    mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
+                    break;
+                default:
+                    break;
             }
+            return;
+        }
+
+        Log.i(TAG, "Safe Exit");
+        MyToast.show("(*^_^*)");
+
+        // 播放结束
+        if (!needToPlaybackOtherVideo()) {
+            removeView(true);
+            mSP.edit().putBoolean(PLAYBACK_NORMAL_FINISH, true).commit();
         }
     }
 
@@ -2938,20 +2980,24 @@ public class PlayerWrapper {
         if (msg.obj != null) {
             errorInfo = (String) msg.obj;
         }
-        int error = msg.arg1;
-        switch (error) {
+        MyToast.show(errorInfo);
+        mErrorCode = msg.arg1;
+        switch (mErrorCode) {
+            case Callback.ERROR_MEDIA_CODEC:
+                Log.e(TAG, "PlayerWrapper Callback.ERROR_MEDIA_CODEC errorInfo: " + errorInfo);
+                mHasError = true;
+                mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = false;
+                removeView(true);
+                break;
             case Callback.ERROR_TIME_OUT:
-                //case Callback.ERROR_DATA_EXCEPTION:
+                // 读取数据超时
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_OUT errorInfo: " + errorInfo);
-                //MyToast.show("读取数据超时");
-                MyToast.show(errorInfo);
                 // 需要重新播放
                 mHasError = true;
                 break;
             case Callback.ERROR_FFMPEG_INIT:
+                // 音视频初始化失败
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                //MyToast.show("音视频初始化失败");
-                MyToast.show(errorInfo);
                 if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
@@ -2971,20 +3017,14 @@ public class PlayerWrapper {
                     }
                 }
 
-                removeView();
-                if (mSurfaceHolder != null) {
-                    mSurfaceHolder.removeCallback(mSurfaceCallback);
-                    mSurfaceHolder = null;
-                }
-                abandonAudioFocusRequest();
-                System.gc();
+                removeView(true);
                 break;
             default:
                 break;
         }
         if (mIDmrPlayerAppCallback != null) {
             try {
-                mIDmrPlayerAppCallback.onError(mIid, error, errorInfo);
+                mIDmrPlayerAppCallback.onError(mIid, mErrorCode, errorInfo);
             } catch (RemoteException e) {
                 e.printStackTrace();
             }
