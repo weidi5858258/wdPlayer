@@ -36,6 +36,7 @@ import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.WearMainActivity;
+import com.weidi.utils.MyToast;
 
 import java.util.Map;
 
@@ -178,6 +179,7 @@ public class PlayerService extends Service {
     public static final int COMMAND_HANDLE_LANDSCAPE_SCREEN = 5;
     public static final int COMMAND_HANDLE_PORTRAIT_SCREEN = 6;
     public static final int COMMAND_ON_EVENT = 7;
+    public static final int COMMAND_WHICH_PLAYER = 8;
 
     // 测试时使用
     private void internalStartCommand(Intent intent, int flags, int startId) {
@@ -234,6 +236,15 @@ public class PlayerService extends Service {
                     } else {
                         mPlayerWrapper.onEvent(eventType, null);
                     }
+                }
+                break;
+            case COMMAND_WHICH_PLAYER:
+                if (mUseLocalPlayer) {
+                    MyToast.show("使用远程窗口");
+                    mUseLocalPlayer = false;
+                } else {
+                    MyToast.show("使用本地窗口");
+                    mUseLocalPlayer = true;
                 }
                 break;
             default:

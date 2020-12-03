@@ -10,6 +10,7 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.UiModeManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -497,14 +498,23 @@ public class PlayerWrapper {
                         return true;
                     }
 
-                    if (isFrameByFrameMode) {
+                    Intent intent = new Intent();
+                    ComponentName cn = new ComponentName(
+                            "com.weidi.media.wdplayer",
+                            "com.weidi.media.wdplayer.video_player.PlayerService");
+                    intent.setComponent(cn);
+                    intent.setAction(PlayerService.COMMAND_ACTION);
+                    intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_WHICH_PLAYER);
+                    mContext.startService(intent);
+
+                    /*if (isFrameByFrameMode) {
                         return true;
                     }
                     int curVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
                     mAudioManager.setStreamVolume(
                             AudioManager.STREAM_MUSIC,
                             curVolume,
-                            AudioManager.FLAG_SHOW_UI);
+                            AudioManager.FLAG_SHOW_UI);*/
                     return true;
                 }
             });
