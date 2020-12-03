@@ -786,7 +786,6 @@ public class PlayerWrapper {
 
         mSurfaceHolder = mSurfaceView.getHolder();
         // 没有图像出来,就是由于没有设置PixelFormat.RGBA_8888
-        // 这里要写
         mSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
         mSurfaceHolder.addCallback(mSurfaceCallback);
     }
@@ -850,16 +849,15 @@ public class PlayerWrapper {
             // removeView(true)
             mWindowManager.removeView(mRootView);
         }
-        if (needToRemoveCallback) {
-            if (mSurfaceHolder != null) {
-                Log.i(TAG, "removeCallback()");
-                // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
-                mSurfaceHolder.removeCallback(mSurfaceCallback);
-                mSurfaceHolder = null;
-            }
+        if (mSurfaceHolder != null && needToRemoveCallback) {
+            Log.i(TAG, "removeCallback()");
+            // 视频在播放过程中如果removeCallback(...)的话,会发生异常.所以只有在结束时removeCallback(...)
+            // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
+            mSurfaceHolder.removeCallback(mSurfaceCallback);
+            mSurfaceHolder = null;
+            abandonAudioFocusRequest();
+            System.gc();
         }
-        abandonAudioFocusRequest();
-        System.gc();
     }
 
     public void createAlarmTask() {
@@ -1652,9 +1650,6 @@ public class PlayerWrapper {
 
         textInfo = null;
         mIsFinished = false;
-        mSurfaceHolder = mSurfaceView.getHolder();
-        // 这里也要写
-        mSurfaceHolder.setFormat(PixelFormat.RGBA_8888);
 
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
             mWdPlayer = mIjkPlayer;
@@ -2984,19 +2979,20 @@ public class PlayerWrapper {
         mErrorCode = msg.arg1;
         switch (mErrorCode) {
             case Callback.ERROR_MEDIA_CODEC:
+                // 音频或视频硬解码失败(会调用到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_MEDIA_CODEC errorInfo: " + errorInfo);
                 mHasError = true;
                 mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = false;
                 removeView(true);
                 break;
             case Callback.ERROR_TIME_OUT:
-                // 读取数据超时
+                // 读取数据超时(会调用到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_OUT errorInfo: " + errorInfo);
                 // 需要重新播放
                 mHasError = true;
                 break;
             case Callback.ERROR_FFMPEG_INIT:
-                // 音视频初始化失败
+                // 音视频初始化失败(不会调用到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
                 if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
