@@ -1696,9 +1696,6 @@ public class PlayerWrapper {
 
         boolean needTwoPlayer = mSP.getBoolean(NEED_TWO_PLAYER, false);
         if (mPlayerService != null && !needTwoPlayer) {
-            if (mAudioFocusRequest != null) {
-                abandonAudioFocusRequest();
-            }
             requestAudioFocus();
         }
 
@@ -1736,6 +1733,10 @@ public class PlayerWrapper {
 
     private void requestAudioFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (mAudioFocusRequest != null) {
+                mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
+                mAudioFocusRequest = null;
+            }
             /***
              AUDIOFOCUS_LOSS：当本程序正在播放音频时有另一播放器请求获得音频焦点播放音频，那么就会回调该方法并传入此参数
              AUDIOFOCUS_LOSS_TRANSIENT：当另一个播放器请求“短暂”获得音频焦点，传入此参数
