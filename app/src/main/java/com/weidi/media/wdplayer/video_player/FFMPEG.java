@@ -16,11 +16,10 @@ import android.view.Surface;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
-import com.weidi.threadpool.ThreadPool;
 
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE_REMOTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 
 /***
@@ -218,14 +217,15 @@ public class FFMPEG implements WdPlayer {
 
         if (mAudioTrack != null) {
             if (mContext != null) {
-                SharedPreferences sp =
-                        mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-                boolean isMute = false;
+                SharedPreferences sp;
                 if (mIsLocalPlayer) {
-                    isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                    sp = mContext.getSharedPreferences(
+                            PREFERENCES_NAME, Context.MODE_PRIVATE);
                 } else {
-                    isMute = sp.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+                    sp = mContext.getSharedPreferences(
+                            PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
                 }
+                boolean isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
                 if (!isMute) {
                     setVolume(VOLUME_NORMAL);
                 } else {

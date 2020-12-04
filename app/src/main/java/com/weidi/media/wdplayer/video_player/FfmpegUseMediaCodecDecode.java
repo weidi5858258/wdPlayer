@@ -23,6 +23,7 @@ import java.util.Map;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 /***
  Created by weidi on 2020/07/11.
@@ -46,6 +47,7 @@ public class FfmpegUseMediaCodecDecode {
     private Context mContext = null;
     private Surface mSurface = null;
 
+    public boolean mIsLocalPlayer = true;
     public boolean mUseMediaCodecForVideo = true;
     public boolean mUseMediaCodecForAudio = true;
     public AudioWrapper mAudioWrapper = null;
@@ -398,8 +400,14 @@ public class FfmpegUseMediaCodecDecode {
         }
 
         if (mContext != null) {
-            SharedPreferences sp =
-                    mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+            SharedPreferences sp;
+            if (mIsLocalPlayer) {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME, Context.MODE_PRIVATE);
+            } else {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
+            }
             int softSolution = sp.getInt(HARD_SOLUTION, 1);
             int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 1);
             if (softSolution == 0 || softSolutionForAudio == 0) {
@@ -727,10 +735,15 @@ public class FfmpegUseMediaCodecDecode {
         }
 
         if (mContext != null) {
-            SharedPreferences sp =
-                    mContext.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+            SharedPreferences sp;
+            if (mIsLocalPlayer) {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME, Context.MODE_PRIVATE);
+            } else {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
+            }
             int softSolution = sp.getInt(HARD_SOLUTION, 1);
-            Log.w(TAG, "initVideoMediaCodec() softSolution: " + softSolution);
             if (softSolution == 0) {
                 return false;
             }

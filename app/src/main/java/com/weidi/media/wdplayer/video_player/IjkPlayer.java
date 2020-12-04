@@ -18,10 +18,10 @@ import com.weidi.media.wdplayer.util.JniObject;
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
-import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE_REMOTE;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 /***
  ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "mediacodec", 0);//关闭mediacodec硬解，使用软解
@@ -450,14 +450,15 @@ public class IjkPlayer implements WdPlayer {
                     play();
 
                     if (mContext != null) {
-                        SharedPreferences sp = mContext.getSharedPreferences(
-                                PREFERENCES_NAME, Context.MODE_PRIVATE);
-                        boolean isMute = false;
+                        SharedPreferences sp;
                         if (mIsLocalPlayer) {
-                            isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
+                            sp = mContext.getSharedPreferences(
+                                    PREFERENCES_NAME, Context.MODE_PRIVATE);
                         } else {
-                            isMute = sp.getBoolean(PLAYBACK_IS_MUTE_REMOTE, false);
+                            sp = mContext.getSharedPreferences(
+                                    PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
                         }
+                        boolean isMute = sp.getBoolean(PLAYBACK_IS_MUTE, false);
                         if (!isMute) {
                             setVolume(FFMPEG.VOLUME_NORMAL);
                         } else {

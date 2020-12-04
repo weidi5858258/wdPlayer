@@ -40,7 +40,7 @@ import java.util.Map;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 /***
  Created by root on 20-12-01.
@@ -242,7 +242,7 @@ public class RemotePlayerService extends Service {
     }
 
     private void handleAppCrash() {
-        SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
         boolean isNormalFinish = sp.getBoolean(PLAYBACK_NORMAL_FINISH, true);
         mPath = sp.getString(PLAYBACK_ADDRESS, null);
         if (!isNormalFinish && !TextUtils.isEmpty(mPath)) {
