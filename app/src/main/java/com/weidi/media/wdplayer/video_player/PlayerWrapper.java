@@ -844,17 +844,13 @@ public class PlayerWrapper {
         if (mIsAddedView) {
             mIsAddedView = false;
             onPause();
-            Log.i(TAG, "removeView()");
             // removeView(false) ---> removeView(...) ---> onRelease() ---> onFinished() --->
             // removeView(true)
+            Log.i(TAG, "removeView()");
             mWindowManager.removeView(mRootView);
         }
-        if (mSurfaceHolder != null && needToRemoveCallback) {
-            Log.i(TAG, "removeCallback()");
-            // 视频在播放过程中如果removeCallback(...)的话,会发生异常.所以只有在结束时removeCallback(...)
-            // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
-            mSurfaceHolder.removeCallback(mSurfaceCallback);
-            mSurfaceHolder = null;
+        if (needToRemoveCallback) {
+            removeCallback();
             abandonAudioFocusRequest();
             System.gc();
         }
@@ -1092,6 +1088,7 @@ public class PlayerWrapper {
         }
         if (mPrePath != null) {
             Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
+            removeCallback();
             mUiHandler.removeMessages(MSG_ADD_VIEW);
             mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
             return true;
@@ -1774,6 +1771,16 @@ public class PlayerWrapper {
                 default:
                     break;
             }
+        }
+    }
+
+    private void removeCallback() {
+        // 视频在播放过程中如果removeCallback(...)的话,会发生异常.所以只有在结束时removeCallback(...)
+        // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
+        if (mSurfaceHolder != null) {
+            Log.i(TAG, "removeCallback()");
+            mSurfaceHolder.removeCallback(mSurfaceCallback);
+            mSurfaceHolder = null;
         }
     }
 
@@ -2858,9 +2865,7 @@ public class PlayerWrapper {
 
         if (mHasError) {
             mHasError = false;
-            if (!mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo) {
-                mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = true;
-            }
+            mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = true;
         }
     }
 
@@ -2922,19 +2927,19 @@ public class PlayerWrapper {
         mFfmpegUseMediaCodecDecode.releaseMediaCodec();
         mFFMPEGPlayer.releaseAudioTrack();
 
+        abandonAudioFocusRequest();
+
         if (mHasError) {
-            Log.d(TAG, "onFinished() restart playback");
+            Log.i(TAG, "onFinished() restart playback");
             switch (mErrorCode) {
+                case Callback.ERROR_TIME_OUT:
                 case Callback.ERROR_MEDIA_CODEC:
+                    if (mErrorCode == Callback.ERROR_TIME_OUT) {
+                        mHasError = false;
+                    }
+                    removeCallback();
                     mUiHandler.removeMessages(MSG_ADD_VIEW);
                     mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
-                    break;
-                case Callback.ERROR_TIME_OUT:
-                    mHasError = false;
-                    // 重新开始播放
-                    // startForGetMediaFormat();
-                    mThreadHandler.removeMessages(MSG_PREPARE);
-                    mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
                     break;
                 default:
                     break;
@@ -2956,10 +2961,11 @@ public class PlayerWrapper {
         if (msg.obj != null && msg.obj instanceof String) {
             String toastInfo = ((String) msg.obj).trim();
             //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
-            if (toastInfo.contains("[")
-                    && toastInfo.contains("]")) {
+            if (toastInfo.contains("[") && toastInfo.contains("]")) {
                 textInfo = toastInfo;
                 textInfoTV.setText(toastInfo);
+                mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+                mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
             } else if (toastInfo.contains("AVERROR_EOF")) {
                 Log.i(TAG, "inInfo() mPrePath = null");
                 mPrePath = null;
@@ -2980,20 +2986,21 @@ public class PlayerWrapper {
         mErrorCode = msg.arg1;
         switch (mErrorCode) {
             case Callback.ERROR_MEDIA_CODEC:
-                // 音频或视频硬解码失败(会调用到onFinished())
+                // 音频或视频硬解码失败(会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_MEDIA_CODEC errorInfo: " + errorInfo);
-                mHasError = true;
                 mFfmpegUseMediaCodecDecode.mUseMediaCodecForVideo = false;
-                removeView(true);
+                mHasError = true;
+                removeView(false);
                 break;
             case Callback.ERROR_TIME_OUT:
-                // 读取数据超时(会调用到onFinished())
+                // 读取数据超时(会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_OUT errorInfo: " + errorInfo);
                 // 需要重新播放
                 mHasError = true;
+                removeView(false);
                 break;
             case Callback.ERROR_FFMPEG_INIT:
-                // 音视频初始化失败(不会调用到onFinished())
+                // 音视频初始化失败(不会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
                 if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
