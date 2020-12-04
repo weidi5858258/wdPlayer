@@ -529,6 +529,17 @@ public class RemotePlayerService extends Service {
         @Override
         public int setDataSource(int iid, String type) throws RemoteException {
             if (iid < 0) {
+                if (TextUtils.equals(type, "PortraitScreen")) {
+                    if (mPlayerWrapper != null) {
+                        mPlayerWrapper.handlePortraitScreen();
+                    }
+                    return SUCCESS;
+                } else if (TextUtils.equals(type, "LandscapeScreen")) {
+                    if (mPlayerWrapper != null) {
+                        mPlayerWrapper.handlePortraitScreenWithTV();
+                    }
+                    return SUCCESS;
+                }
                 mType = type;
             }
             return SUCCESS;

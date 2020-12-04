@@ -1987,7 +1987,11 @@ public class PlayerWrapper {
                     0, 0);
             relativeParams.width = mNeedVideoWidth;
             relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
+            try {
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         // 改变SurfaceView宽高度
@@ -2003,7 +2007,11 @@ public class PlayerWrapper {
         } else {
             relativeParams.height = mNeedVideoHeight;
         }
-        mSurfaceView.setLayoutParams(relativeParams);
+        try {
+            mSurfaceView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW         relativeParams.width: " +
                 relativeParams.width + " relativeParams.height: " + relativeParams.height);
 
@@ -2011,7 +2019,11 @@ public class PlayerWrapper {
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(
                 (mScreenWidth - mNeedVideoWidth) / 2, 6, 0, 0);
-        textInfoScrollView.setLayoutParams(relativeParams);
+        try {
+            textInfoScrollView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2024,7 +2036,11 @@ public class PlayerWrapper {
             frameParams.width = mScreenHeight;
         }
         frameParams.height = mControllerPanelLayoutHeight;
-        mControllerPanelLayout.setLayoutParams(frameParams);
+        try {
+            mControllerPanelLayout.setLayoutParams(frameParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (statusBarHeight != 0) {
@@ -2052,9 +2068,9 @@ public class PlayerWrapper {
         if (position != null && position.contains(PLAYBACK_WINDOW_POSITION_TAG)) {
             String[] positions = position.split(PLAYBACK_WINDOW_POSITION_TAG);
             y = Integer.parseInt(positions[1]);
-                /*if (IS_WATCH) {
-                    y = 65;
-                }*/
+            /*if (IS_WATCH) {
+                y = 65;
+            }*/
         }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW x: " + x + " y: " + y);
 
@@ -2075,19 +2091,6 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                 mScreenWidth: " +
                 mScreenWidth + " mScreenHeight: " + mScreenHeight);
 
-        // 生产,消耗进度条高度
-        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
-        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mDataCacheLayoutHeight);
-        if (mDataCacheLayoutHeight > 0) {
-            RelativeLayout.LayoutParams relativeParams =
-                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
-            relativeParams.setMargins(0, 0, 0, 0);
-            relativeParams.width = mScreenWidth;
-            relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
-        }
-
         // 改变SurfaceView高度
         RelativeLayout.LayoutParams relativeParams =
                 (RelativeLayout.LayoutParams) mSurfaceView.getLayoutParams();
@@ -2097,6 +2100,7 @@ public class PlayerWrapper {
             mNeedVideoHeight = (mScreenWidth * mVideoHeight) / mVideoWidth;
             if (mNeedVideoHeight > mScreenHeight) {
                 mNeedVideoHeight = mScreenHeight;
+                mNeedVideoWidth = (mNeedVideoHeight * mVideoWidth) / mVideoHeight;
             }
         } else {
             mNeedVideoWidth = mScreenWidth;
@@ -2104,14 +2108,22 @@ public class PlayerWrapper {
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
-        mSurfaceView.setLayoutParams(relativeParams);
+        try {
+            mSurfaceView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW              mNeedVideoWidth: " +
                 mNeedVideoWidth + " mNeedVideoHeight: " + mNeedVideoHeight);
 
         relativeParams =
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(0, 6, 0, 0);
-        textInfoScrollView.setLayoutParams(relativeParams);
+        try {
+            textInfoScrollView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2132,25 +2144,45 @@ public class PlayerWrapper {
             /*mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(R.color.lightgray));*/
         }
-        frameParams.width = mScreenWidth;
+        frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
-        mControllerPanelLayout.setLayoutParams(frameParams);
+        try {
+            mControllerPanelLayout.setLayoutParams(frameParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // 生产,消耗进度条高度
+        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
+        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
+                mDataCacheLayoutHeight);
+        if (mDataCacheLayoutHeight > 0) {
+            relativeParams = (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
+            relativeParams.setMargins(0, 0, 0, 0);
+            relativeParams.width = mNeedVideoWidth;
+            relativeParams.height = mDataCacheLayoutHeight;
+            try {
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
                     updateRootViewLayout(
-                            mScreenWidth,
+                            mNeedVideoWidth,
                             mNeedVideoHeight, x, y);
                 } else {
                     if (mIsLive) {
                         // 直播节目
                         updateRootViewLayout(
-                                mScreenWidth,
+                                mNeedVideoWidth,
                                 mNeedVideoHeight + pauseRlHeight, x, y);
                     } else {
                         updateRootViewLayout(
-                                mScreenWidth,
+                                mNeedVideoWidth,
                                 mNeedVideoHeight + mControllerPanelLayoutHeight, x, y);
                     }
                 }
@@ -2158,15 +2190,15 @@ public class PlayerWrapper {
                 if (mIsVideo) {
                     if (mIsLive) {
                         // 是视频并且只下载不播放的情况下
-                        updateRootViewLayout(mScreenWidth, pauseRlHeight, x, y);
+                        updateRootViewLayout(mNeedVideoWidth, pauseRlHeight, x, y);
                         return;
                     }
                 }
                 if (!mIsLive) {
                     // 音乐 或者 mMediaDuration > 0
-                    updateRootViewLayout(mScreenWidth, mControllerPanelLayoutHeight + 1, x, y);
+                    updateRootViewLayout(mNeedVideoWidth, mControllerPanelLayoutHeight + 1, x, y);
                 } else {
-                    updateRootViewLayout(mScreenWidth, pauseRlHeight + 1, x, y);
+                    updateRootViewLayout(mNeedVideoWidth, pauseRlHeight + 1, x, y);
                 }
             }
         }
@@ -2230,14 +2262,22 @@ public class PlayerWrapper {
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
-        mSurfaceView.setLayoutParams(relativeParams);
+        try {
+            mSurfaceView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW              mNeedVideoWidth: " +
                 mNeedVideoWidth + " mNeedVideoHeight: " + mNeedVideoHeight);
 
         relativeParams =
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(0, 4, 0, 0);
-        textInfoScrollView.setLayoutParams(relativeParams);
+        try {
+            textInfoScrollView.setLayoutParams(relativeParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2254,7 +2294,11 @@ public class PlayerWrapper {
         }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
-        mControllerPanelLayout.setLayoutParams(frameParams);
+        try {
+            mControllerPanelLayout.setLayoutParams(frameParams);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
@@ -2265,24 +2309,28 @@ public class PlayerWrapper {
             relativeParams.setMargins(0, 0, 0, 0);
             relativeParams.width = mNeedVideoWidth;
             relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
+            try {
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-                    updateRootViewLayout(mScreenWidth, mNeedVideoHeight, x, y);
+                    updateRootViewLayout(mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
                     if (mIsLive) {
-                        updateRootViewLayout(mScreenWidth,
+                        updateRootViewLayout(mNeedVideoWidth,
                                 mNeedVideoHeight + pauseRlHeight, x, y);
                     } else {
-                        updateRootViewLayout(mScreenWidth,
+                        updateRootViewLayout(mNeedVideoWidth,
                                 mNeedVideoHeight + mControllerPanelLayoutHeight, x, y);
                     }
                 }
             } else {
-                updateRootViewLayout(mScreenWidth, mControllerPanelLayoutHeight + 1, x, y);
+                updateRootViewLayout(mNeedVideoWidth, mControllerPanelLayoutHeight + 1, x, y);
             }
         }
     }
@@ -3047,7 +3095,11 @@ public class PlayerWrapper {
             mLayoutParams.height = height;
             mLayoutParams.x = x;
             mLayoutParams.y = y;
-            mWindowManager.updateViewLayout(mRootView, mLayoutParams);
+            try {
+                mWindowManager.updateViewLayout(mRootView, mLayoutParams);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -3753,9 +3805,9 @@ public class PlayerWrapper {
 
         @Override
         public boolean onTouch(View view, MotionEvent event) {
-            if (!mIsPortraitScreen) {
+            /*if (!mIsPortraitScreen) {
                 return true;
-            }
+            }*/
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     x = (int) event.getRawX();

@@ -396,15 +396,34 @@ public class PlayerService extends Service {
             case COMMAND_HANDLE_LANDSCAPE_SCREEN:
                 if (mPlayerWrapper != null) {
                     if (msg.arg1 == 0) {
-                        mPlayerWrapper.handleLandscapeScreen(0);
+                        if (JniPlayerActivity.isAliveJniPlayerActivity) {
+                            mPlayerWrapper.handleLandscapeScreen(0);
+                        } else {
+                            mPlayerWrapper.handlePortraitScreenWithTV();
+                        }
                     } else {
-                        mPlayerWrapper.handleLandscapeScreen(1);
+                        mPlayerWrapper.handlePortraitScreenWithTV();
+                        //mPlayerWrapper.handleLandscapeScreen(1);
+                    }
+                }
+                if (mRemoteVideoPlayer != null) {
+                    try {
+                        mRemoteVideoPlayer.setDataSource(-1, "LandscapeScreen");
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
                     }
                 }
                 break;
             case COMMAND_HANDLE_PORTRAIT_SCREEN:
                 if (mPlayerWrapper != null) {
                     mPlayerWrapper.handlePortraitScreen();
+                }
+                if (mRemoteVideoPlayer != null) {
+                    try {
+                        mRemoteVideoPlayer.setDataSource(-1, "PortraitScreen");
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
                 }
                 break;
             default:

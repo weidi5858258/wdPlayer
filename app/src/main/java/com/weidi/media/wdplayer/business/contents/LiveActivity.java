@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -14,6 +16,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 
 import com.weidi.eventbus.EventBusUtils;
@@ -114,6 +117,41 @@ public class LiveActivity extends Activity {
             }
         }
         return super.dispatchKeyEvent(event);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        Log.d(TAG, "onConfigurationChanged()" +
+                " newConfig: " + newConfig.toString());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // 横屏的时候隐藏刘海屏的刘海部分
+            if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_NEVER;
+                getWindow().setAttributes(lp);
+            } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                // 竖屏的时候展示刘海屏的刘海部分
+                WindowManager.LayoutParams lp = getWindow().getAttributes();
+                lp.layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                getWindow().setAttributes(lp);
+            }
+        }
+
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                    new Object[]{0});
+        } else {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                    null);
+        }
     }
 
     @Override
