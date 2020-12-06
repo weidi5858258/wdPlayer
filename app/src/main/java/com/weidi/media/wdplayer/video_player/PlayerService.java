@@ -179,7 +179,11 @@ public class PlayerService extends Service {
     public static final int COMMAND_HANDLE_LANDSCAPE_SCREEN = 5;
     public static final int COMMAND_HANDLE_PORTRAIT_SCREEN = 6;
     public static final int COMMAND_ON_EVENT = 7;
-    public static final int COMMAND_WHICH_PLAYER = 8;
+    // window a fm / window b ijk A窗口选择什么播放器
+    // window a time_out 16000    A窗口设置超时时间
+    // window a audio 0/1
+    // window a media 0/1
+    public static final int COMMAND_WHICH_WINDOW = 8;
 
     // 测试时使用
     private void internalStartCommand(Intent intent, int flags, int startId) {
@@ -238,7 +242,7 @@ public class PlayerService extends Service {
                     }
                 }
                 break;
-            case COMMAND_WHICH_PLAYER:
+            case COMMAND_WHICH_WINDOW:
                 if (mUseLocalPlayer) {
                     MyToast.show("使用远程窗口");
                     mUseLocalPlayer = false;
@@ -319,6 +323,8 @@ public class PlayerService extends Service {
             case COMMAND_HANDLE_PORTRAIT_SCREEN:
                 mUiHandler.removeMessages(COMMAND_HANDLE_PORTRAIT_SCREEN);
                 mUiHandler.sendEmptyMessage(COMMAND_HANDLE_PORTRAIT_SCREEN);
+                break;
+            case COMMAND_WHICH_WINDOW:
                 break;
             case KeyEvent.KEYCODE_HEADSETHOOK:// 79
                 if (mPlayerWrapper != null)

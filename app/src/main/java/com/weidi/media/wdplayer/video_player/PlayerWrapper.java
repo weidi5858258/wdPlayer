@@ -510,7 +510,7 @@ public class PlayerWrapper {
                             "com.weidi.media.wdplayer.video_player.PlayerService");
                     intent.setComponent(cn);
                     intent.setAction(PlayerService.COMMAND_ACTION);
-                    intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_WHICH_PLAYER);
+                    intent.putExtra(PlayerService.COMMAND_NAME, PlayerService.COMMAND_WHICH_WINDOW);
                     mContext.startService(intent);
 
                     /*if (isFrameByFrameMode) {
@@ -1693,6 +1693,7 @@ public class PlayerWrapper {
             if (IS_PHONE) {
                 EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 18000);
             }
+            MyToast.show(String.valueOf(EDMediaCodec.TIME_OUT));
             Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
 
