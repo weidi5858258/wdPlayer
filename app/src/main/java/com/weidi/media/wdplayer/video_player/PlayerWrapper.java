@@ -199,7 +199,6 @@ public class PlayerWrapper {
     private boolean mIsH264 = false;
     private boolean mIsVideo = false;
     private boolean mIsAudio = false;
-    private boolean mIsFinished = true;
     private boolean mIsLocalPlayer = true;
     private SimpleDateFormat mSimpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
 
@@ -1602,107 +1601,25 @@ public class PlayerWrapper {
         Log.d(TAG, "startPlayback()                  mPath: " + mCurPath);
         if (!mIsAddedView
                 || !mRootView.isShown()
-                || TextUtils.isEmpty(mCurPath)
-                || !mIsFinished) {
+                || TextUtils.isEmpty(mCurPath)) {
             Log.e(TAG, "startPlayback() The condition is not satisfied");
             return;
         }
 
-        // region 判断是什么样的文件(一般用于本地文件)
-
-        String tempPath = "";
-        boolean isSeparatedAudioVideo = false;
-        if (mCurPath.endsWith(".m4s")) {
-            tempPath = mCurPath.substring(0, mCurPath.lastIndexOf("/"));
-            File audioFile = new File(tempPath + "/audio.m4s");
-            File videoFile = new File(tempPath + "/video.m4s");
-            Log.d(TAG,
-                    "startPlayback()                  audio: " + audioFile.getAbsolutePath());
-            Log.d(TAG,
-                    "startPlayback()                  video: " + videoFile.getAbsolutePath());
-            if (audioFile.exists() && videoFile.exists()) {
-                isSeparatedAudioVideo = true;
-            }
-        } else if (mCurPath.endsWith(".h264") || mCurPath.endsWith(".aac")) {
-            tempPath = mCurPath.substring(0, mCurPath.lastIndexOf("/"));
-            String fileName = mCurPath.substring(
-                    mCurPath.lastIndexOf("/") + 1, mCurPath.lastIndexOf("."));
-            Log.d(TAG, "startPlayback()               fileName: " + fileName);
-            StringBuilder sb = new StringBuilder(tempPath);
-            sb.append("/");
-            sb.append(fileName);
-            sb.append(".aac");
-            File audioFile = new File(sb.toString());
-            sb = new StringBuilder(tempPath);
-            sb.append("/");
-            sb.append(fileName);
-            sb.append(".h264");
-            File videoFile = new File(sb.toString());
-            Log.d(TAG,
-                    "startPlayback()                  audio: " + audioFile.getAbsolutePath());
-            Log.d(TAG,
-                    "startPlayback()                  video: " + videoFile.getAbsolutePath());
-            if (audioFile.exists() && videoFile.exists()) {
-                isSeparatedAudioVideo = true;
-            }
-        }
-        Log.d(TAG, "startPlayback()  isSeparatedAudioVideo: " + isSeparatedAudioVideo);
-
-        // endregion
-
         textInfo = null;
-        mIsFinished = false;
 
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
             mWdPlayer = mIjkPlayer;
             mIjkPlayer.mIsLocal = mIsLocal;
         } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
-            mSimpleVideoPlayer = new SimpleVideoPlayer();
+            //mSimpleVideoPlayer = new SimpleVideoPlayer();
             //mWdPlayer = mSimpleVideoPlayer;
         } else {
             mWdPlayer = mFFMPEGPlayer;
-            mFfmpegUseMediaCodecDecode.mType = mType;
-            mFfmpegUseMediaCodecDecode.setSurface(mSurfaceHolder.getSurface());
-            mFFMPEGPlayer.mIsSeparatedAudioVideo = isSeparatedAudioVideo;
+            mFFMPEGPlayer.setType(mType);
             sendEmptyMessage(DO_SOMETHING_CODE_init);
-
-            // setMode
-            JniObject jniObject = JniObject.obtain();
-            if (isSeparatedAudioVideo) {
-                // [.m4s] or [.h264 and .aac](达不到同步效果)
-                if (mCurPath.endsWith(".m4s")) {
-                    jniObject.writeInt(USE_MODE_AUDIO_VIDEO);
-                } else {
-                    jniObject.writeInt(USE_MODE_AAC_H264);
-                }
-            } else {
-                if (mIsVideo) {
-                    if (mCurPath.endsWith(".h264")) {
-                        jniObject.writeInt(USE_MODE_ONLY_VIDEO);
-                    } else {
-                        jniObject.writeBoolean(IS_WATCH ? true : false);
-                        mWdPlayer.onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
-                        jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
-                    }
-                } else if (mIsAudio) {
-                    jniObject.writeInt(USE_MODE_ONLY_AUDIO);
-                }
-            }
-            mWdPlayer.onTransact(DO_SOMETHING_CODE_setMode, jniObject);
-
-            if (IS_PHONE) {
-                EDMediaCodec.TIME_OUT = mSP.getInt(MEDIACODEC_TIME_OUT, 18000);
-            }
-            MyToast.show(String.valueOf(EDMediaCodec.TIME_OUT));
-            Log.d(TAG, "startPlayback()               time_out: " + EDMediaCodec.TIME_OUT);
         }
 
-        boolean needTwoPlayer = mSP.getBoolean(NEED_TWO_PLAYER, false);
-        if (mPlayerService != null && !needTwoPlayer) {
-            requestAudioFocus();
-        }
-
-        // 音视频存在于同一个文件
         long position = 0;
         if (mPathTimeMap.containsKey(md5Path)) {
             // seekTo
@@ -1711,23 +1628,15 @@ public class PlayerWrapper {
         }
 
         mWdPlayer.seekTo(position);
-        mWdPlayer.setSurface(mSurfaceHolder.getSurface());
         mWdPlayer.setDataSource(mCurPath);
-        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-            mWdPlayer.start();
-            return;
-        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+        mWdPlayer.setSurface(mSurfaceHolder.getSurface());
+        if (!mWdPlayer.prepareSync()) {
             return;
         }
 
-        if (Integer.parseInt(sendEmptyMessage(DO_SOMETHING_CODE_initPlayer)) != 0) {
-            // 不在这里做事了.遇到error会从底层回调到java端的
-            //MyToast.show("音视频初始化失败");
-            //mUiHandler.removeMessages(Callback.MSG_ON_ERROR);
-            //mUiHandler.sendEmptyMessage(Callback.MSG_ON_ERROR);
-            mIsFinished = true;
-            abandonAudioFocusRequest();
-            return;
+        boolean needTwoPlayer = mSP.getBoolean(NEED_TWO_PLAYER, false);
+        if (mPlayerService != null && !needTwoPlayer) {
+            requestAudioFocus();
         }
 
         mWdPlayer.start();
@@ -2893,7 +2802,6 @@ public class PlayerWrapper {
                 e.printStackTrace();
             }
         }
-        mIsFinished = true;
         mFfmpegUseMediaCodecDecode.releaseMediaCodec();
         mFFMPEGPlayer.releaseAudioTrack();
 
@@ -2946,7 +2854,6 @@ public class PlayerWrapper {
     }
 
     private void onError(Message msg) {
-        mIsFinished = true;
         mHasError = false;
         String errorInfo = "error";
         if (msg.obj != null) {

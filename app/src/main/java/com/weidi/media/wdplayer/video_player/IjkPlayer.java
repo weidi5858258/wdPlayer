@@ -152,6 +152,16 @@ public class IjkPlayer implements WdPlayer {
         }
     }
 
+    @Override
+    public boolean prepareSync() {
+        return true;
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    public boolean prepareAsync() {
+        return true;
+    }
+
     @TargetApi(Build.VERSION_CODES.M)
     @Override
     public void start() {
@@ -287,11 +297,6 @@ public class IjkPlayer implements WdPlayer {
         mIjkMediaPlayer.reset();
         mIjkMediaPlayer.release();
         mIjkMediaPlayer = null;
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
-    public void prepareAsync() {
-
     }
 
     private void createPlayer() {

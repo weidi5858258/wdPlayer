@@ -14,9 +14,14 @@ import android.util.Log;
 import android.view.Surface;
 
 import com.weidi.media.wdplayer.util.Callback;
+import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
+import com.weidi.utils.MyToast;
 
+import java.io.File;
+
+import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
@@ -276,7 +281,11 @@ public class FFMPEG implements WdPlayer {
     private Handler mUiHandler;
     private Surface mSurface;
     private String mPath;
-    public boolean mIsSeparatedAudioVideo;
+    private String mType;
+    private boolean mIsInit = false;
+    private boolean mIsVideo = false;
+    private boolean mIsAudio = false;
+    private boolean mIsSeparatedAudioVideo = false;
     public boolean mIsLocalPlayer = true;
 
     // 在结束时调用,不然调用时机不对,会产生IllegalStateException异常的
@@ -303,25 +312,23 @@ public class FFMPEG implements WdPlayer {
     @Override
     public void setSurface(Surface surface) {
         mSurface = surface;
-        if (mSurface == null || TextUtils.isEmpty(mPath)) {
-            return;
-        }
-        onTransact(DO_SOMETHING_CODE_setSurface,
-                JniObject.obtain()
-                        .writeString(mPath)
-                        .writeObject(mSurface));
     }
 
     @Override
     public void setDataSource(String path) {
         mPath = path;
-        if (TextUtils.isEmpty(mPath) || mSurface == null) {
-            return;
+    }
+
+    public void setType(String type) {
+        mType = type;
+        mIsVideo = false;
+        mIsAudio = false;
+        if (TextUtils.isEmpty(mType)
+                || mType.startsWith("video/")) {
+            mIsVideo = true;
+        } else if (mType.startsWith("audio/")) {
+            mIsAudio = true;
         }
-        onTransact(DO_SOMETHING_CODE_setSurface,
-                JniObject.obtain()
-                        .writeString(mPath)
-                        .writeObject(mSurface));
     }
 
     @Override
@@ -342,6 +349,118 @@ public class FFMPEG implements WdPlayer {
     @Override
     public void seekTo(long second) {
         onTransact(DO_SOMETHING_CODE_seekTo, JniObject.obtain().writeLong(second));
+    }
+
+    @Override
+    public boolean prepareSync() {
+        if (TextUtils.isEmpty(mPath) || mSurface == null) {
+            Log.e(TAG, "prepareSync() TextUtils.isEmpty(mPath) || mSurface == null");
+            return false;
+        }
+
+        if (mFfmpegUseMediaCodecDecode != null) {
+            mFfmpegUseMediaCodecDecode.mType = mType;
+            mFfmpegUseMediaCodecDecode.setSurface(mSurface);
+        }
+
+        // region 判断是什么样的文件(一般用于本地文件)
+
+        mIsSeparatedAudioVideo = false;
+        String tempPath = "";
+        if (mPath.endsWith(".m4s")) {
+            tempPath = mPath.substring(0, mPath.lastIndexOf("/"));
+            File audioFile = new File(tempPath + "/audio.m4s");
+            File videoFile = new File(tempPath + "/video.m4s");
+            Log.d(TAG,
+                    "prepareSync()                  audio: " + audioFile.getAbsolutePath());
+            Log.d(TAG,
+                    "prepareSync()                  video: " + videoFile.getAbsolutePath());
+            if (audioFile.exists() && videoFile.exists()) {
+                mIsSeparatedAudioVideo = true;
+            }
+        } else if (mPath.endsWith(".h264") || mPath.endsWith(".aac")) {
+            tempPath = mPath.substring(0, mPath.lastIndexOf("/"));
+            String fileName = mPath.substring(
+                    mPath.lastIndexOf("/") + 1, mPath.lastIndexOf("."));
+            Log.d(TAG, "prepareSync()               fileName: " + fileName);
+            StringBuilder sb = new StringBuilder(tempPath);
+            sb.append("/");
+            sb.append(fileName);
+            sb.append(".aac");
+            File audioFile = new File(sb.toString());
+            sb = new StringBuilder(tempPath);
+            sb.append("/");
+            sb.append(fileName);
+            sb.append(".h264");
+            File videoFile = new File(sb.toString());
+            Log.d(TAG,
+                    "prepareSync()                  audio: " + audioFile.getAbsolutePath());
+            Log.d(TAG,
+                    "prepareSync()                  video: " + videoFile.getAbsolutePath());
+            if (audioFile.exists() && videoFile.exists()) {
+                mIsSeparatedAudioVideo = true;
+            }
+        }
+        Log.d(TAG, "prepareSync()  isSeparatedAudioVideo: " + mIsSeparatedAudioVideo);
+
+        // endregion
+
+        // region setMode
+
+        JniObject jniObject = JniObject.obtain();
+        if (mIsSeparatedAudioVideo) {
+            // [.m4s] or [.h264 and .aac](达不到同步效果)
+            if (mPath.endsWith(".m4s")) {
+                jniObject.writeInt(USE_MODE_AUDIO_VIDEO);
+            } else {
+                jniObject.writeInt(USE_MODE_AAC_H264);
+            }
+        } else {
+            if (mIsVideo) {
+                if (mPath.endsWith(".h264")) {
+                    jniObject.writeInt(USE_MODE_ONLY_VIDEO);
+                } else {
+                    jniObject.writeBoolean(PlayerWrapper.IS_WATCH ? true : false);
+                    onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
+                    jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
+                }
+            } else if (mIsAudio) {
+                jniObject.writeInt(USE_MODE_ONLY_AUDIO);
+            }
+        }
+        onTransact(DO_SOMETHING_CODE_setMode, jniObject);
+
+        // endregion
+
+        if (PlayerWrapper.IS_PHONE) {
+            SharedPreferences sp;
+            if (mIsLocalPlayer) {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME, Context.MODE_PRIVATE);
+            } else {
+                sp = mContext.getSharedPreferences(
+                        PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
+            }
+            EDMediaCodec.TIME_OUT = sp.getInt(MEDIACODEC_TIME_OUT, 18000);
+        }
+        MyToast.show(String.valueOf(EDMediaCodec.TIME_OUT));
+        Log.d(TAG, "prepareSync() time_out: " + EDMediaCodec.TIME_OUT);
+
+        onTransact(DO_SOMETHING_CODE_setSurface,
+                JniObject.obtain()
+                        .writeString(mPath)
+                        .writeObject(mSurface));
+
+        if (Integer.parseInt(onTransact(DO_SOMETHING_CODE_initPlayer, null)) != 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean prepareAsync() {
+        return true;
     }
 
     @Override

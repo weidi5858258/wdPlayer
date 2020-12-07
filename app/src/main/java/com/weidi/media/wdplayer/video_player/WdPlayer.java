@@ -25,7 +25,9 @@ public interface WdPlayer {
     // 单位: 秒
     void seekTo(long second);
 
-    //void prepare();
+    boolean prepareSync();
+
+    boolean prepareAsync();
 
     void start();
 
