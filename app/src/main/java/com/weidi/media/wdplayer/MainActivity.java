@@ -287,12 +287,10 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, LiveActivity.class));
                         break;
                     case 3:
-                        if (IS_PHONE) {
-                            Intent intent = new Intent();
-                            intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
-                            intent.setClass(MainActivity.this, JniPlayerActivity.class);
-                            startActivity(intent);
-                        }
+                        Intent intent = new Intent();
+                        intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
+                        intent.setClass(MainActivity.this, JniPlayerActivity.class);
+                        startActivity(intent);
                         break;
                     case 4:
                         if (IS_PHONE) {
@@ -377,7 +375,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void internalResume() {
-        JniPlayerActivity.isAliveJniPlayerActivity = false;
         if (IS_TV) {
             findViewById(R.id.address_et).setVisibility(View.GONE);
             Object result = EventBusUtils.post(

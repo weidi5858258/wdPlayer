@@ -407,9 +407,10 @@ public class PlayerService extends Service {
                         } else {
                             mPlayerWrapper.handlePortraitScreenWithTV();
                         }
-                    } else {
+                    } else if (msg.arg1 == 1) {
+                        mPlayerWrapper.handleLandscapeScreen(1);
+                    } else if (msg.arg1 == 2) {
                         mPlayerWrapper.handlePortraitScreenWithTV();
-                        //mPlayerWrapper.handleLandscapeScreen(1);
                     }
                 }
                 if (mRemoteVideoPlayer != null) {

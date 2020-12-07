@@ -3,6 +3,7 @@ package com.weidi.media.wdplayer.video_player;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -93,6 +94,13 @@ public class JniPlayerActivity extends Activity {
             Log.d(TAG, "onDestroy()");
         internalDestroy();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (DEBUG)
+            Log.d(TAG, "onNewIntent() intent: " + intent);
     }
 
     @Override
@@ -204,7 +212,7 @@ public class JniPlayerActivity extends Activity {
 
     ///////////////////////////////////////////////////////////////////////
 
-    private static final String TAG = "player_alexander";
+    private static final String TAG = "JniPlayerActivity";
     private static final boolean DEBUG = true;
 
     public static final String CONTENT_PATH = "content_path";
@@ -229,7 +237,7 @@ public class JniPlayerActivity extends Activity {
         ActivityManager manager = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo
                 service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceName.equals(service.service.getClassName())) {
+            if (TextUtils.equals(serviceName, service.service.getClassName())) {
                 return true;
             }
         }
@@ -366,11 +374,21 @@ public class JniPlayerActivity extends Activity {
     }
 
     private void internalResume() {
-
+        if (PlayerWrapper.IS_TV && noFinish) {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                    new Object[]{0});
+        }
     }
 
     private void internalPause() {
-
+        if (PlayerWrapper.IS_TV && noFinish) {
+            EventBusUtils.post(
+                    PlayerService.class,
+                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                    new Object[]{2});
+        }
     }
 
     private void internalStop() {
@@ -386,7 +404,7 @@ public class JniPlayerActivity extends Activity {
                 EventBusUtils.post(
                         PlayerService.class,
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
-                        new Object[]{1});
+                        new Object[]{2});
             } else {
                 EventBusUtils.post(
                         PlayerService.class,
