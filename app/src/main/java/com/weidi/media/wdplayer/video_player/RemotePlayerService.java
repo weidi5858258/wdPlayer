@@ -366,8 +366,10 @@ public class RemotePlayerService extends Service {
                 if (mPlayerWrapper != null) {
                     if (msg.arg1 == 0) {
                         mPlayerWrapper.handleLandscapeScreen(0);
-                    } else {
+                    } else if (msg.arg1 == 1) {
                         mPlayerWrapper.handleLandscapeScreen(1);
+                    } else if (msg.arg1 == 2) {
+                        mPlayerWrapper.handlePortraitScreenWithTV();
                     }
                 }
                 break;
@@ -530,14 +532,15 @@ public class RemotePlayerService extends Service {
         public int setDataSource(int iid, String type) throws RemoteException {
             if (iid < 0) {
                 if (TextUtils.equals(type, "PortraitScreen")) {
-                    if (mPlayerWrapper != null) {
-                        mPlayerWrapper.handlePortraitScreen();
-                    }
+                    mUiHandler.removeMessages(COMMAND_HANDLE_PORTRAIT_SCREEN);
+                    mUiHandler.sendEmptyMessage(COMMAND_HANDLE_PORTRAIT_SCREEN);
                     return SUCCESS;
                 } else if (TextUtils.equals(type, "LandscapeScreen")) {
-                    if (mPlayerWrapper != null) {
-                        mPlayerWrapper.handlePortraitScreenWithTV();
-                    }
+                    mUiHandler.removeMessages(COMMAND_HANDLE_LANDSCAPE_SCREEN);
+                    Message msg = mUiHandler.obtainMessage();
+                    msg.what = COMMAND_HANDLE_LANDSCAPE_SCREEN;
+                    msg.arg1 = 2;
+                    mUiHandler.sendMessage(msg);
                     return SUCCESS;
                 }
                 mType = type;

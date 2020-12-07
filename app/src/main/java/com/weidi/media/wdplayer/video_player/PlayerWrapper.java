@@ -1988,11 +1988,7 @@ public class PlayerWrapper {
                     0, 0);
             relativeParams.width = mNeedVideoWidth;
             relativeParams.height = mDataCacheLayoutHeight;
-            try {
-                mDataCacheLayout.setLayoutParams(relativeParams);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            mDataCacheLayout.setLayoutParams(relativeParams);
         }
 
         // 改变SurfaceView宽高度
@@ -2008,11 +2004,7 @@ public class PlayerWrapper {
         } else {
             relativeParams.height = mNeedVideoHeight;
         }
-        try {
-            mSurfaceView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mSurfaceView.setLayoutParams(relativeParams);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW         relativeParams.width: " +
                 relativeParams.width + " relativeParams.height: " + relativeParams.height);
 
@@ -2020,11 +2012,7 @@ public class PlayerWrapper {
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(
                 (mScreenWidth - mNeedVideoWidth) / 2, 6, 0, 0);
-        try {
-            textInfoScrollView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        textInfoScrollView.setLayoutParams(relativeParams);
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2037,11 +2025,7 @@ public class PlayerWrapper {
             frameParams.width = mScreenHeight;
         }
         frameParams.height = mControllerPanelLayoutHeight;
-        try {
-            mControllerPanelLayout.setLayoutParams(frameParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mControllerPanelLayout.setLayoutParams(frameParams);
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (statusBarHeight != 0) {
@@ -2109,22 +2093,14 @@ public class PlayerWrapper {
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
-        try {
-            mSurfaceView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mSurfaceView.setLayoutParams(relativeParams);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW              mNeedVideoWidth: " +
                 mNeedVideoWidth + " mNeedVideoHeight: " + mNeedVideoHeight);
 
         relativeParams =
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(0, 6, 0, 0);
-        try {
-            textInfoScrollView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        textInfoScrollView.setLayoutParams(relativeParams);
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2147,11 +2123,7 @@ public class PlayerWrapper {
         }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
-        try {
-            mControllerPanelLayout.setLayoutParams(frameParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mControllerPanelLayout.setLayoutParams(frameParams);
 
         // 生产,消耗进度条高度
         mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
@@ -2162,11 +2134,7 @@ public class PlayerWrapper {
             relativeParams.setMargins(0, 0, 0, 0);
             relativeParams.width = mNeedVideoWidth;
             relativeParams.height = mDataCacheLayoutHeight;
-            try {
-                mDataCacheLayout.setLayoutParams(relativeParams);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            mDataCacheLayout.setLayoutParams(relativeParams);
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -2263,22 +2231,14 @@ public class PlayerWrapper {
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
-        try {
-            mSurfaceView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mSurfaceView.setLayoutParams(relativeParams);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW              mNeedVideoWidth: " +
                 mNeedVideoWidth + " mNeedVideoHeight: " + mNeedVideoHeight);
 
         relativeParams =
                 (RelativeLayout.LayoutParams) textInfoScrollView.getLayoutParams();
         relativeParams.setMargins(0, 4, 0, 0);
-        try {
-            textInfoScrollView.setLayoutParams(relativeParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        textInfoScrollView.setLayoutParams(relativeParams);
 
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
@@ -2295,11 +2255,7 @@ public class PlayerWrapper {
         }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
-        try {
-            mControllerPanelLayout.setLayoutParams(frameParams);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        mControllerPanelLayout.setLayoutParams(frameParams);
 
         mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
@@ -2310,11 +2266,7 @@ public class PlayerWrapper {
             relativeParams.setMargins(0, 0, 0, 0);
             relativeParams.width = mNeedVideoWidth;
             relativeParams.height = mDataCacheLayoutHeight;
-            try {
-                mDataCacheLayout.setLayoutParams(relativeParams);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            mDataCacheLayout.setLayoutParams(relativeParams);
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -3096,11 +3048,7 @@ public class PlayerWrapper {
             mLayoutParams.height = height;
             mLayoutParams.x = x;
             mLayoutParams.y = y;
-            try {
-                mWindowManager.updateViewLayout(mRootView, mLayoutParams);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            mWindowManager.updateViewLayout(mRootView, mLayoutParams);
         }
     }
 
