@@ -3059,7 +3059,7 @@ namespace alexander_media_mediacodec {
 
             // region 有些视频的(videoPts - preVideoPts)大于0.12,导致播放不连贯.一般为0.04
 
-            if (needToResetVideoPts
+            /*if (needToResetVideoPts
                 && !needToGetResultAgain
                 && isLive
                 && prePts != curPts
@@ -3089,7 +3089,7 @@ namespace alexander_media_mediacodec {
                 }
                 //LOGI("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
                 preVideoPts = videoPts;
-            }
+            }*/
             /*else if (needToResetVideoPts2
                        && !needToGetResultAgain
                        && isLive
