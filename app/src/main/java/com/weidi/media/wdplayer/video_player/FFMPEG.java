@@ -443,7 +443,7 @@ public class FFMPEG implements WdPlayer {
             }
             EDMediaCodec.TIME_OUT = sp.getInt(MEDIACODEC_TIME_OUT, 18000);
         }
-        MyToast.show(String.valueOf(EDMediaCodec.TIME_OUT));
+        // MyToast.show(String.valueOf(EDMediaCodec.TIME_OUT));
         Log.d(TAG, "prepareSync() time_out: " + EDMediaCodec.TIME_OUT);
 
         onTransact(DO_SOMETHING_CODE_setSurface,

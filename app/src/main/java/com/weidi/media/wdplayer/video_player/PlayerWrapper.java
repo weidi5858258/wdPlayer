@@ -820,7 +820,7 @@ public class PlayerWrapper {
     }
 
     private void onRelease() {
-        if (mWdPlayer != null && mWdPlayer.isRunning()) {
+        if (mWdPlayer != null/* && mWdPlayer.isRunning()*/) {
             Log.i(TAG, "onRelease()");
             mWdPlayer.release();
         }
