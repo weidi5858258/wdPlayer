@@ -400,6 +400,11 @@ public class PlayerWrapper {
         }
         mLayoutParams = new WindowManager.LayoutParams();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            /*mLayoutParams.type = WindowManager.LayoutParams.TYPE_TOAST;
+            mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+            mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+            mLayoutParams.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE;
+            mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;*/
             mLayoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
         } else {
             mLayoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
@@ -848,13 +853,13 @@ public class PlayerWrapper {
         mPrePath = null;
         if (mIsAddedView) {
             mIsAddedView = false;
-            onPause();
             // removeView(false) ---> removeView(...) ---> onRelease() ---> onFinished() --->
             // removeView(true)
             Log.i(TAG, "removeView()");
             mWindowManager.removeView(mRootView);
         }
         if (needToRemoveCallback) {
+            onPause();
             removeCallback();
             abandonAudioFocusRequest();
             System.gc();
