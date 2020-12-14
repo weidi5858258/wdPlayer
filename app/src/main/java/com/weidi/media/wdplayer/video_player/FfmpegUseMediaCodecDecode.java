@@ -409,7 +409,7 @@ public class FfmpegUseMediaCodecDecode {
                         PREFERENCES_NAME_REMOTE, Context.MODE_PRIVATE);
             }
             int softSolution = sp.getInt(HARD_SOLUTION, 1);
-            int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 0);
+            int softSolutionForAudio = sp.getInt(HARD_SOLUTION_AUDIO, 1);
             if (softSolution == 0 || softSolutionForAudio == 0) {
                 return false;
             }
