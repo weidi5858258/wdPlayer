@@ -540,7 +540,7 @@ public class PlayerWrapper {
             || newPath.startsWith("ftp://")) {
         mIsLocal = false;
     }*/
-    public synchronized void setDataSource(String path) {
+    public void setDataSource(String path) {
         if (TextUtils.isEmpty(path)) {
             Log.i(TAG, "setDataSource() path is null");
             return;
@@ -556,7 +556,7 @@ public class PlayerWrapper {
         Log.i(TAG, "setDataSource() mCurPath:\n" + mCurPath);
 
         mUiHandler.removeMessages(MSG_ADD_VIEW);
-        mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
+        mUiHandler.sendEmptyMessageDelayed(MSG_ADD_VIEW, 888);
     }
 
     public void setType(String type) {
@@ -831,7 +831,7 @@ public class PlayerWrapper {
         }
     }
 
-    private synchronized void addView() {
+    private void addView() {
         Log.i(TAG, "addView()    mIsAddedView: " + mIsAddedView);
         if (mIsAddedView) {
             mIsAddedView = false;
@@ -848,7 +848,7 @@ public class PlayerWrapper {
         mWindowManager.addView(mRootView, mLayoutParams);
     }
 
-    public synchronized void removeView(boolean needToRemoveCallback) {
+    public void removeView(boolean needToRemoveCallback) {
         Log.i(TAG, "removeView() mIsAddedView: " + mIsAddedView);
         mPrePath = null;
         if (mIsAddedView) {
@@ -1601,7 +1601,7 @@ public class PlayerWrapper {
         //mThreadHandler.sendEmptyMessageDelayed(MSG_PREPARE, 3000);
     }
 
-    private synchronized void startPlayback() {
+    private void startPlayback() {
         Log.d(TAG, "startPlayback() start");
         Log.d(TAG, "startPlayback()                  mPath: " + mCurPath);
         if (!mIsAddedView
