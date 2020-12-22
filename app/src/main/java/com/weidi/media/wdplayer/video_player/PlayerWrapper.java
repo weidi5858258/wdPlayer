@@ -977,7 +977,8 @@ public class PlayerWrapper {
         }
 
         int orientation = mContext.getResources().getConfiguration().orientation;
-        if (orientation == Configuration.ORIENTATION_PORTRAIT
+        if ((orientation == Configuration.ORIENTATION_PORTRAIT
+                && mNeedVideoHeight <= (int) (mScreenHeight * 2 / 3))
                 || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1)
                 || mIsAudio) {
             mControllerPanelLayout.setBackgroundColor(
@@ -2020,13 +2021,18 @@ public class PlayerWrapper {
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
         if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-            if (mNeedVideoHeight < mScreenHeight) {
+            /*if (mNeedVideoHeight < mScreenHeight) {
                 frameParams.setMargins(
                         0, mNeedVideoHeight - mControllerPanelLayoutHeight - 10, 0, 0);
             } else {
+                // mNeedVideoHeight == mScreenHeight
                 frameParams.setMargins(
                         0, getStatusBarHeight(), 0, 0);
-            }
+            }*/
+            frameParams.setMargins(
+                    0,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
+                    0, 0);
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
