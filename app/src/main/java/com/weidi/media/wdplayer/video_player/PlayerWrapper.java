@@ -7,9 +7,11 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.KeyguardManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.UiModeManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -57,6 +59,7 @@ import android.widget.TextView;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
+import com.weidi.media.wdplayer.MyApplication;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
@@ -163,6 +166,7 @@ public class PlayerWrapper {
     private static final int MSG_DOWNLOAD = 18;
     private static final int MSG_LOAD_CONTENTS = 19;
     private static final int MSG_ADD_VIEW = 20;
+    private static final int MSG_SCREEN_BRIGHT_WAKE_LOCK = 21;
 
     private HashMap<String, Long> mPathTimeMap = new HashMap<>();
     private ArrayList<String> mCouldPlaybackPathList = new ArrayList<>();
@@ -214,6 +218,7 @@ public class PlayerWrapper {
     private int maxVolume;
     // 查看剩余电量
     private BatteryManager mBatteryManager;
+    private ScreenBroadcastReceiver mScreenReceiver;
 
     private SurfaceView mSurfaceView;
     private LinearLayout mControllerPanelLayout;
@@ -389,6 +394,10 @@ public class PlayerWrapper {
             default:
                 IS_PHONE = true;
                 break;
+        }
+
+        if (IS_WATCH) {
+            registerReceiver();
         }
 
         LayoutInflater inflater =
@@ -813,6 +822,7 @@ public class PlayerWrapper {
 
     public void onDestroy() {
         onRelease();
+        unregisterReceiver();
         mFFMPEGPlayer = null;
         mIjkPlayer = null;
         mSimpleVideoPlayer = null;
@@ -1377,6 +1387,9 @@ public class PlayerWrapper {
                 break;
             case MSG_ADD_VIEW:
                 addView();
+                break;
+            case MSG_SCREEN_BRIGHT_WAKE_LOCK:
+                wakeUpAndUnlock();
                 break;
             default:
                 break;
@@ -3711,6 +3724,68 @@ public class PlayerWrapper {
                     break;
             }
             return true;
+        }
+    }
+
+    private void registerReceiver() {
+        if (mScreenReceiver == null) {
+            mScreenReceiver = new ScreenBroadcastReceiver();
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            filter.addAction(Intent.ACTION_SCREEN_OFF);
+            filter.addAction(Intent.ACTION_USER_PRESENT);
+            mContext.registerReceiver(mScreenReceiver, filter);
+        }
+    }
+
+    private void unregisterReceiver() {
+        if (mScreenReceiver != null) {
+            mContext.unregisterReceiver(mScreenReceiver);
+            mScreenReceiver = null;
+        }
+    }
+
+    @SuppressLint("InvalidWakeLockTag")
+    private void wakeUpAndUnlock() {
+        PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+        boolean isInteractive = pm.isInteractive();
+        if (!isInteractive) {
+            // 屏幕是关闭状态
+            PowerManager.WakeLock wl = pm.newWakeLock(
+                    PowerManager.ACQUIRE_CAUSES_WAKEUP
+                            | PowerManager.SCREEN_BRIGHT_WAKE_LOCK,
+                    //| WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                    "WakeLock");
+            // 点亮屏幕
+            wl.acquire(10000);
+            // 释放
+            wl.release();
+        }
+        /*// 屏幕解锁
+        KeyguardManager keyguardManager =
+                (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
+        KeyguardManager.KeyguardLock keyguardLock = keyguardManager.newKeyguardLock("unLock");
+        // 屏幕锁定
+        keyguardLock.reenableKeyguard();
+        // 解锁
+        keyguardLock.disableKeyguard();*/
+    }
+
+    private class ScreenBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (Intent.ACTION_SCREEN_ON.equals(action)) {
+                Log.i(TAG, "onReceive() 亮屏");
+                mUiHandler.removeMessages(MSG_SCREEN_BRIGHT_WAKE_LOCK);
+            } else if (Intent.ACTION_SCREEN_OFF.equals(action)) {
+                Log.i(TAG, "onReceive() 锁屏");
+                mUiHandler.removeMessages(MSG_SCREEN_BRIGHT_WAKE_LOCK);
+                mUiHandler.sendEmptyMessageDelayed(MSG_SCREEN_BRIGHT_WAKE_LOCK, 5 * 60 * 1000);
+            } else if (Intent.ACTION_USER_PRESENT.equals(action)) {
+                Log.i(TAG, "onReceive() 解锁");
+            }
         }
     }
 

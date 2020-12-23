@@ -3,13 +3,13 @@
     package="com.weidi.media.wdplayer">
 
     <!-- 读取Log权限 -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_LOGS" />
     <!-- 相机权限-->
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!--<uses-permission android:name="android.permission.CAMERA" />-->
     <!-- 录音权限 -->
+    <!--<uses-permission android:name="android.permission.RECORD_AUDIO" />-->
+    <!-- 重启完毕 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- 读写权限-->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -19,12 +19,14 @@
     <!-- 这个权限是必须有的，否则操作不了硬件,google的文档没有说出来，据说是因为有过滤器后自动获得，但是我的项目没这句话不成功。 -->
     <uses-permission android:name="android.permission.HARDWARE_TEST" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <!--加入电池白名单-->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <!--电话-->
+    <!--读取本机识别码-->
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <!--重新设置外拨电话的路径-->
     <uses-permission android:name="android.permission.PROCESS_OUTGOING_CALLS" />
     <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
     <!--网络-->
