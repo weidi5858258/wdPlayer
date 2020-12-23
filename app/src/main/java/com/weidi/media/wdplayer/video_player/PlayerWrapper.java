@@ -3781,8 +3781,9 @@ public class PlayerWrapper {
                 mUiHandler.removeMessages(MSG_SCREEN_BRIGHT_WAKE_LOCK);
             } else if (Intent.ACTION_SCREEN_OFF.equals(action)) {
                 Log.i(TAG, "onReceive() 锁屏");
+                // 在手表上,delayMillis的时间间隔是严重不同的
                 mUiHandler.removeMessages(MSG_SCREEN_BRIGHT_WAKE_LOCK);
-                mUiHandler.sendEmptyMessageDelayed(MSG_SCREEN_BRIGHT_WAKE_LOCK, 5 * 60 * 1000);
+                mUiHandler.sendEmptyMessageDelayed(MSG_SCREEN_BRIGHT_WAKE_LOCK, 30 * 1000);
             } else if (Intent.ACTION_USER_PRESENT.equals(action)) {
                 Log.i(TAG, "onReceive() 解锁");
             }
