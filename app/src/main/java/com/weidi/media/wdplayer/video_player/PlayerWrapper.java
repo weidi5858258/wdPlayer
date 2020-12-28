@@ -612,10 +612,11 @@ public class PlayerWrapper {
         mFFMPEGPlayer.setContext(mContext);
         mFFMPEGPlayer.setHandler(mUiHandler);
         mFFMPEGPlayer.mIsLocalPlayer = mIsLocalPlayer;
+        mFFMPEGPlayer.setFfmpegUseMediaCodecDecode(mFfmpegUseMediaCodecDecode);
+        mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_init, null);
         mIjkPlayer.setContext(mContext);
         mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
         mIjkPlayer.mIsLocalPlayer = mIsLocalPlayer;
-        mFFMPEGPlayer.setFfmpegUseMediaCodecDecode(mFfmpegUseMediaCodecDecode);
         if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
         }
@@ -1636,7 +1637,6 @@ public class PlayerWrapper {
         } else {
             mWdPlayer = mFFMPEGPlayer;
             mFFMPEGPlayer.setType(mType);
-            sendEmptyMessage(DO_SOMETHING_CODE_init);
         }
 
         long position = 0;

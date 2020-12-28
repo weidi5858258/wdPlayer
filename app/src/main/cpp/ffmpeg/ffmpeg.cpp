@@ -605,7 +605,7 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     sleepMethodID = env->GetMethodID(
             FFMPEGClass, "sleep", "(J)V");
 
-    if (jniObject_jclass) {
+    if (jniObject_jclass != nullptr) {
         env->DeleteGlobalRef(jniObject_jclass);
         jniObject_jclass = nullptr;
     }
@@ -613,16 +613,26 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     jniObject_jclass = reinterpret_cast<jclass>(env->NewGlobalRef(tempJniObjectClass));
     env->DeleteLocalRef(tempJniObjectClass);
 
-    valueString_jfieldID = env->GetFieldID(jniObject_jclass, "valueString", "Ljava/lang/String;");
-    valueInt_jfieldID = env->GetFieldID(jniObject_jclass, "valueInt", "I");
-    valueLong_jfieldID = env->GetFieldID(jniObject_jclass, "valueLong", "J");
-    valueByte_jfieldID = env->GetFieldID(jniObject_jclass, "valueByte", "B");
-    valueBoolean_jfieldID = env->GetFieldID(jniObject_jclass, "valueBoolean", "Z");
-    valueFloat_jfieldID = env->GetFieldID(jniObject_jclass, "valueFloat", "F");
-    valueDouble_jfieldID = env->GetFieldID(jniObject_jclass, "valueDouble", "D");
-    valueChar_jfieldID = env->GetFieldID(jniObject_jclass, "valueChar", "C");
-    valueShort_jfieldID = env->GetFieldID(jniObject_jclass, "valueShort", "S");
-    valueObject_jfieldID = env->GetFieldID(jniObject_jclass, "valueObject", "Ljava/lang/Object;");
+    valueString_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueString", "Ljava/lang/String;");
+    valueInt_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueInt", "I");
+    valueLong_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueLong", "J");
+    valueByte_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueByte", "B");
+    valueBoolean_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueBoolean", "Z");
+    valueFloat_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueFloat", "F");
+    valueDouble_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueDouble", "D");
+    valueChar_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueChar", "C");
+    valueShort_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueShort", "S");
+    valueObject_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueObject", "Ljava/lang/Object;");
     valueStringArray_jfieldID = env->GetFieldID(
             jniObject_jclass, "valueStringArray", "[Ljava/lang/String;");
     valueIntArray_jfieldID = env->GetFieldID(
@@ -630,19 +640,19 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     valueObjectArray_jfieldID = env->GetFieldID(
             jniObject_jclass, "valueObjectArray", "[Ljava/lang/Object;");
 
-    if (videoProducerObject) {
+    if (videoProducerObject != nullptr) {
         env->DeleteGlobalRef(videoProducerObject);
         videoProducerObject = nullptr;
     }
-    if (videoConsumerObject) {
+    if (videoConsumerObject != nullptr) {
         env->DeleteGlobalRef(videoConsumerObject);
         videoConsumerObject = nullptr;
     }
-    if (audioProducerObject) {
+    if (audioProducerObject != nullptr) {
         env->DeleteGlobalRef(audioProducerObject);
         audioProducerObject = nullptr;
     }
-    if (audioConsumerObject) {
+    if (audioConsumerObject != nullptr) {
         env->DeleteGlobalRef(audioConsumerObject);
         audioConsumerObject = nullptr;
     }
@@ -707,7 +717,6 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
             callback_jclass, "onInfo", "(Ljava/lang/String;)V");
     env->DeleteLocalRef(callback_jclass);
 
-    //
     env->DeleteLocalRef(FFMPEGClass);
     FFMPEGClass = nullptr;
 
