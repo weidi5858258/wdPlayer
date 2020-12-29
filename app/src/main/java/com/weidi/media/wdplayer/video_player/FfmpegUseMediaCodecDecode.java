@@ -5,20 +5,27 @@ import android.content.SharedPreferences;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
+import android.os.Build;
+import android.os.Handler;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
 import com.weidi.media.wdplayer.exo.ExoAudioTrack;
+import com.weidi.media.wdplayer.util.AVPacket;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.utils.MyToast;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import androidx.annotation.NonNull;
 
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
@@ -46,6 +53,7 @@ public class FfmpegUseMediaCodecDecode {
     // 为了注册广播
     private Context mContext = null;
     private Surface mSurface = null;
+    private Handler mThreadHandler;
 
     public boolean mIsLocalPlayer = true;
     public boolean mUseMediaCodecForVideo = true;
@@ -178,6 +186,10 @@ public class FfmpegUseMediaCodecDecode {
 
     public void setSurface(Surface surface) {
         mSurface = surface;
+    }
+
+    public void setHandler(Handler handler) {
+        mThreadHandler = handler;
     }
 
     public void setVolume(float volume) {
@@ -1044,6 +1056,43 @@ public class FfmpegUseMediaCodecDecode {
             return false;
         }
 
+        //////////////////////////////////////////////////////////////////////////////
+
+        /*MediaCodecInfo[] mediaCodecInfos =
+                MediaUtils.findAllDecodersByMime(mVideoWrapper.mime);
+        for (MediaCodecInfo mediaCodecInfo : mediaCodecInfos) {
+            if (mediaCodecInfo == null) {
+                continue;
+            }
+            try {
+                mVideoWrapper.decoderMediaCodec =
+                        MediaCodec.createByCodecName(mediaCodecInfo.getName());
+                break;
+            } catch (NullPointerException
+                    | IllegalArgumentException
+                    | MediaCodec.CodecException
+                    | IOException e) {
+                e.printStackTrace();
+                MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
+                mVideoWrapper.decoderMediaCodec = null;
+                continue;
+            }
+        }
+
+        if (mVideoWrapper.decoderMediaCodec == null) {
+            Log.e(TAG, "initVideoMediaCodec() create Video MediaCodec failure");
+            MyToast.show("create Video MediaCodec failure");
+            return false;
+        }
+
+        mVideoWrapper.decoderMediaCodec.setCallback(
+                mVideoAsyncDecoderCallback, mThreadHandler);
+        mVideoWrapper.decoderMediaCodec.configure(
+                mVideoWrapper.decoderMediaFormat, mVideoWrapper.mSurface, null, 0);
+        mVideoWrapper.decoderMediaCodec.start();*/
+
+        //////////////////////////////////////////////////////////////////////////////
+
         if (mVideoWrapper.decoderMediaFormat.containsKey("csd-0")) {
             ByteBuffer buffer = mVideoWrapper.decoderMediaFormat.getByteBuffer("csd-0");
             byte[] csd_0 = new byte[buffer.limit()];
@@ -1076,6 +1125,14 @@ public class FfmpegUseMediaCodecDecode {
                 0,
                 wrapper.render,
                 true);
+
+        // test
+        /*AVPacket avPacket = new AVPacket(wrapper.size);
+        avPacket.data = wrapper.data;
+        avPacket.presentationTimeUs = wrapper.sampleTime;
+        avPacket.flags = 0;
+        mInputDatasQueue.offer(avPacket);
+        return true;*/
     }
 
     // video
@@ -1344,5 +1401,80 @@ public class FfmpegUseMediaCodecDecode {
             }
         }
     }
+
+    /////////////////////////////////////////////////////////////////////////////////////
+
+    private final static ArrayBlockingQueue<AVPacket> mInputDatasQueue =
+            new ArrayBlockingQueue<AVPacket>(10);
+
+    private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
+        @Override
+        public void onInputBufferAvailable(@NonNull MediaCodec codec, int roomIndex) {
+            ByteBuffer room = null;
+            // 根据房间号找到房间
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                room = codec.getInputBuffer(roomIndex);
+            } else {
+                room = codec.getInputBuffers()[roomIndex];
+            }
+            if (room == null) {
+                return;
+            }
+
+            AVPacket avPacket = mInputDatasQueue.poll();
+            if (avPacket != null) {
+                byte[] data = avPacket.data;
+                int size = avPacket.size;
+                long presentationTimeUs = avPacket.presentationTimeUs;
+                int flags = avPacket.flags;
+                if (size <= 0) {
+                    flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
+                }
+                // 入住之前打扫一下房间
+                room.clear();
+                // 入住
+                room.put(data, 0, size);
+                codec.queueInputBuffer(roomIndex, 0, size, presentationTimeUs, flags);
+            }
+            avPacket = null;
+        }
+
+        @Override
+        public void onOutputBufferAvailable(@NonNull MediaCodec codec, int roomIndex,
+                                            @NonNull MediaCodec.BufferInfo roomInfo) {
+            ByteBuffer room = null;
+            // 根据房间号找到房间
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                //Log.i(TAG, "drainOutputBuffer() roomIndex: " + roomIndex);
+                room = codec.getOutputBuffer(roomIndex);
+            } else {
+                room = codec.getOutputBuffers()[roomIndex];
+            }
+            // 房间大小
+            int roomSize = roomInfo.size;
+            // 不能根据room是否为null来判断是audio还是video(但我的三星Note2手机上是可以的)
+            if (room != null) {
+                room.position(roomInfo.offset);
+                room.limit(roomInfo.offset + roomSize);
+                mCallback.handleVideoOutputBuffer(roomIndex, room, roomInfo, roomSize);
+                room.clear();
+            } else {
+                mCallback.handleVideoOutputBuffer(roomIndex, null, null, -1);
+            }
+
+            codec.releaseOutputBuffer(roomIndex, true);
+        }
+
+        @Override
+        public void onError(@NonNull MediaCodec mediaCodec, @NonNull MediaCodec.CodecException e) {
+            mCallback.handleVideoOutputBuffer(-1, null, null, -1);
+        }
+
+        @Override
+        public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec,
+                                          @NonNull MediaFormat mediaFormat) {
+            mCallback.handleVideoOutputFormat(mediaFormat);
+        }
+    };
 
 }
