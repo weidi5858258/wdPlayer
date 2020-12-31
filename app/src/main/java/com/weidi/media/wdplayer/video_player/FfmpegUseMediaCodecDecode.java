@@ -1414,9 +1414,9 @@ public class FfmpegUseMediaCodecDecode {
     private final static boolean AUDIO_NEED_TO_ASYNC = false;
 
     private final static ArrayBlockingQueue<AVPacket> mVideoInputDatasQueue =
-            new ArrayBlockingQueue<AVPacket>(15);
+            new ArrayBlockingQueue<AVPacket>(5);
     private final static ArrayBlockingQueue<AVPacket> mAudioInputDatasQueue =
-            new ArrayBlockingQueue<AVPacket>(15);
+            new ArrayBlockingQueue<AVPacket>(5);
 
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
