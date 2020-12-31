@@ -349,6 +349,9 @@ public class FFMPEG implements WdPlayer {
     @Override
     public void seekTo(long second) {
         onTransact(DO_SOMETHING_CODE_seekTo, JniObject.obtain().writeLong(second));
+        if (mFfmpegUseMediaCodecDecode != null) {
+            mFfmpegUseMediaCodecDecode.clearQueue();
+        }
     }
 
     @Override

@@ -608,7 +608,6 @@ public class PlayerWrapper {
         mFFMPEGPlayer = FFMPEG.getDefault();
         mIjkPlayer = new IjkPlayer();
         mFfmpegUseMediaCodecDecode.setContext(mContext);
-        mFfmpegUseMediaCodecDecode.setHandler(mThreadHandler);
         mFfmpegUseMediaCodecDecode.mIsLocalPlayer = mIsLocalPlayer;
         mFFMPEGPlayer.setContext(mContext);
         mFFMPEGPlayer.setHandler(mUiHandler);
