@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -287,6 +288,15 @@ public class FfmpegUseMediaCodecDecode {
                 e.printStackTrace();
             }
         }
+        try {
+            synchronized (mVideoInputDatasLock) {
+                Log.i(TAG, "mVideoInputDatasLock.notifyAll() start");
+                mVideoInputDatasLock.notifyAll();
+                Log.i(TAG, "mVideoInputDatasLock.notifyAll() end");
+            }
+        } catch (IllegalMonitorStateException e) {
+            e.printStackTrace();
+        }
         clearQueue();
         Log.i(TAG, "release() end");
     }
@@ -303,8 +313,14 @@ public class FfmpegUseMediaCodecDecode {
                 AVPacket avPacket = mAudioInputDatasQueue.poll();
                 avPacket = null;
             }
+            size = mVideoInputDatasList.size();
+            for (int i = 0; i < size; i++) {
+                AVPacket avPacket = mVideoInputDatasList.get(i);
+                avPacket = null;
+            }
             mVideoInputDatasQueue.clear();
             mAudioInputDatasQueue.clear();
+            mVideoInputDatasList.clear();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1179,7 +1195,21 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.flags = 0;
                     try {
                         // 超出限制就会阻塞
-                        mVideoInputDatasQueue.put(avPacket);
+                        // mVideoInputDatasQueue.put(avPacket);
+                        synchronized (mVideoInputDatasLock) {
+                            mVideoInputDatasList.add(avPacket);
+                            if (mVideoInputDatasIsWaiting) {
+                                mVideoInputDatasLock.notify();
+                            }
+                            if (mVideoInputDatasList.size() >= 5) {
+                                mVideoInputDatasLock.notify();
+                                //Log.e(TAG, "feedInputBufferAndDrainOutputBuffer() wait start");
+                                mVideoInputDatasIsWaiting = true;
+                                mVideoInputDatasLock.wait();
+                                mVideoInputDatasIsWaiting = false;
+                                //Log.e(TAG, "feedInputBufferAndDrainOutputBuffer() wait end");
+                            }
+                        }
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1484,20 +1514,43 @@ public class FfmpegUseMediaCodecDecode {
     private Condition notEmpty;
     // Condition for waiting puts
     private Condition notFull;
+    private final static ArrayList<AVPacket> mVideoInputDatasList = new ArrayList<AVPacket>(5);
+    private final static Object mVideoInputDatasLock = new Object();
+    private boolean mVideoInputDatasIsWaiting = false;
 
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
         @Override
         public void onInputBufferAvailable(@NonNull MediaCodec codec, int roomIndex) {
             AVPacket avPacket = null;
-            try {
-                if (mVideoWrapper != null && mVideoWrapper.isHandling) {
+            if (mVideoWrapper != null && mVideoWrapper.isHandling) {
+                try {
                     // avPacket = mInputDatasQueue.poll();
                     // 没有元素就会阻塞
-                    avPacket = mVideoInputDatasQueue.take();
+                    // avPacket = mVideoInputDatasQueue.take();
+
+                    if (mVideoInputDatasList.isEmpty()) {
+                        synchronized (mVideoInputDatasLock) {
+                            mVideoInputDatasLock.notify();
+                            //Log.e(TAG, "onInputBufferAvailable() wait start");
+                            mVideoInputDatasIsWaiting = true;
+                            mVideoInputDatasLock.wait();
+                            mVideoInputDatasIsWaiting = false;
+                            //Log.e(TAG, "onInputBufferAvailable() wait end");
+                        }
+                    }
+                    if (!mVideoInputDatasList.isEmpty()) {
+                        synchronized (mVideoInputDatasLock) {
+                            avPacket = mVideoInputDatasList.get(0);
+                            mVideoInputDatasList.remove(0);
+                            if (mVideoInputDatasIsWaiting) {
+                                mVideoInputDatasLock.notify();
+                            }
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
             if (avPacket == null
                     || mVideoWrapper == null
