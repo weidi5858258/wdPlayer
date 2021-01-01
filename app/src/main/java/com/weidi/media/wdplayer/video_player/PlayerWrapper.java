@@ -141,10 +141,7 @@ import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PA
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_TYPE;
 
 /***
- /Users/alexander/mydev/workspace_android/wdPlayer/gradle/wrapper/gradle-wrapper.properties
- https://www.kagura.me/dev/20200828131600.html
- distributionUrl=https://code.aliyun.com/kar/gradle-bin-zip/raw/master/gradle-6.5-bin.zip
- distributionUrl=https\://services.gradle.org/distributions/gradle-6.5-bin.zip
+
  */
 public class PlayerWrapper {
 
