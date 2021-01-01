@@ -15,6 +15,7 @@ import android.view.Surface;
 
 import com.weidi.media.wdplayer.exo.ExoAudioTrack;
 import com.weidi.media.wdplayer.util.AVPacket;
+import com.weidi.media.wdplayer.util.ArrayBlockingQueue;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
@@ -24,11 +25,10 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.NonNull;
 
@@ -228,27 +228,25 @@ public class FfmpegUseMediaCodecDecode {
             mAudioWrapper.decoderMediaCodec = null;
             mAudioWrapper = null;
         }*/
-
         if (mVideoWrapper != null) {
-            Log.i(TAG, "releaseMediaCodec 1");
             //mVideoWrapper.decoderMediaCodec.flush();
             MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
             mVideoWrapper.decoderMediaCodec = null;
             mVideoWrapper = null;
         }
         if (mAudioWrapper != null) {
-            Log.i(TAG, "releaseMediaCodec 2");
             //mAudioWrapper.decoderMediaCodec.flush();
             MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
             mAudioWrapper.decoderMediaCodec = null;
             mAudioWrapper = null;
         }
         if (mExoAudioTrack != null) {
-            Log.i(TAG, "releaseAudioTrack 3");
             MediaUtils.releaseAudioTrack(mExoAudioTrack.mAudioTrack);
             mExoAudioTrack.mAudioTrack = null;
             mExoAudioTrack = null;
         }
+        clearQueue();
+        signalQueue();
         Log.i(TAG, "releaseMediaCodec() end");
     }
 
@@ -270,35 +268,8 @@ public class FfmpegUseMediaCodecDecode {
             mAudioWrapper.isPausedForSeek = false;
         }
 
-        if (notEmpty != null) {
-            try {
-                Log.i(TAG, "notEmpty.signal() start");
-                notEmpty.signal();
-                Log.i(TAG, "notEmpty.signal() end");
-            } catch (IllegalMonitorStateException e) {
-                e.printStackTrace();
-            }
-        }
-        if (notFull != null) {
-            try {
-                Log.i(TAG, "notFull.signal() start");
-                notFull.signal();
-                Log.i(TAG, "notFull.signal() end");
-            } catch (IllegalMonitorStateException e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            mVideoInputBufferIsWaited = false;
-            synchronized (mVideoInputDatasLock) {
-                Log.i(TAG, "mVideoInputDatasLock.notifyAll() start");
-                mVideoInputDatasLock.notifyAll();
-                Log.i(TAG, "mVideoInputDatasLock.notifyAll() end");
-            }
-        } catch (IllegalMonitorStateException e) {
-            e.printStackTrace();
-        }
         clearQueue();
+        signalQueue();
         Log.i(TAG, "release() end");
     }
 
@@ -314,23 +285,18 @@ public class FfmpegUseMediaCodecDecode {
                 AVPacket avPacket = mAudioInputDatasQueue.poll();
                 avPacket = null;
             }
-            size = mVideoInputDatasList.size();
-            for (int i = 0; i < size; i++) {
-                AVPacket avPacket = mVideoInputDatasList.get(i);
-                avPacket = null;
-            }
             mVideoInputDatasQueue.clear();
             mAudioInputDatasQueue.clear();
-            mVideoInputDatasList.clear();
-            mVideoInputDatasIsWaited = false;
-            mVideoInputBufferIsWaited = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void handleSeekTo() {
-
+    public void signalQueue() {
+        mVideoInputDatasQueue.signalTake();
+        mVideoInputDatasQueue.signalPut();
+        mAudioInputDatasQueue.signalTake();
+        mAudioInputDatasQueue.signalPut();
     }
 
     // video
@@ -1088,19 +1054,6 @@ public class FfmpegUseMediaCodecDecode {
 
         //////////////////////////////////////////////////////////////////////////////
         if (VIDEO_NEED_TO_ASYNC) {
-            mVideoInputDatasQueue.clear();
-            try {
-                Class clazz = mVideoInputDatasQueue.getClass();
-                Field field = clazz.getDeclaredField("notEmpty");
-                field.setAccessible(true);
-                notEmpty = (Condition) field.get(mVideoInputDatasQueue);
-                field = clazz.getDeclaredField("notFull");
-                field.setAccessible(true);
-                notFull = (Condition) field.get(mVideoInputDatasQueue);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
             MediaCodecInfo[] mediaCodecInfos =
                     MediaUtils.findAllDecodersByMime(mVideoWrapper.mime);
             for (MediaCodecInfo mediaCodecInfo : mediaCodecInfos) {
@@ -1203,22 +1156,6 @@ public class FfmpegUseMediaCodecDecode {
                     try {
                         // 超出限制就会阻塞
                         mVideoInputDatasQueue.put(avPacket);
-
-                        /*synchronized (mVideoInputDatasLock) {
-                            mVideoInputDatasList.add(avPacket);
-                            if (mVideoInputBufferNeedWait) {
-                                mVideoInputDatasLock.notify();
-                            }
-                            if (mVideoInputDatasList.size() >= 5) {
-                                mVideoInputDatasLock.notify();
-                                while (mVideoInputBufferNeedWait) {
-                                    SystemClock.sleep(1);
-                                }
-                                mVideoInputDatasNeedWait = true;
-                                mVideoInputDatasLock.wait();
-                                mVideoInputDatasNeedWait = false;
-                            }
-                        }*/
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1509,14 +1446,6 @@ public class FfmpegUseMediaCodecDecode {
             new ArrayBlockingQueue<AVPacket>(5);
     private final static ArrayBlockingQueue<AVPacket> mAudioInputDatasQueue =
             new ArrayBlockingQueue<AVPacket>(5);
-    // Condition for waiting takes
-    private Condition notEmpty;
-    // Condition for waiting puts
-    private Condition notFull;
-    private final static ArrayList<AVPacket> mVideoInputDatasList = new ArrayList<AVPacket>();
-    private final static Object mVideoInputDatasLock = new Object();
-    private boolean mVideoInputDatasIsWaited = false;
-    private boolean mVideoInputBufferIsWaited = false;
 
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
@@ -1527,30 +1456,7 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     // avPacket = mInputDatasQueue.poll();
                     // 没有元素就会阻塞
-                    mVideoInputBufferIsWaited = true;
                     avPacket = mVideoInputDatasQueue.take();
-                    mVideoInputBufferIsWaited = false;
-
-                    /*if (mVideoInputDatasList.isEmpty()) {
-                        synchronized (mVideoInputDatasLock) {
-                            mVideoInputDatasLock.notify();
-                            while (mVideoInputDatasNeedWait) {
-                                SystemClock.sleep(1);
-                            }
-                            mVideoInputBufferNeedWait = true;
-                            mVideoInputDatasLock.wait();
-                            mVideoInputBufferNeedWait = false;
-                        }
-                    }
-                    if (!mVideoInputDatasList.isEmpty()) {
-                        synchronized (mVideoInputDatasLock) {
-                            avPacket = mVideoInputDatasList.get(0);
-                            mVideoInputDatasList.remove(0);
-                            if (mVideoInputDatasNeedWait) {
-                                mVideoInputDatasLock.notify();
-                            }
-                        }
-                    }*/
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
