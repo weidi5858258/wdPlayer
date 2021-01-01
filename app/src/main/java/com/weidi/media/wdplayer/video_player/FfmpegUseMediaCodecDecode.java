@@ -289,6 +289,7 @@ public class FfmpegUseMediaCodecDecode {
             }
         }
         try {
+            mVideoInputBufferIsWaited = false;
             synchronized (mVideoInputDatasLock) {
                 Log.i(TAG, "mVideoInputDatasLock.notifyAll() start");
                 mVideoInputDatasLock.notifyAll();
@@ -321,9 +322,15 @@ public class FfmpegUseMediaCodecDecode {
             mVideoInputDatasQueue.clear();
             mAudioInputDatasQueue.clear();
             mVideoInputDatasList.clear();
+            mVideoInputDatasIsWaited = false;
+            mVideoInputBufferIsWaited = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void handleSeekTo() {
+
     }
 
     // video
@@ -1169,7 +1176,7 @@ public class FfmpegUseMediaCodecDecode {
 
     public boolean feedInputBufferAndDrainOutputBuffer(SimpleWrapper wrapper) {
         if (wrapper.type == TYPE_AUDIO) {
-            if (AUDIO_NEED_TO_ASYNC) {
+            /*if (AUDIO_NEED_TO_ASYNC) {
                 if (mAudioWrapper != null
                         && mAudioWrapper.isHandling) {
                     AVPacket avPacket = new AVPacket(wrapper.size);
@@ -1184,7 +1191,7 @@ public class FfmpegUseMediaCodecDecode {
                     }
                 }
                 return true;
-            }
+            }*/
         } else {
             if (VIDEO_NEED_TO_ASYNC) {
                 if (mVideoWrapper != null
@@ -1195,21 +1202,23 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.flags = 0;
                     try {
                         // 超出限制就会阻塞
-                        // mVideoInputDatasQueue.put(avPacket);
-                        synchronized (mVideoInputDatasLock) {
+                        mVideoInputDatasQueue.put(avPacket);
+
+                        /*synchronized (mVideoInputDatasLock) {
                             mVideoInputDatasList.add(avPacket);
-                            if (mVideoInputDatasIsWaiting) {
+                            if (mVideoInputBufferNeedWait) {
                                 mVideoInputDatasLock.notify();
                             }
                             if (mVideoInputDatasList.size() >= 5) {
                                 mVideoInputDatasLock.notify();
-                                //Log.e(TAG, "feedInputBufferAndDrainOutputBuffer() wait start");
-                                mVideoInputDatasIsWaiting = true;
+                                while (mVideoInputBufferNeedWait) {
+                                    SystemClock.sleep(1);
+                                }
+                                mVideoInputDatasNeedWait = true;
                                 mVideoInputDatasLock.wait();
-                                mVideoInputDatasIsWaiting = false;
-                                //Log.e(TAG, "feedInputBufferAndDrainOutputBuffer() wait end");
+                                mVideoInputDatasNeedWait = false;
                             }
-                        }
+                        }*/
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1491,16 +1500,6 @@ public class FfmpegUseMediaCodecDecode {
         }
     };
 
-    private static void yuvCopy(byte[] src, int offset, int inWidth, int inHeight,
-                                byte[] dest, int outWidth, int outHeight) {
-        for (int h = 0; h < inHeight; h++) {
-            if (h < outHeight) {
-                System.arraycopy(src, offset + h * inWidth,
-                        dest, h * outWidth, outWidth);
-            }
-        }
-    }
-
     /////////////////////////////////////////////////////////////////////////////////////
 
     private final static boolean VIDEO_NEED_TO_ASYNC = true;
@@ -1514,9 +1513,10 @@ public class FfmpegUseMediaCodecDecode {
     private Condition notEmpty;
     // Condition for waiting puts
     private Condition notFull;
-    private final static ArrayList<AVPacket> mVideoInputDatasList = new ArrayList<AVPacket>(5);
+    private final static ArrayList<AVPacket> mVideoInputDatasList = new ArrayList<AVPacket>();
     private final static Object mVideoInputDatasLock = new Object();
-    private boolean mVideoInputDatasIsWaiting = false;
+    private boolean mVideoInputDatasIsWaited = false;
+    private boolean mVideoInputBufferIsWaited = false;
 
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
@@ -1527,27 +1527,30 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     // avPacket = mInputDatasQueue.poll();
                     // 没有元素就会阻塞
-                    // avPacket = mVideoInputDatasQueue.take();
+                    mVideoInputBufferIsWaited = true;
+                    avPacket = mVideoInputDatasQueue.take();
+                    mVideoInputBufferIsWaited = false;
 
-                    if (mVideoInputDatasList.isEmpty()) {
+                    /*if (mVideoInputDatasList.isEmpty()) {
                         synchronized (mVideoInputDatasLock) {
                             mVideoInputDatasLock.notify();
-                            //Log.e(TAG, "onInputBufferAvailable() wait start");
-                            mVideoInputDatasIsWaiting = true;
+                            while (mVideoInputDatasNeedWait) {
+                                SystemClock.sleep(1);
+                            }
+                            mVideoInputBufferNeedWait = true;
                             mVideoInputDatasLock.wait();
-                            mVideoInputDatasIsWaiting = false;
-                            //Log.e(TAG, "onInputBufferAvailable() wait end");
+                            mVideoInputBufferNeedWait = false;
                         }
                     }
                     if (!mVideoInputDatasList.isEmpty()) {
                         synchronized (mVideoInputDatasLock) {
                             avPacket = mVideoInputDatasList.get(0);
                             mVideoInputDatasList.remove(0);
-                            if (mVideoInputDatasIsWaiting) {
+                            if (mVideoInputDatasNeedWait) {
                                 mVideoInputDatasLock.notify();
                             }
                         }
-                    }
+                    }*/
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
