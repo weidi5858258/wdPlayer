@@ -285,39 +285,44 @@ public class JniPlayerActivity extends Activity {
              uri : content://media/external/video/media/272775
              path: /external/video/media/272775
              2.
-             uri : content://com.huawei.hidisk.fileprovider
-             /root/storage/1532-48AD/Videos/download/25068919/1/32/audio.m4s
+             uri : content://com.huawei.hidisk.fileprovider/root/storage/1532-48AD/.../audio.m4s
              // 这个路径是不对的
              path: /root/storage/1532-48AD/Videos/download/25068919/1/32/audio.m4s
+             3.
+             uri : file:///storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
+             path: /storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
              */
             Uri uri = intent.getData();
             if (uri != null) {
-                // content://com.huawei.hidisk.fileprovider/root/storage/1532-48AD/Android/data/
-                // tv.danmaku.bili/download/92647556/1/64/video.m4s
-                Log.d(TAG, "internalCreate()    uri: " + uri.toString());
-                mPath = uri.getPath();
-                if (!mPath.substring(mPath.lastIndexOf("/")).contains(".")) {
-                    // 如: /external/video/media/272775
-                    String[] proj = {MediaStore.Images.Media.DATA};
-                    Cursor actualimagecursor = this.managedQuery(
-                            uri, proj, null, null, null);
-                    int actual_image_column_index =
-                            actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                    actualimagecursor.moveToFirst();
-                    mPath = actualimagecursor.getString(actual_image_column_index);
+                mPath = uri.toString();
+                Log.d(TAG, "internalCreate()    uri: " + mPath);
+                if (!mPath.toLowerCase().startsWith("http://")
+                        && !mPath.toLowerCase().startsWith("https://")
+                        && !mPath.toLowerCase().startsWith("rtmp://")) {
+                    mPath = uri.getPath();
+                    if (!mPath.substring(mPath.lastIndexOf("/")).contains(".")) {
+                        // 如: /external/video/media/272775
+                        String[] proj = {MediaStore.Images.Media.DATA};
+                        Cursor actualimagecursor = this.managedQuery(
+                                uri, proj, null, null, null);
+                        int actual_image_column_index =
+                                actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                        actualimagecursor.moveToFirst();
+                        mPath = actualimagecursor.getString(actual_image_column_index);
+                    }
+                    Log.d(TAG, "internalCreate() mPath1: " + mPath);
+                    if (mPath.startsWith("/root/")) {
+                        // /root/storage/1532-48AD/Android/data/
+                        // tv.danmaku.bili/download/92647556/1/64/video.m4s
+                        mPath = mPath.substring(5);
+                    } else if (mPath.startsWith("/document/")) {
+                        // /document/37C8-3904:myfiles/video/[2K]Clarity_Demo_2016.mp4
+                        mPath = mPath.replace("/document/", "/storage/");
+                        mPath = mPath.replace(":", "/");
+                    }
+                    // /storage/37C8-3904/myfiles/video/
+                    Log.d(TAG, "internalCreate() mPath2: " + mPath);
                 }
-                Log.d(TAG, "internalCreate() mPath1: " + mPath);
-                if (mPath.startsWith("/root/")) {
-                    // /root/storage/1532-48AD/Android/data/
-                    // tv.danmaku.bili/download/92647556/1/64/video.m4s
-                    mPath = mPath.substring(5);
-                } else if (mPath.startsWith("/document/")) {
-                    // /document/37C8-3904:myfiles/video/[2K]Clarity_Demo_2016.mp4
-                    mPath = mPath.replace("/document/", "/storage/");
-                    mPath = mPath.replace(":", "/");
-                }
-                // /storage/37C8-3904/myfiles/video/
-                Log.d(TAG, "internalCreate() mPath2: " + mPath);
             }
             if (TextUtils.isEmpty(mPath)) {
                 finish();
