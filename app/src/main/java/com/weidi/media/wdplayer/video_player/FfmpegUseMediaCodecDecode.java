@@ -269,30 +269,44 @@ public class FfmpegUseMediaCodecDecode {
             mAudioWrapper.isPausedForSeek = false;
         }
 
-        clearQueue();
         if (notEmpty != null) {
-            notEmpty.signalAll();
+            try {
+                Log.i(TAG, "notEmpty.signal() start");
+                notEmpty.signal();
+                Log.i(TAG, "notEmpty.signal() end");
+            } catch (IllegalMonitorStateException e) {
+                e.printStackTrace();
+            }
         }
         if (notFull != null) {
-            notFull.signalAll();
+            try {
+                Log.i(TAG, "notFull.signal() start");
+                notFull.signal();
+                Log.i(TAG, "notFull.signal() end");
+            } catch (IllegalMonitorStateException e) {
+                e.printStackTrace();
+            }
         }
+        clearQueue();
         Log.i(TAG, "release() end");
     }
 
     public void clearQueue() {
-        int size = mVideoInputDatasQueue.size();
-        for (int i = 0; i < size; i++) {
-            AVPacket avPacket = mVideoInputDatasQueue.poll();
-            if (avPacket != null) {
+        try {
+            int size = mVideoInputDatasQueue.size();
+            for (int i = 0; i < size; i++) {
+                AVPacket avPacket = mVideoInputDatasQueue.poll();
                 avPacket = null;
             }
-        }
-        size = mAudioInputDatasQueue.size();
-        for (int i = 0; i < size; i++) {
-            AVPacket avPacket = mAudioInputDatasQueue.poll();
-            if (avPacket != null) {
+            size = mAudioInputDatasQueue.size();
+            for (int i = 0; i < size; i++) {
+                AVPacket avPacket = mAudioInputDatasQueue.poll();
                 avPacket = null;
             }
+            mVideoInputDatasQueue.clear();
+            mAudioInputDatasQueue.clear();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
