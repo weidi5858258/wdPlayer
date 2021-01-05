@@ -1494,7 +1494,13 @@ public class FfmpegUseMediaCodecDecode {
             room.clear();
             // 入住
             room.put(data, 0, size);
-            codec.queueInputBuffer(roomIndex, 0, size, presentationTimeUs, flags);
+            try {
+                codec.queueInputBuffer(roomIndex, 0, size, presentationTimeUs, flags);
+            } catch (IllegalStateException
+                    | NullPointerException
+                    | MediaCodec.CryptoException e) {
+                e.printStackTrace();
+            }
             avPacket = null;
         }
 
@@ -1526,7 +1532,13 @@ public class FfmpegUseMediaCodecDecode {
             }
 
             if (mVideoWrapper != null && mVideoWrapper.isHandling) {
-                codec.releaseOutputBuffer(roomIndex, true);
+                try {
+                    codec.releaseOutputBuffer(roomIndex, true);
+                } catch (IllegalStateException
+                        | NullPointerException
+                        | MediaCodec.CryptoException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
