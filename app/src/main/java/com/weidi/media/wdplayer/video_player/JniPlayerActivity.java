@@ -301,14 +301,22 @@ public class JniPlayerActivity extends Activity {
                         && !mPath.toLowerCase().startsWith("rtmp://")) {
                     mPath = uri.getPath();
                     if (!mPath.substring(mPath.lastIndexOf("/")).contains(".")) {
-                        // 如: /external/video/media/272775
-                        String[] proj = {MediaStore.Images.Media.DATA};
-                        Cursor actualimagecursor = this.managedQuery(
-                                uri, proj, null, null, null);
-                        int actual_image_column_index =
-                                actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                        actualimagecursor.moveToFirst();
-                        mPath = actualimagecursor.getString(actual_image_column_index);
+                        // /external/video/media/272775
+                        // content://cn.oneplus.filemanager.Safebox/file/2
+                        try {
+                            String[] proj = {MediaStore.Images.Media.DATA};
+                            Cursor actualimagecursor = this.managedQuery(
+                                    uri, proj, null, null, null);
+                            // Caused by: java.lang.IllegalArgumentException: column '_data' does not exist. Available columns: []
+                            int actual_image_column_index =
+                                    actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                            actualimagecursor.moveToFirst();
+                            mPath = actualimagecursor.getString(actual_image_column_index);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            finish();
+                            return;
+                        }
                     }
                     Log.d(TAG, "internalCreate() mPath1: " + mPath);
                     if (mPath.startsWith("/root/")) {
