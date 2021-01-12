@@ -294,7 +294,7 @@ public class JniPlayerActivity extends Activity {
              */
             Uri uri = intent.getData();
             if (uri != null) {
-                mPath = uri.toString();
+                mPath = uri.toString().trim();
                 Log.d(TAG, "internalCreate()    uri: " + mPath);
                 if (!mPath.toLowerCase().startsWith("http://")
                         && !mPath.toLowerCase().startsWith("https://")
@@ -305,9 +305,10 @@ public class JniPlayerActivity extends Activity {
                         // content://cn.oneplus.filemanager.Safebox/file/2
                         try {
                             String[] proj = {MediaStore.Images.Media.DATA};
-                            Cursor actualimagecursor = this.managedQuery(
-                                    uri, proj, null, null, null);
-                            // Caused by: java.lang.IllegalArgumentException: column '_data' does not exist. Available columns: []
+                            Cursor actualimagecursor =
+                                    managedQuery(uri, proj, null, null, null);
+                            // Caused by: java.lang.IllegalArgumentException:
+                            // column '_data' does not exist. Available columns: []
                             int actual_image_column_index =
                                     actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
                             actualimagecursor.moveToFirst();

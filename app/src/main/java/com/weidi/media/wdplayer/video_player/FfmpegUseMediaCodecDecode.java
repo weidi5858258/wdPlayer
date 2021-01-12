@@ -22,13 +22,10 @@ import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.utils.MyToast;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.annotation.NonNull;
 
@@ -58,7 +55,8 @@ public class FfmpegUseMediaCodecDecode {
     // 为了注册广播
     private Context mContext = null;
     private Surface mSurface = null;
-    private Handler mThreadHandler;
+    private Handler mVideoThreadHandler;
+    private Handler mAudioThreadHandler;
 
     public boolean mIsLocalPlayer = true;
     public boolean mUseMediaCodecForVideo = true;
@@ -183,9 +181,16 @@ public class FfmpegUseMediaCodecDecode {
 
     public FfmpegUseMediaCodecDecode() {
         mFFMPEG = FFMPEG.getDefault();
-        HandlerThread handlerThread = new HandlerThread(TAG);
-        handlerThread.start();
-        mThreadHandler = new Handler(handlerThread.getLooper()) {
+        HandlerThread videoHandlerThread = new HandlerThread(TAG);
+        videoHandlerThread.start();
+        mVideoThreadHandler = new Handler(videoHandlerThread.getLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+            }
+        };
+        HandlerThread audioHandlerThread = new HandlerThread(TAG);
+        audioHandlerThread.start();
+        mAudioThreadHandler = new Handler(audioHandlerThread.getLooper()) {
             @Override
             public void handleMessage(Message msg) {
             }
@@ -667,7 +672,7 @@ public class FfmpegUseMediaCodecDecode {
                 return false;
             }
             mAudioWrapper.decoderMediaCodec.setCallback(
-                    mAudioAsyncDecoderCallback, mThreadHandler);
+                    mAudioAsyncDecoderCallback, mAudioThreadHandler);
             mAudioWrapper.decoderMediaCodec.configure(
                     mAudioWrapper.decoderMediaFormat, null, null, 0);
             mAudioWrapper.decoderMediaCodec.start();
@@ -1078,7 +1083,7 @@ public class FfmpegUseMediaCodecDecode {
             try {
                 if (mVideoWrapper.decoderMediaCodec != null) {
                     mVideoWrapper.decoderMediaCodec.setCallback(
-                            mVideoAsyncDecoderCallback, mThreadHandler);
+                            mVideoAsyncDecoderCallback, mVideoThreadHandler);
                     mVideoWrapper.decoderMediaCodec.configure(
                             mVideoWrapper.decoderMediaFormat, mVideoWrapper.mSurface, null, 0);
                     mVideoWrapper.decoderMediaCodec.start();
@@ -1129,7 +1134,7 @@ public class FfmpegUseMediaCodecDecode {
 
     public boolean feedInputBufferAndDrainOutputBuffer(SimpleWrapper wrapper) {
         if (wrapper.type == TYPE_AUDIO) {
-            /*if (AUDIO_NEED_TO_ASYNC) {
+            if (AUDIO_NEED_TO_ASYNC) {
                 if (mAudioWrapper != null
                         && mAudioWrapper.isHandling) {
                     AVPacket avPacket = new AVPacket(wrapper.size);
@@ -1144,7 +1149,7 @@ public class FfmpegUseMediaCodecDecode {
                     }
                 }
                 return true;
-            }*/
+            }
         } else {
             if (VIDEO_NEED_TO_ASYNC) {
                 if (mVideoWrapper != null
@@ -1463,7 +1468,8 @@ public class FfmpegUseMediaCodecDecode {
             }
             if (avPacket == null
                     || mVideoWrapper == null
-                    || !mVideoWrapper.isHandling) {
+                    || !mVideoWrapper.isHandling
+                    || roomIndex < 0) {
                 return;
             }
 
@@ -1507,17 +1513,21 @@ public class FfmpegUseMediaCodecDecode {
         @Override
         public void onOutputBufferAvailable(@NonNull MediaCodec codec, int roomIndex,
                                             @NonNull MediaCodec.BufferInfo roomInfo) {
-            if (mVideoWrapper == null || !mVideoWrapper.isHandling) {
+            if (mVideoWrapper == null || !mVideoWrapper.isHandling || roomIndex < 0) {
                 return;
             }
 
             ByteBuffer room = null;
             // 根据房间号找到房间
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                //Log.i(TAG, "drainOutputBuffer() roomIndex: " + roomIndex);
-                room = codec.getOutputBuffer(roomIndex);
-            } else {
-                room = codec.getOutputBuffers()[roomIndex];
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    room = codec.getInputBuffer(roomIndex);
+                } else {
+                    room = codec.getInputBuffers()[roomIndex];
+                }
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+                room = null;
             }
             // 房间大小
             int roomSize = roomInfo.size;
@@ -1554,7 +1564,7 @@ public class FfmpegUseMediaCodecDecode {
         @Override
         public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec,
                                           @NonNull MediaFormat mediaFormat) {
-            if (mVideoWrapper == null || !mVideoWrapper.isHandling) {
+            if (mVideoWrapper == null || !mVideoWrapper.isHandling || mediaFormat == null) {
                 return;
             }
 
@@ -1566,19 +1576,21 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public void onInputBufferAvailable(@NonNull MediaCodec codec, int roomIndex) {
-            if (mAudioWrapper == null || !mAudioWrapper.isHandling) {
-                return;
-            }
-
             AVPacket avPacket = null;
-            try {
-                // avPacket = mInputDatasQueue.poll();
-                // 没有元素就会阻塞
-                avPacket = mAudioInputDatasQueue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (mAudioWrapper != null && mAudioWrapper.isHandling) {
+                try {
+                    // avPacket = mInputDatasQueue.poll();
+                    // 没有元素就会阻塞
+                    // audio会被一直block住,原因不详
+                    avPacket = mAudioInputDatasQueue.take();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            if (avPacket == null) {
+            if (avPacket == null
+                    || mAudioWrapper == null
+                    || !mAudioWrapper.isHandling
+                    || roomIndex < 0) {
                 return;
             }
 
@@ -1609,24 +1621,34 @@ public class FfmpegUseMediaCodecDecode {
             room.clear();
             // 入住
             room.put(data, 0, size);
-            codec.queueInputBuffer(roomIndex, 0, size, presentationTimeUs, flags);
+            try {
+                codec.queueInputBuffer(roomIndex, 0, size, presentationTimeUs, flags);
+            } catch (IllegalStateException
+                    | NullPointerException
+                    | MediaCodec.CryptoException e) {
+                e.printStackTrace();
+            }
             avPacket = null;
         }
 
         @Override
         public void onOutputBufferAvailable(@NonNull MediaCodec codec, int roomIndex,
                                             @NonNull MediaCodec.BufferInfo roomInfo) {
-            if (mAudioWrapper == null || !mAudioWrapper.isHandling) {
+            if (mAudioWrapper == null || !mAudioWrapper.isHandling || roomIndex < 0) {
                 return;
             }
 
             ByteBuffer room = null;
             // 根据房间号找到房间
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                //Log.i(TAG, "drainOutputBuffer() roomIndex: " + roomIndex);
-                room = codec.getOutputBuffer(roomIndex);
-            } else {
-                room = codec.getOutputBuffers()[roomIndex];
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    room = codec.getInputBuffer(roomIndex);
+                } else {
+                    room = codec.getInputBuffers()[roomIndex];
+                }
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+                room = null;
             }
             // 房间大小
             int roomSize = roomInfo.size;
@@ -1641,7 +1663,13 @@ public class FfmpegUseMediaCodecDecode {
             }
 
             if (mAudioWrapper != null && mAudioWrapper.isHandling) {
-                codec.releaseOutputBuffer(roomIndex, false);
+                try {
+                    codec.releaseOutputBuffer(roomIndex, false);
+                } catch (IllegalStateException
+                        | NullPointerException
+                        | MediaCodec.CryptoException e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -1657,7 +1685,7 @@ public class FfmpegUseMediaCodecDecode {
         @Override
         public void onOutputFormatChanged(@NonNull MediaCodec mediaCodec,
                                           @NonNull MediaFormat mediaFormat) {
-            if (mAudioWrapper == null || !mAudioWrapper.isHandling) {
+            if (mAudioWrapper == null || !mAudioWrapper.isHandling || mediaFormat == null) {
                 return;
             }
 
