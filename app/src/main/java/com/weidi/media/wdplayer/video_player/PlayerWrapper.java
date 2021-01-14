@@ -1098,6 +1098,7 @@ public class PlayerWrapper {
         return true;
     }
 
+    @SuppressLint("MissingPermission")
     private boolean needToPlaybackOtherVideo() {
         Log.i(TAG, "needToPlaybackOtherVideo()");
         if (!mIsLocal && !NetworkUtils.isConnected(mContext)) {
@@ -2396,6 +2397,9 @@ public class PlayerWrapper {
     }
 
     private void buttonClickForPrev() {
+        if (isFrameByFrameMode) {
+            return;
+        }
         mPlayPrevFile = true;
         mPlayNextFile = false;
         mPrePath = null;
@@ -2403,6 +2407,9 @@ public class PlayerWrapper {
     }
 
     private void buttonClickForNext() {
+        if (isFrameByFrameMode) {
+            return;
+        }
         mPlayPrevFile = false;
         mPlayNextFile = true;
         mPrePath = null;
