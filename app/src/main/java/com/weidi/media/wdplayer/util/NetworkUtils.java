@@ -6,6 +6,22 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.os.Build;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.MalformedURLException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresPermission;
 
@@ -95,4 +111,68 @@ public class NetworkUtils {
         }
         return false;
     }
+
+    // 内网ip地址
+    public String getLocalIpV4Address() {
+        try {
+            String ipv4 = null;
+            ArrayList<NetworkInterface> nilist =
+                    Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface ni : nilist) {
+                ArrayList<InetAddress> ialist = Collections.list(ni.getInetAddresses());
+                for (InetAddress address : ialist) {
+                    if (!address.isLoopbackAddress() && !address.isLinkLocalAddress()) {
+                        ipv4 = address.getHostAddress();
+                        return ipv4;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 获取外网IP地址
+     *
+     * @return
+     */
+    public void GetNetIp() {
+        new Thread() {
+            @Override
+            public void run() {
+                String line = "";
+                URL infoUrl = null;
+                InputStream inStream = null;
+                try {
+                    infoUrl = new URL("http://pv.sohu.com/cityjson?ie=utf-8");
+                    URLConnection connection = infoUrl.openConnection();
+                    HttpURLConnection httpConnection = (HttpURLConnection) connection;
+                    int responseCode = httpConnection.getResponseCode();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        inStream = httpConnection.getInputStream();
+                        BufferedReader reader = new BufferedReader(
+                                new InputStreamReader(inStream, "utf-8"));
+                        StringBuilder strber = new StringBuilder();
+                        while ((line = reader.readLine()) != null) {
+                            strber.append(line + "\n");
+                        }
+                        inStream.close();
+                        // 从反馈的结果中提取出IP地址
+                        int start = strber.indexOf("{");
+                        int end = strber.indexOf("}");
+                        String json = strber.substring(start, end + 1);
+                        if (json != null) {
+                            JSONObject jsonObject = new JSONObject(json);
+                            line = jsonObject.optString("cip");
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+
 }
