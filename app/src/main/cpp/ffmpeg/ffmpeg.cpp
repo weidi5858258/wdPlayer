@@ -1630,6 +1630,9 @@ char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
     return info;
 }
 
+/***
+ * jobject thiz 代表定义native方法的类的对象(如果native方法不是static的话)
+ */
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobject thiz,

@@ -32,6 +32,8 @@ import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
+import com.weidi.media.wdplayer.socket.SocketClient;
+import com.weidi.media.wdplayer.socket.SocketServer;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
@@ -90,6 +92,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         internalCreate(savedInstanceState);
+
+        /*new Thread(new Runnable() {
+            @Override
+            public void run() {
+                test();
+            }
+        }).start();*/
     }
 
     @Override
@@ -855,5 +864,12 @@ public class MainActivity extends AppCompatActivity {
             MainActivity.this.onFocusChange(v, hasFocus);
         }
     };*/
+
+    private void test() {
+        SocketServer.getInstance().bind();
+        SocketServer.getInstance().accept();
+
+        //        SocketClient.getInstance().connect();
+    }
 
 }
