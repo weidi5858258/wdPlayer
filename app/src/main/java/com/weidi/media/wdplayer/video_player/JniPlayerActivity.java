@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
+import android.view.OrientationListener;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
@@ -283,14 +284,28 @@ public class JniPlayerActivity extends Activity {
             /***
              1.
              uri : content://media/external/video/media/272775
-             path: /external/video/media/272775
+             path = uri.getPath();
+             path:                /external/video/media/272775
+             path: /storage/emulated/0/Pictures/WeiXin/wx_camera_1610676456161.mp4
              2.
              uri : content://com.huawei.hidisk.fileprovider/root/storage/1532-48AD/.../audio.m4s
-             // 这个路径是不对的
-             path: /root/storage/1532-48AD/Videos/download/25068919/1/32/audio.m4s
+             path = uri.getPath();
+             path:                                         /root/storage/1532-48AD/.../audio.m4s
+             path:                                              /storage/1532-48AD/.../audio.m4s
              3.
+             uri : content://com.mobi.shtp.provider/external/Pictures/WeiXin/***.mp4
+             path = uri.getPath();
+             path:                                 /external/Pictures/WeiXin/***.mp4
+             path:                       /storage/emulated/0/Pictures/WeiXin/***.mp4
+             4.
              uri : file:///storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
-             path: /storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
+             path = uri.getPath();
+             path:        /storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
+
+             // 加密文件
+             content://cn.oneplus.filemanager.Safebox/file/2
+             content://com.huawei.hidisk.fileprovider
+                /root/storage/1532-48AD/.File_SafeBox/.../temp/***.mp4
              */
             Uri uri = intent.getData();
             if (uri != null) {
@@ -300,9 +315,8 @@ public class JniPlayerActivity extends Activity {
                         && !mPath.toLowerCase().startsWith("https://")
                         && !mPath.toLowerCase().startsWith("rtmp://")) {
                     mPath = uri.getPath();
+                    Log.d(TAG, "internalCreate() mPath1: " + mPath);
                     if (!mPath.substring(mPath.lastIndexOf("/")).contains(".")) {
-                        // /external/video/media/272775
-                        // content://cn.oneplus.filemanager.Safebox/file/2
                         try {
                             String[] proj = {MediaStore.Images.Media.DATA};
                             Cursor actualimagecursor =
@@ -319,18 +333,25 @@ public class JniPlayerActivity extends Activity {
                             return;
                         }
                     }
-                    Log.d(TAG, "internalCreate() mPath1: " + mPath);
+                    Log.d(TAG, "internalCreate() mPath2: " + mPath);
                     if (mPath.startsWith("/root/")) {
-                        // /root/storage/1532-48AD/Android/data/
-                        // tv.danmaku.bili/download/92647556/1/64/video.m4s
+                        // /root/storage/1532-48AD/download/***.mp4
+                        // --->
+                        //      /storage/1532-48AD/download/***.mp4
                         mPath = mPath.substring(5);
                     } else if (mPath.startsWith("/document/")) {
-                        // /document/37C8-3904:myfiles/video/[2K]Clarity_Demo_2016.mp4
+                        // /document/37C8-3904:myfiles/video/***.mp4
+                        // --->
+                        //  /storage/37C8-3904/myfiles/video/***.mp4
                         mPath = mPath.replace("/document/", "/storage/");
                         mPath = mPath.replace(":", "/");
+                    } else if (mPath.startsWith("/external/")) {
+                        //           /external/Pictures/WeiXin/wx_camera_1610676456161.mp4
+                        //           --->
+                        // /storage/emulated/0/Pictures/WeiXin/wx_camera_1610676456161.mp4
+                        mPath = mPath.replace("/external/", "/storage/emulated/0/");
                     }
-                    // /storage/37C8-3904/myfiles/video/
-                    Log.d(TAG, "internalCreate() mPath2: " + mPath);
+                    Log.d(TAG, "internalCreate() mPath3: " + mPath);
                 }
             }
             if (TextUtils.isEmpty(mPath)) {
