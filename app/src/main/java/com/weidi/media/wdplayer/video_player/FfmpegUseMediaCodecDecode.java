@@ -676,6 +676,7 @@ public class FfmpegUseMediaCodecDecode {
             mAudioWrapper.decoderMediaCodec.configure(
                     mAudioWrapper.decoderMediaFormat, null, null, 0);
             mAudioWrapper.decoderMediaCodec.start();
+            Log.d(TAG, "initAudioMediaCodec() audio MediaCodec start");
         } else {
             mAudioWrapper.decoderMediaCodec =
                     MediaUtils.getAudioDecoderMediaCodec(
@@ -1087,6 +1088,7 @@ public class FfmpegUseMediaCodecDecode {
                     mVideoWrapper.decoderMediaCodec.configure(
                             mVideoWrapper.decoderMediaFormat, mVideoWrapper.mSurface, null, 0);
                     mVideoWrapper.decoderMediaCodec.start();
+                    Log.w(TAG, "initVideoMediaCodec() video MediaCodec start");
                 }
             } catch (NullPointerException
                     | IllegalArgumentException
@@ -1445,7 +1447,7 @@ public class FfmpegUseMediaCodecDecode {
     /////////////////////////////////////////////////////////////////////////////////////
 
     private final static boolean VIDEO_NEED_TO_ASYNC = true;
-    private final static boolean AUDIO_NEED_TO_ASYNC = false;
+    private final static boolean AUDIO_NEED_TO_ASYNC = true;
 
     private final static ArrayBlockingQueue<AVPacket> mVideoInputDatasQueue =
             new ArrayBlockingQueue<AVPacket>(5);
@@ -1521,9 +1523,9 @@ public class FfmpegUseMediaCodecDecode {
             // 根据房间号找到房间
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    room = codec.getInputBuffer(roomIndex);
+                    room = codec.getOutputBuffer(roomIndex);
                 } else {
-                    room = codec.getInputBuffers()[roomIndex];
+                    room = codec.getOutputBuffers()[roomIndex];
                 }
             } catch (IllegalStateException e) {
                 e.printStackTrace();
@@ -1642,9 +1644,9 @@ public class FfmpegUseMediaCodecDecode {
             // 根据房间号找到房间
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    room = codec.getInputBuffer(roomIndex);
+                    room = codec.getOutputBuffer(roomIndex);
                 } else {
-                    room = codec.getInputBuffers()[roomIndex];
+                    room = codec.getOutputBuffers()[roomIndex];
                 }
             } catch (IllegalStateException e) {
                 e.printStackTrace();
