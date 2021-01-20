@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.KeyguardManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.UiModeManager;
@@ -59,12 +60,14 @@ import android.widget.TextView;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
+import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.MyApplication;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.NetworkUtils;
+import com.weidi.media.wdplayer.util.NotificationUtil;
 import com.weidi.utils.MyToast;
 
 import java.io.BufferedReader;
@@ -870,6 +873,7 @@ public class PlayerWrapper {
             onPause();
             removeCallback();
             abandonAudioFocusRequest();
+            stopForeground();
             System.gc();
         }
     }
@@ -1655,6 +1659,7 @@ public class PlayerWrapper {
         if (mPlayerService != null && !needTwoPlayer) {
             requestAudioFocus();
         }
+        // startForeground();
 
         mWdPlayer.start();
         Log.d(TAG, "startPlayback() end");
@@ -1706,6 +1711,41 @@ public class PlayerWrapper {
         }
     }
 
+    private void abandonAudioFocusRequest() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && mAudioFocusRequest != null) {
+            Log.i(TAG, "abandonAudioFocusRequest()");
+            mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
+            mAudioFocusRequest = null;
+        }
+    }
+
+    private Notification mNotification;
+
+    private void startForeground() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (mNotification == null) {
+                mNotification = NotificationUtil.createNotification(
+                        mContext,
+                        R.drawable.appicon,
+                        mContext.getString(R.string.app_name),
+                        "多媒体播放",
+                        "com.weidi.media.wdplayer",
+                        "com.weidi.media.wdplayer.video_player.PlayerWrapper");
+                NotificationUtil.showNotification(mContext, mNotification);
+            }
+        }
+    }
+
+    private void stopForeground() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (mNotification != null) {
+                NotificationUtil.cancelNotification(mContext);
+                mNotification = null;
+            }
+        }
+    }
+
     private void removeCallback() {
         // 视频在播放过程中如果removeCallback(...)的话,会发生异常.所以只有在结束时removeCallback(...)
         // drainOutputBuffer() Video Output occur exception: java.lang.IllegalStateException
@@ -1713,15 +1753,6 @@ public class PlayerWrapper {
             Log.i(TAG, "removeCallback()");
             mSurfaceHolder.removeCallback(mSurfaceCallback);
             mSurfaceHolder = null;
-        }
-    }
-
-    private void abandonAudioFocusRequest() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && mAudioFocusRequest != null) {
-            Log.i(TAG, "abandonAudioFocusRequest()");
-            mAudioManager.abandonAudioFocusRequest(mAudioFocusRequest);
-            mAudioFocusRequest = null;
         }
     }
 
@@ -2834,6 +2865,7 @@ public class PlayerWrapper {
         mFFMPEGPlayer.releaseAudioTrack();
 
         abandonAudioFocusRequest();
+        stopForeground();
 
         if (mHasError) {
             Log.i(TAG, "onFinished() restart playback");
