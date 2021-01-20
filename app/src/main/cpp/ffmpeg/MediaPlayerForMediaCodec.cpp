@@ -2889,6 +2889,10 @@ namespace alexander_media_mediacodec {
     }
 
     int handleAudioOutputBuffer(int roomIndex) {
+        if (audioWrapper == nullptr || audioWrapper->father == nullptr) {
+            return -1;
+        }
+
         if (runOneTime) {
             audioWrapper->father->isStarted = true;
             if (!videoDisable) {
@@ -2973,7 +2977,7 @@ namespace alexander_media_mediacodec {
                 || audioWrapper->father->isPausedForSeek
                 || !audioWrapper->father->isHandling
                 || !videoWrapper->father->isHandling) {
-                LOGD("handleAudioOutputBuffer() av_usleep return\n");
+                //LOGD("handleAudioOutputBuffer() av_usleep return\n");
                 audioWrapper->father->isSleeping = false;
                 return 0;
             }
@@ -2993,6 +2997,9 @@ namespace alexander_media_mediacodec {
         //LOGW("handleVideoOutputBuffer()    videoPts: %llf\n", videoPts);
         //LOGD("handleVideoOutputBuffer()    audioPts: %llf\n", audioPts);
         //LOGI("handleVideoOutputBuffer()    timeDiff: %llf\n", (videoPts - audioPts));
+        if (videoWrapper == nullptr || videoWrapper->father == nullptr) {
+            return -1;
+        }
 
         long long prePts = (long long) (preVideoPts * 1000000);
         long long curPts = (long long) (videoPts * 1000000);
@@ -3162,7 +3169,7 @@ namespace alexander_media_mediacodec {
                     || videoWrapper->father->isPausedForSeek
                     || !videoWrapper->father->isHandling
                     || !audioWrapper->father->isHandling) {
-                    LOGW("handleVideoOutputBuffer() av_usleep return\n");
+                    //LOGW("handleVideoOutputBuffer() av_usleep return\n");
                     videoWrapper->father->isSleeping = false;
                     return 0;
                 }

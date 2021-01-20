@@ -13,6 +13,7 @@ public class EDMediaCodec {
             "player_alexander";
 
     /***
+     jlong timeoutUs
      -1表示一直等，0表示不等。
      */
     public static int TIME_OUT = 10000;// 10000(10ms)

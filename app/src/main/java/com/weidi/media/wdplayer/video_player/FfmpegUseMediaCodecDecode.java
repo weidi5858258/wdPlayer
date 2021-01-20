@@ -1406,6 +1406,9 @@ public class FfmpegUseMediaCodecDecode {
                 yuvCopy(outData, alignWidth * alignHeight * 5 / 4, alignWidth / 2,
                 alignHeight / 2, vData, width / 2, height / 2);
             }*/
+            if (roomSize <= 0) {
+                return -1;
+            }
 
             videoValueIntArray[0] = roomIndex;
             videoValueIntArray[1] = roomSize;
@@ -1421,6 +1424,10 @@ public class FfmpegUseMediaCodecDecode {
         @Override
         public int handleAudioOutputBuffer(int roomIndex, ByteBuffer room,
                                            MediaCodec.BufferInfo roomInfo, int roomSize) {
+            if (roomSize <= 0) {
+                return -1;
+            }
+
             audioValueIntArray[0] = roomIndex;
             audioValueIntArray[1] = roomSize;
             audioValueObjectArray[0] = room;
@@ -1433,8 +1440,7 @@ public class FfmpegUseMediaCodecDecode {
 
             if (mAudioWrapper.isHandling
                     && mExoAudioTrack.mAudioTrack != null
-                    && room != null
-                    && roomSize > 0) {
+                    && room != null) {
                 byte[] audioData = new byte[roomSize];
                 room.get(audioData, 0, audioData.length);
                 mExoAudioTrack.mAudioTrack.write(audioData, roomInfo.offset, audioData.length);
