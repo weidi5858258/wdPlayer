@@ -3940,6 +3940,13 @@ public class PlayerWrapper {
     public void registerCallback(int iid, IDmrPlayerAppCallback cb) {
         mIid = iid;
         mIDmrPlayerAppCallback = cb;
+        /*if (mIDmrPlayerAppCallback != null) {
+            try {
+                mIDmrPlayerAppCallback.onError(0, 1, "which_window");
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }*/
     }
 
     public void unregisterCallback(int iid, IDmrPlayerAppCallback cb) {
