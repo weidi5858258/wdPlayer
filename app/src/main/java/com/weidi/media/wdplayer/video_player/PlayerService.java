@@ -591,18 +591,24 @@ public class PlayerService extends Service {
         @Override
         public void registerCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
             Log.i(TAG, "registerCallback() iid:" + iid + " cb: " + cb);
-            mPlayerWrapper.registerCallback(iid, cb);
-            if (mRemoteVideoPlayer != null) {
-                mRemoteVideoPlayer.registerCallback(iid, cb);
+            if (iid == 0) {
+                mPlayerWrapper.registerCallback(iid, cb);
+            } else {
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.registerCallback(iid, cb);
+                }
             }
         }
 
         @Override
         public void unregisterCallback(int iid, IDmrPlayerAppCallback cb) throws RemoteException {
             Log.i(TAG, "unregisterCallback() iid:" + iid + " cb: " + cb);
-            mPlayerWrapper.unregisterCallback(iid, cb);
-            if (mRemoteVideoPlayer != null) {
-                mRemoteVideoPlayer.unregisterCallback(iid, cb);
+            if (iid == 0) {
+                mPlayerWrapper.unregisterCallback(iid, cb);
+            } else {
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.unregisterCallback(iid, cb);
+                }
             }
         }
 
@@ -617,17 +623,15 @@ public class PlayerService extends Service {
                     "\niid: " + iid +
                     "\nuri: " + uri +
                     "\nmetadata: " + metadata);
-
-            SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-            needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
-
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
-                mPlayerWrapper.setIID(iid);
+            if (iid == 0) {
                 mPlayerWrapper.setType("video/");
                 mPlayerWrapper.setDataSource(uri);
             } else {
-                mRemoteVideoPlayer.setDataSourceMetadata(iid, uri, metadata);
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.setDataSourceMetadata(iid, uri, metadata);
+                }
             }
+
             return SUCCESS;
         }
 
@@ -640,10 +644,12 @@ public class PlayerService extends Service {
         @Override
         public int stop(int iid) throws RemoteException {
             Log.i(TAG, "stop() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 mPlayerWrapper.stopForDlna(iid);
             } else {
-                mRemoteVideoPlayer.stop(iid);
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.stop(iid);
+                }
             }
             return SUCCESS;
         }
@@ -651,10 +657,12 @@ public class PlayerService extends Service {
         @Override
         public int start(int iid) throws RemoteException {
             Log.i(TAG, "start() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 mPlayerWrapper.playForDlna(iid);
             } else {
-                mRemoteVideoPlayer.start(iid);
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.start(iid);
+                }
             }
             return SUCCESS;
         }
@@ -662,10 +670,12 @@ public class PlayerService extends Service {
         @Override
         public int pause(int iid) throws RemoteException {
             Log.i(TAG, "pause() iid: " + iid);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 mPlayerWrapper.pauseForDlna(iid);
             } else {
-                mRemoteVideoPlayer.pause(iid);
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.pause(iid);
+                }
             }
             return SUCCESS;
         }
@@ -673,42 +683,65 @@ public class PlayerService extends Service {
         @Override
         public int seekTo(int iid, int msec) throws RemoteException {
             Log.i(TAG, "seekTo() iid: " + iid + " msec: " + msec);
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 mPlayerWrapper.seekToForDlna(iid, msec);
             } else {
-                mRemoteVideoPlayer.seekTo(iid, msec);
+                if (mRemoteVideoPlayer != null) {
+                    mRemoteVideoPlayer.seekTo(iid, msec);
+                }
             }
             return SUCCESS;
         }
 
         @Override
         public int getCurrentPosition(int iid) throws RemoteException {
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 return mPlayerWrapper.getCurrentPositionForDlna(iid);
             } else {
-                return mRemoteVideoPlayer.getCurrentPosition(iid);
+                if (mRemoteVideoPlayer != null) {
+                    return mRemoteVideoPlayer.getCurrentPosition(iid);
+                }
             }
+            return 0;
         }
 
         @Override
         public int getDuration(int iid) throws RemoteException {
-            if (mRemoteVideoPlayer == null || !needTwoPlayer || mUseLocalPlayer) {
+            if (iid == 0) {
                 return mPlayerWrapper.getDurationForDlna(iid);
             } else {
-                return mRemoteVideoPlayer.getDuration(iid);
+                if (mRemoteVideoPlayer != null) {
+                    return mRemoteVideoPlayer.getDuration(iid);
+                }
             }
+            return 0;
         }
 
         @Override
         public int setPlaySpeed(int iid, String speedSpec) throws RemoteException {
             Log.i(TAG, "setPlaySpeed() iid: " + iid + " speedSpec: " + speedSpec);
+            if (iid == 0) {
+            } else {
+                if (mRemoteVideoPlayer != null) {
+                }
+            }
             return SUCCESS;
         }
 
         @Override
         public String availablePlaySpeed(int iid) throws RemoteException {
             Log.i(TAG, "availablePlaySpeed() iid: " + iid);
+            if (iid == 0) {
+            } else {
+                if (mRemoteVideoPlayer != null) {
+                }
+            }
             return "1";
+        }
+
+        @Override
+        public int onTransact(int iid, int code, Bundle data) throws RemoteException {
+            return 0;
         }
     };
 

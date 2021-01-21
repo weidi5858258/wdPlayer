@@ -3947,10 +3947,6 @@ public class PlayerWrapper {
         mIDmrPlayerAppCallback = null;
     }
 
-    public void setIID(int iid) {
-        mIid = iid;
-    }
-
     public void playForDlna(int iid) {
         if (mWdPlayer != null && mIDmrPlayerAppCallback != null) {
             if (mWdPlayer.isRunning() && !mWdPlayer.isPlaying()) {

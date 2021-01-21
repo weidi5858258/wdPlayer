@@ -113,4 +113,6 @@ interface IDmrPlayerApp {
      * @throws RemoteException on remote procedure problems.
      */
     int setDataSourceMetadata(int iid, String uri, in Map metadata);
+
+    int onTransact(int iid, int code, inout android.os.Bundle data);
 }

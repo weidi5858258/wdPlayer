@@ -561,7 +561,6 @@ public class RemotePlayerService extends Service {
                 return SUCCESS;
             }
 
-            mPlayerWrapper.setIID(iid);
             mPlayerWrapper.setType("video/");
             mPlayerWrapper.setDataSource(uri);
             return SUCCESS;
@@ -621,6 +620,11 @@ public class RemotePlayerService extends Service {
         public String availablePlaySpeed(int iid) throws RemoteException {
             Log.i(TAG, "availablePlaySpeed() iid: " + iid);
             return "1";
+        }
+
+        @Override
+        public int onTransact(int iid, int code, Bundle data) throws RemoteException {
+            return 0;
         }
     };
 
