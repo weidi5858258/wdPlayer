@@ -653,6 +653,8 @@ public class FfmpegUseMediaCodecDecode {
                     continue;
                 }
                 try {
+                    // OMX.google.aac.decoder
+                    Log.d(TAG, "initAudioMediaCodec() audio name: " + mediaCodecInfo.getName());
                     mAudioWrapper.decoderMediaCodec =
                             MediaCodec.createByCodecName(mediaCodecInfo.getName());
                     break;
@@ -1067,6 +1069,8 @@ public class FfmpegUseMediaCodecDecode {
                     continue;
                 }
                 try {
+                    // OMX.MTK.VIDEO.DECODER.AVC
+                    Log.w(TAG, "initVideoMediaCodec() video name: " + mediaCodecInfo.getName());
                     mVideoWrapper.decoderMediaCodec =
                             MediaCodec.createByCodecName(mediaCodecInfo.getName());
                     break;
