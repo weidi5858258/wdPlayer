@@ -2363,8 +2363,14 @@ namespace alexander_media_mediacodec {
                 averageTimeDiff = 0;
                 if (needToResetVideoPts) {
                     TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
-                    if (TIME_DIFFERENCE < 0) {
+                    if (TIME_DIFFERENCE > 0 && TIME_DIFFERENCE < 0.200000) {
                         TIME_DIFFERENCE = 0.100000;
+                        needToGetResultAgain = false;
+                        runCounts = RUN_COUNTS + 1;
+                        averageTimeDiff = 0.405858;
+                        if (audioWrapper->father->useMediaCodec) {
+                            TIME_DIFFERENCE = 0.080000;
+                        }
                     }
                     //TIME_DIFFERENCE = 0.000800;
                 }
