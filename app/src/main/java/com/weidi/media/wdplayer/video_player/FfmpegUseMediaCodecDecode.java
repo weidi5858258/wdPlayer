@@ -437,6 +437,34 @@ public class FfmpegUseMediaCodecDecode {
      csd-1: {0, 0, 0, 1, 104, -6, -116, -14, 60}
      {sample-rate=48000, pcm-encoding=2, track-id=2, durationUs=5617728000, mime=audio/raw,
      channel-count=2, language=new, mime-old=audio/ac3, max-input-size=1556}
+
+     audio/raw
+     OMX.google.raw.decoder
+     c2.android.raw.decoder
+     audio/flac
+     OMX.qti.audio.decoder.flac
+     OMX.google.flac.decoder
+     c2.android.flac.decoder
+     audio/mpeg
+     OMX.google.mp3.decoder
+     c2.android.mp3.decoder
+     audio/ac3
+     OMX.MTK.AUDIO.DECODER.DSPAC3
+     audio/eac3
+     OMX.MTK.AUDIO.DECODER.DSPEAC3
+     audio/ac4
+     audio/mpeg-L2
+     OMX.MTK.AUDIO.DECODER.DSPMP2
+
+     audio/mp4a-latm
+     OMX.google.aac.decoder
+     c2.android.aac.decoder
+     audio/x-ms-wma
+     OMX.MTK.AUDIO.DECODER.DSPWMA
+
+     audio/vorbis
+     OMX.google.vorbis.decoder
+     c2.android.vorbis.decoder
      */
     public boolean initAudioMediaCodec(JniObject jniObject) {
         Log.d(TAG, "initAudioMediaCodec() start");
@@ -652,21 +680,34 @@ public class FfmpegUseMediaCodecDecode {
                 if (mediaCodecInfo == null) {
                     continue;
                 }
-                try {
-                    // OMX.google.aac.decoder
-                    Log.d(TAG, "initAudioMediaCodec() audio name: " + mediaCodecInfo.getName());
-                    mAudioWrapper.decoderMediaCodec =
-                            MediaCodec.createByCodecName(mediaCodecInfo.getName());
-                    break;
-                } catch (NullPointerException
-                        | IllegalArgumentException
-                        | MediaCodec.CodecException
-                        | IOException e) {
-                    e.printStackTrace();
-                    MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
-                    mAudioWrapper.decoderMediaCodec = null;
+                codecName = mediaCodecInfo.getName();
+                if (TextUtils.isEmpty(codecName)) {
                     continue;
                 }
+                String tempCodecName = codecName.toLowerCase();
+                if (tempCodecName.startsWith("omx.google.")
+                        || tempCodecName.startsWith("c2.android.")
+                        || tempCodecName.endsWith(".secure")
+                        || (!tempCodecName.startsWith("omx.") && !tempCodecName.startsWith("c2."))) {
+                    codecName = null;
+                    continue;
+                }
+                break;
+            }
+            if (TextUtils.isEmpty(codecName)) {
+                return false;
+            }
+
+            try {
+                Log.d(TAG, "initAudioMediaCodec() audio CodecName: " + codecName);
+                mAudioWrapper.decoderMediaCodec = MediaCodec.createByCodecName(codecName);
+            } catch (NullPointerException
+                    | IllegalArgumentException
+                    | MediaCodec.CodecException
+                    | IOException e) {
+                e.printStackTrace();
+                MediaUtils.releaseMediaCodec(mAudioWrapper.decoderMediaCodec);
+                mAudioWrapper.decoderMediaCodec = null;
             }
             if (mAudioWrapper.decoderMediaCodec == null) {
                 Log.e(TAG, "initAudioMediaCodec() create Audio MediaCodec failure");
@@ -742,6 +783,73 @@ public class FfmpegUseMediaCodecDecode {
      AVCodecID = 1 // mpeg1video
      AVCodecID = 7 // mjpeg
 
+     audio/raw
+     OMX.google.raw.decoder
+     c2.android.raw.decoder
+     audio/flac
+     OMX.qti.audio.decoder.flac
+     OMX.google.flac.decoder
+     c2.android.flac.decoder
+     audio/mpeg
+     OMX.google.mp3.decoder
+     c2.android.mp3.decoder
+     audio/ac3
+     OMX.MTK.AUDIO.DECODER.DSPAC3
+     audio/eac3
+     OMX.MTK.AUDIO.DECODER.DSPEAC3
+     audio/ac4
+     audio/mpeg-L2
+     OMX.MTK.AUDIO.DECODER.DSPMP2
+
+     audio/mp4a-latm
+     OMX.google.aac.decoder
+     c2.android.aac.decoder
+     audio/x-ms-wma
+     OMX.MTK.AUDIO.DECODER.DSPWMA
+
+     video/raw
+     video/hevc
+     OMX.MTK.VIDEO.DECODER.HEVC
+     OMX.MTK.VIDEO.DECODER.HEVC.secure
+     OMX.qcom.video.decoder.hevc(硬解)
+     OMX.qcom.video.decoder.hevc.secure(硬解)
+     OMX.google.hevc.decoder(软解)
+     c2.android.hevc.decoder(软解)
+     video/avc
+     OMX.MTK.VIDEO.DECODER.AVC
+     OMX.MTK.VIDEO.DECODER.AVC.secure
+     OMX.qcom.video.decoder.avc
+     OMX.qcom.video.decoder.avc.secure
+     OMX.google.h264.decoder
+     c2.android.avc.decoder
+     video/3gpp
+     OMX.MTK.VIDEO.DECODER.H263
+     OMX.qcom.video.decoder.h263
+     OMX.google.h263.decoder
+     c2.android.h263.decoder
+     video/mp4v-es
+     OMX.MTK.VIDEO.DECODER.MPEG4
+     OMX.qcom.video.decoder.mpeg4
+     OMX.google.mpeg4.decoder
+     c2.android.mpeg4.decoder
+     video/mpeg2
+     OMX.MTK.VIDEO.DECODER.MPEG2
+     OMX.MTK.VIDEO.DECODER.MPEG2.secure
+     OMX.qcom.video.decoder.mpeg2
+     OMX.qcom.video.decoder.mpeg2.secure
+     OMX.google.mpeg2.decoder
+     video/x-vnd.on2.vp8
+     OMX.MTK.VIDEO.DECODER.VP8
+     OMX.qcom.video.decoder.vp8
+     OMX.google.vp8.decoder
+     c2.android.vp8.decoder
+     video/x-vnd.on2.vp9
+     OMX.MTK.VIDEO.DECODER.VP9
+     OMX.MTK.VIDEO.DECODER.VP9.secure
+     OMX.qcom.video.decoder.vp9
+     OMX.qcom.video.decoder.vp9.secure
+     OMX.google.vp9.decoder
+     c2.android.vp9.decoder
      */
     public boolean initVideoMediaCodec(JniObject jniObject) {
         Log.w(TAG, "initVideoMediaCodec() start");
@@ -1064,25 +1172,40 @@ public class FfmpegUseMediaCodecDecode {
         if (VIDEO_NEED_TO_ASYNC) {
             MediaCodecInfo[] mediaCodecInfos =
                     MediaUtils.findAllDecodersByMime(mVideoWrapper.mime);
+            String codecName = null;
             for (MediaCodecInfo mediaCodecInfo : mediaCodecInfos) {
                 if (mediaCodecInfo == null) {
                     continue;
                 }
-                try {
-                    // OMX.MTK.VIDEO.DECODER.AVC
-                    Log.w(TAG, "initVideoMediaCodec() video name: " + mediaCodecInfo.getName());
-                    mVideoWrapper.decoderMediaCodec =
-                            MediaCodec.createByCodecName(mediaCodecInfo.getName());
-                    break;
-                } catch (NullPointerException
-                        | IllegalArgumentException
-                        | MediaCodec.CodecException
-                        | IOException e) {
-                    e.printStackTrace();
-                    MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
-                    mVideoWrapper.decoderMediaCodec = null;
+                codecName = mediaCodecInfo.getName();
+                if (TextUtils.isEmpty(codecName)) {
                     continue;
                 }
+                String tempCodecName = codecName.toLowerCase();
+                if (tempCodecName.startsWith("omx.google.")
+                        || tempCodecName.startsWith("c2.android.")
+                        || tempCodecName.endsWith(".secure")
+                        || (!tempCodecName.startsWith("omx.") && !tempCodecName.startsWith("c2."))) {
+                    codecName = null;
+                    continue;
+                }
+                // 保证是硬解的解码器 如: OMX.qcom.video.decoder.avc
+                break;
+            }
+            if (TextUtils.isEmpty(codecName)) {
+                return false;
+            }
+
+            try {
+                Log.w(TAG, "initVideoMediaCodec() audio CodecName: " + codecName);
+                mVideoWrapper.decoderMediaCodec = MediaCodec.createByCodecName(codecName);
+            } catch (NullPointerException
+                    | IllegalArgumentException
+                    | MediaCodec.CodecException
+                    | IOException e) {
+                e.printStackTrace();
+                MediaUtils.releaseMediaCodec(mVideoWrapper.decoderMediaCodec);
+                mVideoWrapper.decoderMediaCodec = null;
             }
 
             try {

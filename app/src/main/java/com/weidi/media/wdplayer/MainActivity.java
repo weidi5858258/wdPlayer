@@ -838,17 +838,34 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "Environment.MEDIA_SHARED    : " + f.getAbsolutePath());
         }
 
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_RAW);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_HEVC);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_AVC);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_H263);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_MPEG4);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_MPEG2);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_VP8);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_VP9);
+        // 没有遇到过
+        /*MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_AV1);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_SCRAMBLED);*/
+
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_RAW);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_FLAC);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_MPEG);
-        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AAC);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AC3);
-        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_VORBIS);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_EAC3);
-        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_OPUS);
-        // 不支持
-        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_QCELP);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AC4);
         MediaUtils.findAllDecodersByMime("audio/mpeg-L2");
+
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_AAC);
         MediaUtils.findAllDecodersByMime("audio/x-ms-wma");
+
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_VORBIS);
+        // 没有遇到过
+        /*MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_OPUS);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_AUDIO_QCELP);*/
     }
 
     private View.OnClickListener mOnClickListener = new View.OnClickListener() {

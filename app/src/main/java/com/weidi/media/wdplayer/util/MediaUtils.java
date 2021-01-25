@@ -432,15 +432,15 @@ public class MediaUtils {
                     continue;
                 }
 
-                if (codecCapabilities.getVideoCapabilities() != null) {
+                /*if (codecCapabilities.getVideoCapabilities() != null) {
                     // video解码器
                     Log.d(TAG, "-----------------------------------------------------");
                     Log.d(TAG,
                             "findAllDecodersByMime() video codecName: " + mediaCodecInfo.getName());
-                    Log.d(TAG, "解码时支持的colorFormat:");
                     // 什么样的video解码器有什么样的colorFormat
                     // 有些video解码器有多个colorFormat,而有些可能只有一个colorFormat
                     // 只有video才有colorFormats
+                    Log.d(TAG, "解码时支持的colorFormat:");
                     for (int colorFormat : codecCapabilities.colorFormats) {
                         Log.d(TAG, "findAllDecodersByMime() " + colorFormat +
                                 " : " + colorFormatMap.get(colorFormat));
@@ -449,7 +449,10 @@ public class MediaUtils {
                     // audio解码器
                     Log.d(TAG,
                             "findAllDecodersByMime() audio codecName: " + mediaCodecInfo.getName());
-                }
+                }*/
+
+                Log.d(TAG,
+                        "findAllDecodersByMime() codecName: " + mediaCodecInfo.getName());
             } catch (IllegalArgumentException e) {
                 // unsupported
                 continue;
