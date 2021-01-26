@@ -2029,6 +2029,7 @@ namespace alexander_media_mediacodec {
                     }
                     continue;
                 }
+
                 // 有些直播节目会这样
                 if (isLive && readFrame == AVERROR_EOF) {
                     // LOGF("readData() readFrame  : %d\n", readFrame);
@@ -2087,14 +2088,14 @@ namespace alexander_media_mediacodec {
                             videoWrapper->father->list2->size());
                 }
 
-                pthread_mutex_lock(&readLockMutex);
+                /*pthread_mutex_lock(&readLockMutex);
                 if (needToDownload && isInitSuccess) {
                     LOGI("readData() 文件读完,已经停止下载\n");
                     needToDownload = false;
                     isInitSuccess = false;
                     closeDownload();
                 }
-                pthread_mutex_unlock(&readLockMutex);
+                pthread_mutex_unlock(&readLockMutex);*/
 
                 if (onlyDownloadNotPlayback) {
                     onInfo("文件已读完");
@@ -2148,14 +2149,25 @@ namespace alexander_media_mediacodec {
                 continue;
             }
 
-            if (isInitSuccess && needToDownload) {
+            /*if (isInitSuccess && needToDownload) {
                 //downloadImpl(wrapper, srcAVPacket, copyAVPacket);
                 if (onlyDownloadNotPlayback) {
                     //av_packet_unref(srcAVPacket);
                     continue;
                 }
-            }
+            }*/
+
+            // 硬解数据
             if (wrapper->useMediaCodec) {
+                // srcAVPacket数据通过av_bsf_send_packet和av_bsf_receive_packet函数加工后,数据大小不变
+                /*LOGD("readData() srcAVPacket1: %d %d %d %d %d %d\n",
+                        srcAVPacket->data[0],
+                        srcAVPacket->data[1],
+                        srcAVPacket->data[2],
+                        srcAVPacket->data[3],
+                        srcAVPacket->data[4],
+                        srcAVPacket->data[5]
+                        );*/
                 readFrame = av_bsf_send_packet(wrapper->avbsfContext, srcAVPacket);
                 if (readFrame < 0) {
                     if (wrapper->type == TYPE_AUDIO) {
@@ -2166,23 +2178,33 @@ namespace alexander_media_mediacodec {
                         //audioWrapper->father->useMediaCodec = false;
                         //videoWrapper->father->useMediaCodec = false;
                     }
+                    av_packet_unref(srcAVPacket);
                     stop();
                     //continue;
                     break;
                 }
                 while (av_bsf_receive_packet(wrapper->avbsfContext, srcAVPacket) == 0) {
+                    /*LOGD("readData() srcAVPacket2: %d %d %d %d %d %d\n",
+                         srcAVPacket->data[0],
+                         srcAVPacket->data[1],
+                         srcAVPacket->data[2],
+                         srcAVPacket->data[3],
+                         srcAVPacket->data[4],
+                         srcAVPacket->data[5]
+                    );*/
                     readDataImpl(wrapper, srcAVPacket);
                 }
                 continue;
             }
+
+            // 软解数据
             readDataImpl(wrapper, srcAVPacket);
         }// for(;;) end
         LOGF("readData() end\n");
 
         LOGI("readData() end 1\n");
         if (!audioHasSentNullPacket) {
-            if (!audioDisable
-                && audioWrapper->father->useMediaCodec) {
+            if (!audioDisable && audioWrapper->father->useMediaCodec) {
                 int readFrame = av_bsf_send_packet(audioWrapper->father->avbsfContext, nullptr);
                 if (readFrame == 0) {
                     while ((readFrame = av_bsf_receive_packet(
@@ -2192,10 +2214,10 @@ namespace alexander_media_mediacodec {
                 }
             }
         }
+
         LOGI("readData() end 2\n");
         if (!videoHasSentNullPacket) {
-            if (!videoDisable
-                && videoWrapper->father->useMediaCodec) {
+            if (!videoDisable && videoWrapper->father->useMediaCodec) {
                 int readFrame = av_bsf_send_packet(videoWrapper->father->avbsfContext, nullptr);
                 if (readFrame == 0) {
                     while ((readFrame = av_bsf_receive_packet(
@@ -2205,8 +2227,9 @@ namespace alexander_media_mediacodec {
                 }
             }
         }
+
         LOGI("readData() end 3\n");
-        pthread_mutex_lock(&readLockMutex);
+        /*pthread_mutex_lock(&readLockMutex);
         if (needToDownload && isInitSuccess) {
             LOGI("readData() 读线程退出,停止下载\n");
             needToDownload = false;
@@ -2214,13 +2237,8 @@ namespace alexander_media_mediacodec {
             closeDownload();
         }
         pthread_mutex_unlock(&readLockMutex);
-        LOGI("readData() end 4\n");
-        /*if (srcAVPacket != nullptr) {
-            //av_packet_unref(srcAVPacket);
-            av_packet_free(&srcAVPacket);
-            srcAVPacket = nullptr;
-        }*/
-        LOGI("readData() end 5\n");
+        LOGI("readData() end 4\n");*/
+
         isReading = false;
 
         return nullptr;
@@ -2627,7 +2645,7 @@ namespace alexander_media_mediacodec {
                     || audioWrapper->father->isPausedForSeek
                     || !audioWrapper->father->isHandling
                     || !videoWrapper->father->isHandling) {
-                    LOGD("handleAudioDataImpl() TIME_DIFFERENCE return\n");
+                    //LOGD("handleAudioDataImpl() TIME_DIFFERENCE return\n");
                     audioWrapper->father->isSleeping = false;
                     return 0;
                 }

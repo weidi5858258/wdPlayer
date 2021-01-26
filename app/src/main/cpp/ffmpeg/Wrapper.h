@@ -113,6 +113,14 @@ struct Wrapper {
     AVCodec *encoderAVCodec = nullptr;
     AVCodecID avCodecId;
 
+    /***
+     FFmpeg解码获得的AVPacket只包含视频压缩数据，并没有包含相关的解码信息
+    （比如：h264的sps pps头信息，AAC的adts头信息），没有这些编码头信息解
+    码器（MediaCodec）是不能解码的。在FFmpeg中，这些头信息是保存
+    在解码器上下文（AVCodecContext）的extradata中的，所以我们需要为每一种
+    格式的视频添加相应的解码头信息，这样解码器（MediaCodec）才能正确解析
+    每一个AVPacket里的视频数据。
+     */
     // 默认为0,即false
     bool useMediaCodec;
     const AVBitStreamFilter *avBitStreamFilter = nullptr;

@@ -587,7 +587,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.d(TAG, "initAudioMediaCodec() audio           mime: " + audioMime);
         if (TextUtils.isEmpty(audioMime)) {
             Log.e(TAG, "initAudioMediaCodec() audioMime is empty");
-            MyToast.show("audio mime is empty");
+            // MyToast.show("audio mime is empty");
             return false;
         }
 
@@ -711,7 +711,7 @@ public class FfmpegUseMediaCodecDecode {
             }
             if (mAudioWrapper.decoderMediaCodec == null) {
                 Log.e(TAG, "initAudioMediaCodec() create Audio MediaCodec failure");
-                MyToast.show("create Audio MediaCodec failure");
+                // MyToast.show("create Audio MediaCodec failure");
                 return false;
             }
             mAudioWrapper.decoderMediaCodec.setCallback(
@@ -727,7 +727,7 @@ public class FfmpegUseMediaCodecDecode {
                             mAudioWrapper.decoderMediaFormat);
             if (mAudioWrapper.decoderMediaCodec == null) {
                 Log.e(TAG, "initAudioMediaCodec() create Audio MediaCodec failure");
-                MyToast.show("create Audio MediaCodec failure");
+                // MyToast.show("create Audio MediaCodec failure");
                 return false;
             }
         }
@@ -1184,12 +1184,13 @@ public class FfmpegUseMediaCodecDecode {
                 String tempCodecName = codecName.toLowerCase();
                 if (tempCodecName.startsWith("omx.google.")
                         || tempCodecName.startsWith("c2.android.")
+                        // 用于加密的视频
                         || tempCodecName.endsWith(".secure")
                         || (!tempCodecName.startsWith("omx.") && !tempCodecName.startsWith("c2."))) {
                     codecName = null;
                     continue;
                 }
-                // 保证是硬解的解码器 如: OMX.qcom.video.decoder.avc
+                // 保证是硬解的解码器 如: OMX.qcom.video.decoder.avc OMX.MTK.VIDEO.DECODER.HEVC
                 break;
             }
             if (TextUtils.isEmpty(codecName)) {
@@ -1631,6 +1632,7 @@ public class FfmpegUseMediaCodecDecode {
             if (size <= 0) {
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
             }
+            // Log.w(TAG, "onInputBufferAvailable() data:\n" + Arrays.toString(data));
             // 入住之前打扫一下房间
             room.clear();
             // 入住
