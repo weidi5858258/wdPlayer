@@ -123,6 +123,7 @@ struct Wrapper {
      */
     // 默认为0,即false
     bool useMediaCodec;
+    bool need_to_do_for_av_bsf_packet;
     const AVBitStreamFilter *avBitStreamFilter = nullptr;
     AVBSFContext *avbsfContext = nullptr;
 

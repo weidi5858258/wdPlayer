@@ -294,6 +294,9 @@ namespace alexander_media_mediacodec {
     // true时表示一帧一帧的看画面
     static bool isFrameByFrameMode = false;
 
+    static AVPacket comparePkt[2];
+    static bool run_one_time_for_compare_two_avpacket = true;
+
     ///////////////////////////////////////////////////////
 
     // true表示只下载,不播放
@@ -561,11 +564,14 @@ namespace alexander_media_mediacodec {
         needToDownload = false;
         videoDisable = false;
         audioDisable = false;
+        run_one_time_for_compare_two_avpacket = true;
 
         av_init_packet(&readVideoAVPacket);
         av_init_packet(&readAudioAVPacket);
         av_init_packet(&handleVideoAVPacket);
         av_init_packet(&handleAudioAVPacket);
+        av_init_packet(&comparePkt[0]);
+        av_init_packet(&comparePkt[1]);
     }
 
     void initAudio() {
@@ -588,6 +594,7 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
+        wrapper->need_to_do_for_av_bsf_packet = true;
         wrapper->list1 = &audio_list1;
         wrapper->list2 = &audio_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -616,6 +623,7 @@ namespace alexander_media_mediacodec {
         wrapper->streamIndex = -1;
         wrapper->isReading = true;
         wrapper->isHandling = true;
+        wrapper->need_to_do_for_av_bsf_packet = true;
         wrapper->list1 = &video_list1;
         wrapper->list2 = &video_list2;
         wrapper->readLockMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1996,7 +2004,7 @@ namespace alexander_media_mediacodec {
          2.list1中先存满n个,然后list2一次性存满
          3.list1中还没满n个文件就读完了
          */
-        LOGI("%s\n", "readData() start");
+        LOGI("readData() start");
         for (;;) {
             // exit
             if (!audioWrapper->father->isReading
@@ -2125,8 +2133,8 @@ namespace alexander_media_mediacodec {
             }// 文件已读完
 
             if (srcAVPacket == nullptr
-                || srcAVPacket->buf == nullptr
-                || srcAVPacket->data == nullptr) {
+                || srcAVPacket->data == nullptr
+                || srcAVPacket->size < 0) {
                 continue;
             }
 
@@ -2158,16 +2166,11 @@ namespace alexander_media_mediacodec {
             }*/
 
             // 硬解数据
-            if (wrapper->useMediaCodec) {
+            if (wrapper->useMediaCodec && wrapper->need_to_do_for_av_bsf_packet) {
                 // srcAVPacket数据通过av_bsf_send_packet和av_bsf_receive_packet函数加工后,数据大小不变
-                /*LOGD("readData() srcAVPacket1: %d %d %d %d %d %d\n",
-                        srcAVPacket->data[0],
-                        srcAVPacket->data[1],
-                        srcAVPacket->data[2],
-                        srcAVPacket->data[3],
-                        srcAVPacket->data[4],
-                        srcAVPacket->data[5]
-                        );*/
+                if (run_one_time_for_compare_two_avpacket && wrapper->type == TYPE_VIDEO) {
+                    av_packet_ref(&comparePkt[0], srcAVPacket);
+                }
                 readFrame = av_bsf_send_packet(wrapper->avbsfContext, srcAVPacket);
                 if (readFrame < 0) {
                     if (wrapper->type == TYPE_AUDIO) {
@@ -2178,21 +2181,33 @@ namespace alexander_media_mediacodec {
                         //audioWrapper->father->useMediaCodec = false;
                         //videoWrapper->father->useMediaCodec = false;
                     }
+
                     av_packet_unref(srcAVPacket);
                     stop();
-                    //continue;
                     break;
                 }
                 while (av_bsf_receive_packet(wrapper->avbsfContext, srcAVPacket) == 0) {
-                    /*LOGD("readData() srcAVPacket2: %d %d %d %d %d %d\n",
-                         srcAVPacket->data[0],
-                         srcAVPacket->data[1],
-                         srcAVPacket->data[2],
-                         srcAVPacket->data[3],
-                         srcAVPacket->data[4],
-                         srcAVPacket->data[5]
-                    );*/
+                    if (run_one_time_for_compare_two_avpacket && wrapper->type == TYPE_VIDEO) {
+                        av_packet_ref(&comparePkt[1], srcAVPacket);
+                    }
                     readDataImpl(wrapper, srcAVPacket);
+                }
+                if (run_one_time_for_compare_two_avpacket && wrapper->type == TYPE_VIDEO) {
+                    int size = srcAVPacket->size;
+                    bool isEqual = true;
+                    for (int i = 0; i < size; i++) {
+                        if (comparePkt[0].data[i] != comparePkt[1].data[i]) {
+                            isEqual = false;
+                            break;
+                        }
+                    }
+                    if (isEqual) {
+                        wrapper->need_to_do_for_av_bsf_packet = false;
+                        LOGI("readData() 好消息!不需要再调用av_bsf_send_packet(...)和av_bsf_receive_packet(...)了");
+                    }
+                    av_packet_unref(&comparePkt[0]);
+                    av_packet_unref(&comparePkt[1]);
+                    run_one_time_for_compare_two_avpacket = false;
                 }
                 continue;
             }
@@ -2200,7 +2215,7 @@ namespace alexander_media_mediacodec {
             // 软解数据
             readDataImpl(wrapper, srcAVPacket);
         }// for(;;) end
-        LOGF("readData() end\n");
+        LOGF("readData() end");
 
         LOGI("readData() end 1\n");
         if (!audioHasSentNullPacket) {
@@ -4729,6 +4744,7 @@ namespace alexander_media_mediacodec {
         }
 
         if ((long long) timestamp < 0
+            || !isReading
             || audioWrapper == nullptr
             || audioWrapper->father == nullptr
             || audioWrapper->father->isPausedForSeek

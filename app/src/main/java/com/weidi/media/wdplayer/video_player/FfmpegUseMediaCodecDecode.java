@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -1018,12 +1019,14 @@ public class FfmpegUseMediaCodecDecode {
         }
         if (TextUtils.equals(videoMime, MediaFormat.MIMETYPE_VIDEO_VP8)
                 || TextUtils.equals(videoMime, MediaFormat.MIMETYPE_VIDEO_VP9)
+                // MTK
                 || TextUtils.equals(videoMime, "video/mjpeg")
                 || TextUtils.equals(videoMime, "video/x-vp6")) {
             // 没有csd-0和csd-1
         } else if (TextUtils.equals(videoMime, MediaFormat.MIMETYPE_VIDEO_HEVC)
                 || TextUtils.equals(videoMime, MediaFormat.MIMETYPE_VIDEO_MPEG4)
                 || TextUtils.equals(videoMime, MediaFormat.MIMETYPE_VIDEO_MPEG2)
+                // MTK
                 || TextUtils.equals(videoMime, "video/x-ms-wmv")) {
             // 只有csd-0
             if (sps_pps != null) {
@@ -1288,6 +1291,9 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.data = wrapper.data;
                     avPacket.presentationTimeUs = wrapper.sampleTime;
                     avPacket.flags = 0;
+                    /*Log.w(TAG, "feedInputBufferAndDrainOutputBuffer() data:\n" +
+                            Arrays.toString(wrapper.data));
+                    SystemClock.sleep(1000);*/
                     try {
                         // 超出限制就会阻塞
                         mVideoInputDatasQueue.put(avPacket);
