@@ -2294,6 +2294,7 @@ namespace alexander_media_mediacodec {
                  */
                 needToGetResultAgain = false;
                 double step = -0.000500;
+                step = 0.058258;
                 if (videoWrapper->father->useMediaCodec) {
                     if (audioWrapper->father->useMediaCodec) {
                         step = -0.105000;
@@ -2322,7 +2323,7 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.195000 + step;
                     }
 
-                    //TIME_DIFFERENCE = 0.200000;
+                    // TIME_DIFFERENCE = 0.200000;
                 } else {
                     TIME_DIFFERENCE = 0.300000;
                 }
