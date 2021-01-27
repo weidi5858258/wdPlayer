@@ -809,6 +809,7 @@ public class FfmpegUseMediaCodecDecode {
      OMX.MTK.AUDIO.DECODER.DSPWMA
 
      video/raw
+     无解码器
      video/hevc
      OMX.MTK.VIDEO.DECODER.HEVC
      OMX.MTK.VIDEO.DECODER.HEVC.secure
@@ -816,6 +817,7 @@ public class FfmpegUseMediaCodecDecode {
      OMX.qcom.video.decoder.hevc.secure(硬解)
      OMX.google.hevc.decoder(软解)
      c2.android.hevc.decoder(软解)
+
      video/avc
      OMX.MTK.VIDEO.DECODER.AVC
      OMX.MTK.VIDEO.DECODER.AVC.secure
@@ -823,27 +825,32 @@ public class FfmpegUseMediaCodecDecode {
      OMX.qcom.video.decoder.avc.secure
      OMX.google.h264.decoder
      c2.android.avc.decoder
+
      video/3gpp
      OMX.MTK.VIDEO.DECODER.H263
      OMX.qcom.video.decoder.h263
      OMX.google.h263.decoder
      c2.android.h263.decoder
+
      video/mp4v-es
      OMX.MTK.VIDEO.DECODER.MPEG4
      OMX.qcom.video.decoder.mpeg4
      OMX.google.mpeg4.decoder
      c2.android.mpeg4.decoder
+
      video/mpeg2
      OMX.MTK.VIDEO.DECODER.MPEG2
      OMX.MTK.VIDEO.DECODER.MPEG2.secure
      OMX.qcom.video.decoder.mpeg2
      OMX.qcom.video.decoder.mpeg2.secure
      OMX.google.mpeg2.decoder
+
      video/x-vnd.on2.vp8
      OMX.MTK.VIDEO.DECODER.VP8
      OMX.qcom.video.decoder.vp8
      OMX.google.vp8.decoder
      c2.android.vp8.decoder
+
      video/x-vnd.on2.vp9
      OMX.MTK.VIDEO.DECODER.VP9
      OMX.MTK.VIDEO.DECODER.VP9.secure
@@ -851,6 +858,22 @@ public class FfmpegUseMediaCodecDecode {
      OMX.qcom.video.decoder.vp9.secure
      OMX.google.vp9.decoder
      c2.android.vp9.decoder
+
+     video/dolby-vision
+     OMX.dolby.vision.dvhe.stn.decoder
+     OMX.dolby.vision.dvhe.stn.decoder.secure
+     OMX.dolby.vision.dvhe.dtr.decoder
+     OMX.dolby.vision.dvhe.dtr.decoder.secure
+     OMX.dolby.vision.dvhe.st.decoder
+     OMX.dolby.vision.dvhe.st.decoder.secure
+     OMX.dolby.vision.dvav.se.decoder
+     OMX.dolby.vision.dvav.se.decoder.secure
+
+     video/scrambled
+     无解码器
+
+     video/av01
+     无解码器
      */
     public boolean initVideoMediaCodec(JniObject jniObject) {
         Log.w(TAG, "initVideoMediaCodec() start");

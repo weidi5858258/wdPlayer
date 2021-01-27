@@ -846,6 +846,9 @@ public class MainActivity extends AppCompatActivity {
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_MPEG2);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_VP8);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_VP9);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_SCRAMBLED);
+        MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_AV1);
         // 没有遇到过
         /*MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_AV1);
         MediaUtils.findAllDecodersByMime(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION);
