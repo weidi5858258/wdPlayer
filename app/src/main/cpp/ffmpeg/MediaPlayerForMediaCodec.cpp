@@ -2293,9 +2293,10 @@ namespace alexander_media_mediacodec {
                  0.457614 0.461167 0.472319 0.486549 0.494847
                  */
                 needToGetResultAgain = false;
-                double step = -0.000500;
-                step = 0.058258;
                 if (videoWrapper->father->useMediaCodec) {
+                    // TIME_DIFFERENCE = 0.200000;
+                    double step = -0.000500;
+                    step = 0.058258;
                     if (audioWrapper->father->useMediaCodec) {
                         step = -0.105000;
                         step = -0.115000;
@@ -2322,8 +2323,6 @@ namespace alexander_media_mediacodec {
                     } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.410000) {
                         TIME_DIFFERENCE = 0.195000 + step;
                     }
-
-                    // TIME_DIFFERENCE = 0.200000;
                 } else {
                     TIME_DIFFERENCE = 0.300000;
                 }
@@ -2335,11 +2334,34 @@ namespace alexander_media_mediacodec {
                  */
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
-                    TIME_DIFFERENCE = 0.100000;
+                    /*TIME_DIFFERENCE = 0.100000;
                     TIME_DIFFERENCE = 0.050000;
                     if (audioWrapper->father->useMediaCodec) {
                         //TIME_DIFFERENCE = 0.300000;
                         TIME_DIFFERENCE = 0.050000;
+                    }*/
+
+                    double step = -0.048258;
+                    if (averageTimeDiff > 0.390000) {
+                        TIME_DIFFERENCE = 0.199500 + step;
+                    } else if (averageTimeDiff > 0.380000 && averageTimeDiff < 0.390000) {
+                        TIME_DIFFERENCE = 0.199000 + step;
+                    } else if (averageTimeDiff > 0.370000 && averageTimeDiff < 0.380000) {
+                        TIME_DIFFERENCE = 0.198500 + step;
+                    } else if (averageTimeDiff > 0.360000 && averageTimeDiff < 0.370000) {
+                        TIME_DIFFERENCE = 0.198000 + step;
+                    } else if (averageTimeDiff > 0.350000 && averageTimeDiff < 0.360000) {
+                        TIME_DIFFERENCE = 0.197500 + step;
+                    } else if (averageTimeDiff > 0.340000 && averageTimeDiff < 0.350000) {
+                        TIME_DIFFERENCE = 0.197000 + step;
+                    } else if (averageTimeDiff > 0.330000 && averageTimeDiff < 0.340000) {
+                        TIME_DIFFERENCE = 0.196500 + step;
+                    } else if (averageTimeDiff > 0.320000 && averageTimeDiff < 0.330000) {
+                        TIME_DIFFERENCE = 0.196000 + step;
+                    } else if (averageTimeDiff > 0.310000 && averageTimeDiff < 0.320000) {
+                        TIME_DIFFERENCE = 0.195500 + step;
+                    } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.310000) {
+                        TIME_DIFFERENCE = 0.195000 + step;
                     }
                 } else {
                     TIME_DIFFERENCE = 0.200000;

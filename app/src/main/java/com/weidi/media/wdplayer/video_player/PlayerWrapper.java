@@ -2071,10 +2071,17 @@ public class PlayerWrapper {
                 frameParams.setMargins(
                         0, getStatusBarHeight(), 0, 0);
             }*/
-            frameParams.setMargins(
-                    0,
-                    mNeedVideoHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
-                    0, 0);
+            if (mNeedVideoHeight >= (mScreenHeight - getStatusBarHeight())) {
+                frameParams.setMargins(
+                        0,
+                        mNeedVideoHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
+                        0, 0);
+            } else {
+                frameParams.setMargins(
+                        0,
+                        mNeedVideoHeight - 100,
+                        0, 0);
+            }
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
