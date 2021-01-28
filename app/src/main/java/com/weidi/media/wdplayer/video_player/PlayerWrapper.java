@@ -1027,9 +1027,9 @@ public class PlayerWrapper {
         }
         if (!IS_WATCH) {
             ObjectAnimator controllerPanelAnimator =
-                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0f, 1f);
+                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0.0f, 1.0f);
             ObjectAnimator textInfoAnimator =
-                    ObjectAnimator.ofFloat(textInfoTV, "alpha", 0f, 1f);
+                    ObjectAnimator.ofFloat(textInfoTV, "alpha", 0.0f, 1.0f);
             if (mIsLocal) {
                 controllerPanelAnimator.setDuration(5000);
                 textInfoAnimator.setDuration(5000);
@@ -3108,7 +3108,7 @@ public class PlayerWrapper {
         mUiHandler.removeMessages(MSG_CHANGE_COLOR);
         if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE// 横屏
                 || Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            if (mControllerPanelLayout.getVisibility() == View.VISIBLE) {
+            if (textInfoScrollView.getVisibility() == View.VISIBLE) {
                 mControllerPanelLayout.setVisibility(View.GONE);
                 textInfoScrollView.setVisibility(View.GONE);
                 mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, false).commit();
@@ -3116,7 +3116,7 @@ public class PlayerWrapper {
                 mControllerPanelLayout.setVisibility(View.VISIBLE);
                 textInfoScrollView.setVisibility(View.VISIBLE);
                 mSP.edit().putBoolean(PLAYBACK_SHOW_CONTROLLERPANELLAYOUT, true).commit();
-                mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 10);
+                mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
             }
             return;
         }
