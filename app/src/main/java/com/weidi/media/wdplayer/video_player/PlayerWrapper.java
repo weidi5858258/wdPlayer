@@ -617,9 +617,9 @@ public class PlayerWrapper {
         mIjkPlayer.setContext(mContext);
         mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
         mIjkPlayer.mIsLocalPlayer = mIsLocalPlayer;
-        if (IS_WATCH) {
+        /*if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
-        }
+        }*/
 
         /*if (mGetMediaFormat == null) {
             mGetMediaFormat = new GetMediaFormat();
