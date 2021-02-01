@@ -1673,6 +1673,7 @@ public class FfmpegUseMediaCodecDecode {
                     | MediaCodec.CryptoException e) {
                 e.printStackTrace();
             }
+            avPacket.clear();
             avPacket = null;
         }
 
@@ -1794,6 +1795,7 @@ public class FfmpegUseMediaCodecDecode {
                     | MediaCodec.CryptoException e) {
                 e.printStackTrace();
             }
+            avPacket.clear();
             avPacket = null;
         }
 

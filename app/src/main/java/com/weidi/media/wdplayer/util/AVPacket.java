@@ -30,8 +30,9 @@ public class AVPacket implements Parcelable {
     }
 
     public void clear() {
-        Arrays.fill(data, (byte) 0);
+        //Arrays.fill(data, (byte) 0);
         data = null;
+        cryptoInfo = null;
     }
 
     protected AVPacket(Parcel in) {
@@ -65,7 +66,6 @@ public class AVPacket implements Parcelable {
         dest.writeLong(presentationTimeUs);
         dest.writeInt(flags);
     }
-
 
 
 }

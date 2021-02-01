@@ -411,30 +411,38 @@ namespace alexander_media_mediacodec {
 
     // 通知读线程开始读(其中有一个队列空的情况)
     void notifyToRead(Wrapper *wrapper) {
-        pthread_mutex_lock(&wrapper->readLockMutex);
-        pthread_cond_signal(&wrapper->readLockCondition);
-        pthread_mutex_unlock(&wrapper->readLockMutex);
+        if (wrapper != nullptr) {
+            pthread_mutex_lock(&wrapper->readLockMutex);
+            pthread_cond_signal(&wrapper->readLockCondition);
+            pthread_mutex_unlock(&wrapper->readLockMutex);
+        }
     }
 
     // 通知读线程开始等待(队列都满的情况)
     void notifyToReadWait(Wrapper *wrapper) {
-        pthread_mutex_lock(&wrapper->readLockMutex);
-        pthread_cond_wait(&wrapper->readLockCondition, &wrapper->readLockMutex);
-        pthread_mutex_unlock(&wrapper->readLockMutex);
+        if (wrapper != nullptr) {
+            pthread_mutex_lock(&wrapper->readLockMutex);
+            pthread_cond_wait(&wrapper->readLockCondition, &wrapper->readLockMutex);
+            pthread_mutex_unlock(&wrapper->readLockMutex);
+        }
     }
 
     // 通知处理线程开始处理(几种情况需要唤醒:开始播放时,cache缓存时)
     void notifyToHandle(Wrapper *wrapper) {
-        pthread_mutex_lock(&wrapper->handleLockMutex);
-        pthread_cond_signal(&wrapper->handleLockCondition);
-        pthread_mutex_unlock(&wrapper->handleLockMutex);
+        if (wrapper != nullptr) {
+            pthread_mutex_lock(&wrapper->handleLockMutex);
+            pthread_cond_signal(&wrapper->handleLockCondition);
+            pthread_mutex_unlock(&wrapper->handleLockMutex);
+        }
     }
 
     // 通知处理线程开始等待
     void notifyToHandleWait(Wrapper *wrapper) {
-        pthread_mutex_lock(&wrapper->handleLockMutex);
-        pthread_cond_wait(&wrapper->handleLockCondition, &wrapper->handleLockMutex);
-        pthread_mutex_unlock(&wrapper->handleLockMutex);
+        if (wrapper != nullptr) {
+            pthread_mutex_lock(&wrapper->handleLockMutex);
+            pthread_cond_wait(&wrapper->handleLockCondition, &wrapper->handleLockMutex);
+            pthread_mutex_unlock(&wrapper->handleLockMutex);
+        }
     }
 
     int read_thread_interrupt_cb(void *opaque) {
@@ -529,8 +537,8 @@ namespace alexander_media_mediacodec {
             codecName = codecName->next;
         }*/
 
-        readLockMutex = PTHREAD_MUTEX_INITIALIZER;
-        readLockCondition = PTHREAD_COND_INITIALIZER;
+        //readLockMutex = PTHREAD_MUTEX_INITIALIZER;
+        //readLockCondition = PTHREAD_COND_INITIALIZER;
         TIME_DIFFERENCE = 1.000000;
         videoSleepTime = 11000;
         preProgress = 0;
@@ -4276,8 +4284,8 @@ namespace alexander_media_mediacodec {
             LOGI("%s\n", "closeOther() end");
         }
         closeDownload();
-        pthread_mutex_destroy(&readLockMutex);
-        pthread_cond_destroy(&readLockCondition);
+        //pthread_mutex_destroy(&readLockMutex);
+        //pthread_cond_destroy(&readLockCondition);
     }
 
     int initPlayer() {
