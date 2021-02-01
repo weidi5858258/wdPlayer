@@ -2380,8 +2380,8 @@ namespace alexander_media_mediacodec {
                  */
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
-                    TIME_DIFFERENCE = 0.050000;
                     TIME_DIFFERENCE = 0.010000;
+                    TIME_DIFFERENCE = 0.058258;
                 } else {
                     TIME_DIFFERENCE = 0.100000;
                 }
@@ -2429,12 +2429,12 @@ namespace alexander_media_mediacodec {
                     TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
                     if (TIME_DIFFERENCE > 0 && TIME_DIFFERENCE < 0.200000) {
                         TIME_DIFFERENCE = 0.100000;
-                        needToGetResultAgain = false;
-                        runCounts = RUN_COUNTS + 1;
-                        averageTimeDiff = 0.405858;
                         if (audioWrapper->father->useMediaCodec) {
                             TIME_DIFFERENCE = 0.080000;
                         }
+                        needToGetResultAgain = false;
+                        runCounts = RUN_COUNTS + 1;
+                        averageTimeDiff = 0.405858;
                     }
                     //TIME_DIFFERENCE = 0.000800;
                 }
