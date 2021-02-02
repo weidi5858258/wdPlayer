@@ -874,6 +874,17 @@ public class FfmpegUseMediaCodecDecode {
 
      video/av01
      无解码器
+
+     if (codecName.startsWithIgnoreCase("c2.")) {
+     return new CCodec;
+     } else if (codecName.startsWithIgnoreCase("omx.")) {
+     // at this time only ACodec specifies a mime type.
+     return new ACodec;
+     } else if (codecName.startsWithIgnoreCase("android.filter.")) {
+     return new MediaFilter;
+     } else {
+     return NULL;
+     }
      */
     public boolean initVideoMediaCodec(JniObject jniObject) {
         Log.w(TAG, "initVideoMediaCodec() start");
