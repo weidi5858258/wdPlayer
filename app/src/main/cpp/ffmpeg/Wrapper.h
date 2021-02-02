@@ -100,6 +100,11 @@ extern "C" {
 
 #define RUN_COUNTS 88
 
+struct AVBSFInternal {
+    AVPacket *buffer_pkt;
+    int eof;
+};
+
 // 子类都要用到的部分
 struct Wrapper {
     int type = TYPE_UNKNOW;

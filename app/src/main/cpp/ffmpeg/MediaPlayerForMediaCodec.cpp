@@ -211,7 +211,8 @@ fps不大于30,kbps为0或者小于4000,最大分辨率为1080P
 
 #define LOG "player_alexander_media_mediacodec"
 
-char inFilePath[2048];
+// ffmpeg中文件路径长度就是1024,所以我们不需要多也不需要少
+char inFilePath[1024];
 AVFormatContext *avFormatContext = nullptr;
 struct AudioWrapper *audioWrapper = nullptr;
 struct VideoWrapper *videoWrapper = nullptr;
@@ -919,23 +920,28 @@ namespace alexander_media_mediacodec {
              -875574520(Server returned 404 Not Found)
              -1094995529(Invalid data found when processing input)
              -1330794744(Protocol not found)
+
+             AVFormatContext支持的options选项定义在libavformat/options_table.h中
+             AVDictionary *options = NULL;
+             av_dict_set(&options, “probesize”, “4096", 0);
+             av_dict_set(&options, “max_delay”, “5000000”, 0);
+             如probesize和max_delay
              */
             int ret = avformat_open_input(&avFormatContext,
                                           inFilePath,
                                           nullptr, nullptr);
+            int64_t endTime = av_gettime_relative();
+            LOGE("openAndFindAVFormatContext() avformat_open_input: %lld ms\n",
+                 (long long) ((endTime - startTime) / 1000));// 单位: ms
             if (ret) {
                 char buf[1024];
                 av_strerror(ret, buf, 1024);
-                LOGE("openAndFindAVFormatContext() Couldn't open file, because this: [ %d(%s) ]",
-                     ret, buf);
+                onError(0x100, buf);
                 // 这里就是某些视频初始化失败的地方
-                LOGE("openAndFindAVFormatContext() Couldn't open input stream\n");
+                LOGE("openAndFindAVFormatContext() Couldn't open file, because this: [ (%d)(%s) ]",
+                     ret, buf);
                 return -1;
             }
-            int64_t endTime = av_gettime_relative();
-            LOGI("openAndFindAVFormatContext() avformat_open_input: %ld\n",
-                 (long) ((endTime - startTime) / 1000));
-
             // av_log_set_callback(log_callback_null);
         } else {
             if (avformat_open_input(&avFormatContext,
@@ -1967,6 +1973,43 @@ namespace alexander_media_mediacodec {
         return 0;
     }
 
+    // 从ffmpeg源码中copy过来的
+    int av_bsf_send_packet_(AVBSFContext *ctx, AVPacket *pkt) {
+        int ret;
+
+        if (!pkt || (!pkt->data && !pkt->side_data_elems)) {
+            LOGE("av_bsf_send_packet ctx->internal->eof = 1");
+            ctx->internal->eof = 1;
+            return 0;
+        }
+
+        if (ctx->internal->eof) {
+            LOGE("A non-NULL packet sent after an EOF.");
+            /***
+            解决一个bug.
+            西瓜视频投屏到电视机上然后用我的软件播放,然后seek时会出现这种情况
+            文件并没有读完,但是就是走到这里了,然后返回AVERROR(EINVAL)
+             */
+            ctx->internal->eof = 0;
+            //return AVERROR(EINVAL);// -22
+        }
+
+        if (ctx->internal->buffer_pkt->data ||
+            ctx->internal->buffer_pkt->side_data_elems) {
+            LOGE("ctx->internal->buffer_pkt ->data or ->side_data_elems failure");
+            return AVERROR(EAGAIN);// -11
+        }
+
+        ret = av_packet_make_refcounted(pkt);
+        if (ret < 0) {
+            LOGE("av_packet_make_refcounted failure");
+            return ret;
+        }
+        av_packet_move_ref(ctx->internal->buffer_pkt, pkt);
+
+        return 0;
+    }
+
     void *readData(void *opaque) {
         if (audioWrapper == nullptr
             || audioWrapper->father == nullptr
@@ -2179,13 +2222,14 @@ namespace alexander_media_mediacodec {
                 if (run_one_time_for_compare_two_avpacket && wrapper->type == TYPE_VIDEO) {
                     av_packet_ref(&comparePkt[0], srcAVPacket);
                 }
-                readFrame = av_bsf_send_packet(wrapper->avbsfContext, srcAVPacket);
+                // 原函数名为: av_bsf_send_packet(...)
+                readFrame = av_bsf_send_packet_(wrapper->avbsfContext, srcAVPacket);
                 if (readFrame < 0) {
                     if (wrapper->type == TYPE_AUDIO) {
-                        LOGE("readData() audio av_bsf_send_packet failure\n");
+                        LOGE("readData() audio av_bsf_send_packet failure: %d", readFrame);
                         //audioWrapper->father->useMediaCodec = false;
                     } else {
-                        LOGE("readData() video av_bsf_send_packet failure\n");
+                        LOGE("readData() video av_bsf_send_packet failure: %d", readFrame);
                         //audioWrapper->father->useMediaCodec = false;
                         //videoWrapper->father->useMediaCodec = false;
                     }
@@ -4303,7 +4347,7 @@ namespace alexander_media_mediacodec {
             if (isInterrupted) {
                 onFinished();
             } else {
-                onError(0x100, "openAndFindAVFormatContext() < 0 failed");
+                //onError(0x100, "openAndFindAVFormatContext() < 0 failed");
             }
             return -1;
         }
@@ -4564,8 +4608,9 @@ namespace alexander_media_mediacodec {
 //        const char *src = "http://192.168.0.112:8080/tomcat_video/game_of_thrones/game_of_thrones_season_1/01.mp4";
 //        av_strlcpy(inVideoFilePath, src, sizeof(inVideoFilePath));
 
-        memset(inFilePath, '\0', sizeof(inFilePath));
-        av_strlcpy(inFilePath, filePath, sizeof(inFilePath));
+        //memset(inFilePath, '\0', sizeof(inFilePath));
+        memset(inFilePath, 0, sizeof(inFilePath));
+        av_strlcpy(inFilePath, filePath ? filePath : "", sizeof(inFilePath));
         LOGI("setJniParameters() filePath  : %s", inFilePath);
 
         isLocal = startsWith(inFilePath, "/storage/");
