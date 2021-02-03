@@ -2472,7 +2472,7 @@ namespace alexander_media_mediacodec {
                 if (needToResetVideoPts) {
                     TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
                     if (TIME_DIFFERENCE > 0 && TIME_DIFFERENCE < 0.200000) {
-                        TIME_DIFFERENCE = 0.100000;
+                        TIME_DIFFERENCE = 0.250250;
                         if (audioWrapper->father->useMediaCodec) {
                             TIME_DIFFERENCE = 0.080000;
                         }
