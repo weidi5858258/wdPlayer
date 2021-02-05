@@ -102,6 +102,11 @@
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
 
         <activity
+            android:name="com.weidi.media.wdplayer.business.contents.LiveActivityForIptv"
+            android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />
+
+        <activity
             android:name="com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite"
             android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />

@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
+import com.weidi.media.wdplayer.business.contents.LiveActivityForIptv;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
 import com.weidi.media.wdplayer.socket.SocketClient;
@@ -296,27 +297,30 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, LiveActivity.class));
                         break;
                     case 3:
+                        startActivity(new Intent(MainActivity.this, LiveActivityForIptv.class));
+                        break;
+                    case 4:
                         Intent intent = new Intent();
                         intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
                         intent.setClass(MainActivity.this, JniPlayerActivity.class);
                         startActivity(intent);
                         break;
-                    case 4:
+                    case 5:
                         if (IS_PHONE) {
                             startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
                         }
                         break;
-                    case 5:
+                    case 6:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
                         MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
                         break;
-                    case 6:
+                    case 7:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
                         MyToast.show(PLAYER_IJKPLAYER);
                         break;
-                    case 7:
+                    case 8:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         boolean needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
                         if (needTwoPlayer) {
@@ -326,8 +330,6 @@ public class MainActivity extends AppCompatActivity {
                             MyToast.show("启用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
                         }
-                        break;
-                    case 8:
                         break;
                     case 9:
                         break;

@@ -308,6 +308,7 @@ public class PlayerWrapper {
 
     // 第一个存储视频地址,第二个存储标题
     public static final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
+    public static final LinkedHashMap<String, String> mIptvContentsMap = new LinkedHashMap();
     public static final LinkedHashMap<String, String> mMenFavoriteContentsMap = new LinkedHashMap();
     public static LinkedHashMap<String, String> mLocalVideoContentsMap;
     public static LinkedHashMap<String, String> mLocalAudioContentsMap;
@@ -3306,6 +3307,7 @@ public class PlayerWrapper {
     private void loadContents() {
         Log.i(TAG, "loadContents() start");
         mContentsMap.clear();
+        mIptvContentsMap.clear();
         mMenFavoriteContentsMap.clear();
 
         File[] files = mContext.getExternalFilesDirs(Environment.MEDIA_SHARED);
@@ -3335,7 +3337,10 @@ public class PlayerWrapper {
             return;
         }
 
+        // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared
         Log.i(TAG, "Environment.MEDIA_SHARED: " + file.getAbsolutePath());
+
+        // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/contents.txt
         StringBuilder sb = new StringBuilder();
         sb.append(file.getAbsolutePath());
         sb.append("/");
@@ -3346,6 +3351,20 @@ public class PlayerWrapper {
         } else {
             if (copyFile("contents.", contentsFile)) {
                 readContents(contentsFile, mContentsMap);
+            }
+        }
+
+        // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/iptv.url
+        sb.delete(0, sb.length());
+        sb.append(file.getAbsolutePath());
+        sb.append("/");
+        sb.append("iptv.url");
+        contentsFile = new File(sb.toString());
+        if (contentsFile.exists()) {
+            readContents(contentsFile, mIptvContentsMap);
+        } else {
+            if (copyFile("iptv.url", contentsFile)) {
+                readContents(contentsFile, mIptvContentsMap);
             }
         }
 
@@ -3479,7 +3498,9 @@ public class PlayerWrapper {
     }
 
     private void readContents(File file, LinkedHashMap<String, String> map) {
-        final String TAG = "@@@@@@@@@@";
+        final String TAG1 = "@@@@@@@@@@";
+        final String TAG2 = "#EXTINF:-1 ,";
+
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new FileReader(file));
@@ -3489,20 +3510,45 @@ public class PlayerWrapper {
             String value = null;
             StringBuilder sb = new StringBuilder();
             int i = 0;
+            boolean toDoIt = false;
             //一次读一行，读入null时文件结束
             while ((aLineContent = reader.readLine()) != null) {
+                toDoIt = false;
                 if (aLineContent.length() == 0) {
                     continue;
                 }
 
                 aLineContent = aLineContent.trim();
 
-                if (aLineContent.contains(TAG) && !aLineContent.startsWith("#")) {
-                    ++i;
-                    contents = aLineContent.split(TAG);
+                if (aLineContent.contains(TAG1)
+                        && !aLineContent.startsWith("#")
+                        && !aLineContent.startsWith("//")) {
+                    contents = aLineContent.split(TAG1);
                     key = contents[0];
                     value = contents[1];
+                    if (contents.length > 1) {
+                        toDoIt = true;
+                    }
+                } else {
+                    if (aLineContent.startsWith(TAG2)) {
+                        value = aLineContent.substring(TAG2.length(), aLineContent.length());
+                        key = null;
+                    } else if (aLineContent.startsWith("http://")
+                            || aLineContent.startsWith("https://")
+                            || aLineContent.startsWith("rtmp://")
+                            || aLineContent.startsWith("rtsp://")) {
+                        key = aLineContent;
+                    } else {
+                        value = null;
+                        key = null;
+                    }
+                    if (!TextUtils.isEmpty(key) && !TextUtils.isEmpty(value)) {
+                        toDoIt = true;
+                    }
+                }
 
+                if (toDoIt) {
+                    ++i;
                     sb.append(i);
                     if (i < 10) {
                         sb.append("____");
@@ -3516,16 +3562,13 @@ public class PlayerWrapper {
                     sb.append("_");
                     sb.append(value);
 
-                    if (contents.length > 1) {
-                        if (!map.containsKey(key)) {
-                            map.put(key, sb.toString());
-                        } else {
-                            --i;
-                        }
+                    if (!map.containsKey(key)) {
+                        map.put(key, sb.toString());
+                    } else {
+                        --i;
                     }
 
-                    /*Log.i("player_alexander", "readContents() sb.toString(): " +
-                            sb.toString());*/
+                    /*Log.i("player_alexander", "readContents() sb.toString(): " + sb.toString());*/
                     sb.delete(0, sb.length());
                 }
             }
