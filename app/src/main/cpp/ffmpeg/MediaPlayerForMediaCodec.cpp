@@ -2482,15 +2482,18 @@ namespace alexander_media_mediacodec {
                     }
                     //TIME_DIFFERENCE = 0.000800;
                 }
-            } else {
-                // 对4K视频特殊处理
-                /*if (frameRate >= 45
-                    && videoWrapper->srcWidth >= 3840
-                    && videoWrapper->srcHeight >= 2160) {
-                    // 增大TIME_DIFFERENCE值让视频加快
-                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
-                }*/
             }
+
+            if (!needToGetResultAgain) {
+                // 对4K视频再进行特殊处理
+                if (/*frameRate >= 45
+                    && */videoWrapper->srcWidth >= 3840
+                         && videoWrapper->srcHeight >= 2160) {
+                    // 增大TIME_DIFFERENCE值让视频加快
+                    TIME_DIFFERENCE = averageTimeDiff + 0.258258;
+                }
+            }
+
             LOGI("hope_to_get_a_good_result() TIME_DIFFERENCE: %lf\n", TIME_DIFFERENCE);
         }
 
