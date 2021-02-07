@@ -1015,9 +1015,9 @@ public class PlayerWrapper {
 
             if (!IS_WATCH) {
                 if (mIsLocalPlayer) {
-                    sb.append("[LP] ");
+                    sb.append("[A] ");
                 } else {
-                    sb.append("[RP] ");
+                    sb.append("[B] ");
                 }
             }
 
