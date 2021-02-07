@@ -2497,6 +2497,8 @@ namespace alexander_media_mediacodec {
             LOGI("hope_to_get_a_good_result() TIME_DIFFERENCE: %lf\n", TIME_DIFFERENCE);
         }
 
+        // region
+
         char info[200];
         memset(info, '\0', sizeof(info));
         if (videoWrapper->father->useMediaCodec
@@ -2617,6 +2619,8 @@ namespace alexander_media_mediacodec {
             }
         }
         onInfo(info);
+
+        // endregion
     }
 
     void resetForGetAGoodResult() {
