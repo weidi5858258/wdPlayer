@@ -3826,9 +3826,10 @@ namespace alexander_media_mediacodec {
                         continue;
                     }
 
-                    if (srcAVPacket->size <= 0) {// 655360
+                    /*if (srcAVPacket->size <= 0) {// 655360
                         LOGE("handleData() audio AVPacket size: %d\n", srcAVPacket->size);
-                    }
+                    }*/
+
                     //LOGD("handleData() audio feedInputBufferAndDrainOutputBuffer start\n");
                     feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                             0x0001,
@@ -3863,6 +3864,7 @@ namespace alexander_media_mediacodec {
                         // 关键帧
                         LOGW("handleData() video AVPacket key frame: %d\n", srcAVPacket->size);
                     }*/
+
                     //LOGW("handleData() video feedInputBufferAndDrainOutputBuffer start\n");
                     feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
                             0x0002,
