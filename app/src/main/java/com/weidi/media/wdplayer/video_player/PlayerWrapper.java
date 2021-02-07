@@ -2081,10 +2081,10 @@ public class PlayerWrapper {
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
-                if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
+                //if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
+                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
                     updateRootViewLayout(
-                            mNeedVideoWidth,
-                            mNeedVideoHeight, x, y);
+                            mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
                     if (mIsLive) {
                         // 直播节目
