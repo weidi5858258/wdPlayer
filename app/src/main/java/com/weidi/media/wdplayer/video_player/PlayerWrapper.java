@@ -7,7 +7,6 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
-import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -60,11 +59,8 @@ import android.widget.TextView;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.EventBusUtils;
-import com.weidi.media.wdplayer.MainActivity;
-import com.weidi.media.wdplayer.MyApplication;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
-import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.NetworkUtils;
 import com.weidi.media.wdplayer.util.NotificationUtil;
@@ -108,7 +104,6 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
-import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
@@ -128,16 +123,8 @@ import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_fra
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForFinish;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForReady;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_init;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_initPlayer;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatch;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseAudio;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseVideo;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setMode;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AAC_H264;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_AUDIO_VIDEO;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_MEDIA_MEDIACODEC;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_AUDIO;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.USE_MODE_ONLY_VIDEO;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PATH;
@@ -991,8 +978,9 @@ public class PlayerWrapper {
 
         int orientation = mContext.getResources().getConfiguration().orientation;
         if ((orientation == Configuration.ORIENTATION_PORTRAIT
-                && mNeedVideoHeight <= (int) (mScreenHeight * 2 / 3))
-                || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1)
+                //&& mNeedVideoHeight <= (int) (mScreenHeight * 2 / 3))
+                && (mNeedVideoHeight + mControllerPanelLayoutHeight) <= (mScreenHeight - getStatusBarHeight()))
+                || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1 && !IS_TV)
                 || mIsAudio) {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
@@ -2063,34 +2051,18 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-            /*if (mNeedVideoHeight < mScreenHeight) {
-                frameParams.setMargins(
-                        0, mNeedVideoHeight - mControllerPanelLayoutHeight - 10, 0, 0);
-            } else {
-                // mNeedVideoHeight == mScreenHeight
-                frameParams.setMargins(
-                        0, getStatusBarHeight(), 0, 0);
-            }*/
-            if (mNeedVideoHeight >= (mScreenHeight - getStatusBarHeight())) {
-                frameParams.setMargins(
-                        0,
-                        mNeedVideoHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
-                        0, 0);
-            } else {
-                frameParams.setMargins(
-                        0,
-                        mNeedVideoHeight - 100,
-                        0, 0);
-            }
+        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+            frameParams.setMargins(
+                    0,
+                    mScreenHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
+                    0, 0);
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
             frameParams.setMargins(
                     0, mNeedVideoHeight, 0, 0);
-            /*mControllerPanelLayout.setBackgroundColor(
-                    mContext.getResources().getColor(R.color.lightgray));*/
         }
+
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);

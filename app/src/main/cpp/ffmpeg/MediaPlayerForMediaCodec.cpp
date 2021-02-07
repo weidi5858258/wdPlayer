@@ -2337,7 +2337,7 @@ namespace alexander_media_mediacodec {
             if (averageTimeDiff > 0.500000) {
                 averageTimeDiffCount++;
                 needToResetVideoPts = true;
-            } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.500000) {
+            } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.500000) {
                 // region 第一次就走进这里的话,算是得到一个比较好的结果了
 
                 /***
@@ -2375,24 +2375,43 @@ namespace alexander_media_mediacodec {
                     } else if (averageTimeDiff > 0.400000 && averageTimeDiff < 0.410000) {
                         TIME_DIFFERENCE = 0.195000 + step;
                     }
+                        //
+                    else if (averageTimeDiff > 0.390000 && averageTimeDiff < 0.400000) {
+                        TIME_DIFFERENCE = 0.194500 + step;
+                    } else if (averageTimeDiff > 0.380000 && averageTimeDiff < 0.390000) {
+                        TIME_DIFFERENCE = 0.194000 + step;
+                    } else if (averageTimeDiff > 0.370000 && averageTimeDiff < 0.380000) {
+                        TIME_DIFFERENCE = 0.193500 + step;
+                    } else if (averageTimeDiff > 0.360000 && averageTimeDiff < 0.370000) {
+                        TIME_DIFFERENCE = 0.193000 + step;
+                    } else if (averageTimeDiff > 0.350000 && averageTimeDiff < 0.360000) {
+                        TIME_DIFFERENCE = 0.192500 + step;
+                    } else if (averageTimeDiff > 0.340000 && averageTimeDiff < 0.350000) {
+                        TIME_DIFFERENCE = 0.192000 + step;
+                    } else if (averageTimeDiff > 0.330000 && averageTimeDiff < 0.340000) {
+                        TIME_DIFFERENCE = 0.191500 + step;
+                    } else if (averageTimeDiff > 0.320000 && averageTimeDiff < 0.330000) {
+                        TIME_DIFFERENCE = 0.191000 + step;
+                    } else if (averageTimeDiff > 0.310000 && averageTimeDiff < 0.320000) {
+                        TIME_DIFFERENCE = 0.190500 + step;
+                    } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.310000) {
+                        TIME_DIFFERENCE = 0.190000 + step;
+                    }
                 } else {
-                    TIME_DIFFERENCE = 0.300000;
+                    if (averageTimeDiff > 0.400000) {
+                        TIME_DIFFERENCE = 0.300000;
+                    } else {
+                        TIME_DIFFERENCE = 0.200000;
+                    }
                 }
 
                 // endregion
-            } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
+                //} else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
                 /***
                  0.339266 0.344956 0.350436 0.365758 0.376415 0.385712 0.397755
                  */
-                needToGetResultAgain = false;
+                /*needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
-                    /*TIME_DIFFERENCE = 0.100000;
-                    TIME_DIFFERENCE = 0.050000;
-                    if (audioWrapper->father->useMediaCodec) {
-                        //TIME_DIFFERENCE = 0.300000;
-                        TIME_DIFFERENCE = 0.050000;
-                    }*/
-
                     double step = -0.048258;
                     if (averageTimeDiff > 0.390000) {
                         TIME_DIFFERENCE = 0.199500 + step;
@@ -2417,7 +2436,7 @@ namespace alexander_media_mediacodec {
                     }
                 } else {
                     TIME_DIFFERENCE = 0.200000;
-                }
+                }*/
             } else if (averageTimeDiff > 0.200000 && averageTimeDiff < 0.300000) {
                 /***
                  0.204199 0.245688 0.263926 0.271427 0.284538
@@ -2425,7 +2444,7 @@ namespace alexander_media_mediacodec {
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
                     TIME_DIFFERENCE = 0.010000;
-                    TIME_DIFFERENCE = 0.058258;
+                    TIME_DIFFERENCE = 0.088258;
                 } else {
                     TIME_DIFFERENCE = 0.100000;
                 }
