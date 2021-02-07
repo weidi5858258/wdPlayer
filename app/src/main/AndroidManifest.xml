@@ -122,6 +122,11 @@
             android:screenOrientation="sensor" />
 
         <activity
+            android:name="com.weidi.media.wdplayer.business.contents.LiveActivityForIptvWear"
+            android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
+            android:screenOrientation="sensor" />
+
+        <activity
             android:name="com.weidi.media.wdplayer.business.contents.LocalAudioActivity"
             android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />

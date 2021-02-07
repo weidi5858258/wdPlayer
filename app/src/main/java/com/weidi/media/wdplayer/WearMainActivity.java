@@ -19,6 +19,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.view.View;
 
+import com.weidi.media.wdplayer.business.contents.LiveActivityForIptvWear;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavoriteWear;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForWear;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivityForWear;
@@ -176,26 +177,30 @@ public class WearMainActivity extends WearableActivity {
                                 new Intent(WearMainActivity.this, LiveActivityForWear.class));
                         break;
                     case 3:
+                        startActivity(
+                                new Intent(WearMainActivity.this, LiveActivityForIptvWear.class));
+                        break;
+                    case 4:
                         // 本地音乐
                         startActivity(
                                 new Intent(WearMainActivity.this, LocalAudioActivityForWear.class));
                         break;
-                    case 4:
+                    case 5:
                         // 本地视频
                         startActivity(
                                 new Intent(WearMainActivity.this, LocalVideoActivityForWear.class));
                         break;
-                    case 5:
+                    case 6:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
                         MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
                         break;
-                    case 6:
+                    case 7:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
                         MyToast.show(PLAYER_IJKPLAYER);
                         break;
-                    case 7:
+                    case 8:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         int softSolution = sp.getInt(HARD_SOLUTION, 1);
                         if (softSolution == 1) {
@@ -206,10 +211,8 @@ public class WearMainActivity extends WearableActivity {
                             sp.edit().putInt(HARD_SOLUTION, 1).commit();
                         }
                         break;
-                    case 8:
-                        finish();
-                        break;
                     case 9:
+                        finish();
                         break;
                     case 10:
                         break;
