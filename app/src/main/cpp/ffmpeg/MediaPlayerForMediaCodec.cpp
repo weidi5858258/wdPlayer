@@ -558,7 +558,7 @@ namespace alexander_media_mediacodec {
         bitRate = 0;
         bit_rate_video = 0;
         bit_rate_audio = 0;
-        testCount = 1;
+        testCount = 0;
 
         needToResetVideoPts = false;
         needToResetVideoPts2 = false;
@@ -3855,9 +3855,10 @@ namespace alexander_media_mediacodec {
                         continue;
                     }
 
-                    if (srcAVPacket->size <= 0) {// 655360
+                    /*if (srcAVPacket->size <= 0) {// 655360
                         LOGE("handleData() video AVPacket size: %d\n", srcAVPacket->size);
-                    }
+                    }*/
+
                     /*if (srcAVPacket->flags & AV_PKT_FLAG_KEY) {
                         // 关键帧
                         LOGW("handleData() video AVPacket key frame: %d\n", srcAVPacket->size);
