@@ -3297,7 +3297,8 @@ namespace alexander_media_mediacodec {
             // region 音视频同步操作
 
             if (tempTimeDifference > 2.000000) {
-                videoPts = audioPts + averageTimeDiff;
+                //videoPts = audioPts + averageTimeDiff;
+                videoPts = audioPts + TIME_DIFFERENCE;
             }
             //LOGW("handleVideoOutputBuffer() av_usleep start\n");
             videoWrapper->father->isSleeping = true;
