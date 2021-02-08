@@ -2062,7 +2062,6 @@ public class PlayerWrapper {
             frameParams.setMargins(
                     0, mNeedVideoHeight, 0, 0);
         }
-
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
@@ -2185,15 +2184,16 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-            //frameParams.setMargins(0, getStatusBarHeight(), 0, 0);
-            frameParams.setMargins(0, mScreenHeight - mControllerPanelLayoutHeight, 0, 0);
+        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+            frameParams.setMargins(
+                    0,
+                    mScreenHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
+                    0, 0);
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
         } else {
-            frameParams.setMargins(0, mNeedVideoHeight, 0, 0);
-            /*mControllerPanelLayout.setBackgroundColor(
-                    mContext.getResources().getColor(R.color.lightgray));*/
+            frameParams.setMargins(
+                    0, mNeedVideoHeight, 0, 0);
         }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
@@ -2213,7 +2213,8 @@ public class PlayerWrapper {
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
-                if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
+                //if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
+                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
                     updateRootViewLayout(mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
                     if (mIsLive) {
