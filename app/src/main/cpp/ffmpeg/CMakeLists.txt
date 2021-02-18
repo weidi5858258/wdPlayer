@@ -46,12 +46,10 @@ add_library(ffmpeg
         )
 ################################FFMPEG################################
 
-# 这个一般是找系统库,放在这个命令里面的不会被打包到我们的apk里面
-find_library( # Sets the name of the path variable.
-        log-lib
+# 第三方库使用add_library(...)和set_target_properties(...)
+# Android平台上已存在的预构建的NDK库使用find_library(...)和target_link_libraries(...)
 
-        # Specifies the name of the NDK library that
-        # you want CMake to locate.
+find_library(log-lib
         log)
 find_library(android-lib
         android)
@@ -72,8 +70,7 @@ target_link_libraries(
         # Specifies the target library.
         ffmpeg
 
-        # Links the target library to the log library
-        # included in the NDK.
+        # ${log-lib}是log库的路径
         ${log-lib}
         ${android-lib}
 
@@ -96,47 +93,28 @@ set(CPP_DIR ${CMAKE_SOURCE_DIR}/src/main/cpp)
 set(LIBS_DIR ${CMAKE_SOURCE_DIR}/src/main/nativeLibs)
 
 # 设置CPU目录
-# armeabi-v7a
-if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    set(CPU_DIR armeabi-v7a)
-endif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-
-# armeabi
 if (${ANDROID_ABI} STREQUAL "armeabi")
     set(CPU_DIR armeabi)
 endif (${ANDROID_ABI} STREQUAL "armeabi")
 
-# arm64-v8a
+if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+    set(CPU_DIR armeabi-v7a)
+endif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+
 if (${ANDROID_ABI} STREQUAL "arm64-v8a")
     set(CPU_DIR arm64-v8a)
 endif (${ANDROID_ABI} STREQUAL "arm64-v8a")
 
-# x86
 if (${ANDROID_ABI} STREQUAL "x86")
     set(CPU_DIR x86)
 endif (${ANDROID_ABI} STREQUAL "x86")
 
-# x86_64
 if (${ANDROID_ABI} STREQUAL "x86_64")
     set(CPU_DIR x86_64)
 endif (${ANDROID_ABI} STREQUAL "x86_64")
 
 #################################################################
-# 添加库
-# add_library( # 库名称
-#              ffmpeg
-# 动态库，生成so文件
-#              SHARED
-# 源码
-#             ${CPP_DIR}/cmdutils.c
-#             ${CPP_DIR}/ffmpeg.c
-#             ${CPP_DIR}/ffmpeg_filter.c
-#             ${CPP_DIR}/ffmpeg_opt.c
-#             ${CPP_DIR}/ffmpeg_cmd.c )
-#################################################################
-# 动态库
-# 下面都是添加库,然后引用库
-# 用于各种类型声音、图像编解码
+# 增加和引用第三方库(动态库)
 
 # 添加库
 add_library(

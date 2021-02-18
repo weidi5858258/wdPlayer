@@ -25,7 +25,7 @@ extern std::list<AVPacket> video_list2;
 
 namespace alexander_only_video {
 
-    static char inFilePath[2048];
+    static char inFilePath[1024];
     static double videoPts = 0.0;
     static double videoPtsPre = 0.0;
     static long long curProgress = 0;

@@ -23,7 +23,7 @@ extern std::list<AVPacket> audio_list2;
 
 namespace alexander_only_audio {
 
-    static char inFilePath[2048];
+    static char inFilePath[1024];
     static long curProgress = 0;
     static long preProgress = 0;
     // 单位: 秒
