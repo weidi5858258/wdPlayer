@@ -1227,6 +1227,8 @@ public class FfmpegUseMediaCodecDecode {
                     codecName = null;
                     continue;
                 }
+                /*int[] colorFormats =
+                        mediaCodecInfo.getCapabilitiesForType(mVideoWrapper.mime).colorFormats;*/
                 // 保证是硬解的解码器 如: OMX.qcom.video.decoder.avc OMX.MTK.VIDEO.DECODER.HEVC
                 break;
             }

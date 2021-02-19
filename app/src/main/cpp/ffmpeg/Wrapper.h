@@ -241,3 +241,37 @@ struct VideoWrapper {
 };
 
 #endif //USEFRAGMENTS_WRAPPER_H
+
+/***
+ YUV采样方式：YUV4:4:4, YUV4:2:2, YUV4:2:0
+ YUV存储方式：planar和packed
+ 对于所有的YUV420图像，它们的Y值排列是完全相同的，因为只有Y的图像就是灰度图像.
+ 在YUV420中，一个像素点对应一个Y，一个4X4的小方块对应一个U和V.
+ YUV420sp与YUV420p的数据格式它们的UV排列在原理上是完全不同的.
+ 420p它是先把U存放完后，再存放V，也就是说UV它们是连续的.
+ 420sp它是UV,UV这样交替存放的.
+ P与SP就是存储格式不同,但是所占空间是相等的.
+ 总结:
+    不管是YUV444,YUV422还是YUV420,(width * hight)的图像就有(width * hight)个Y值.
+    YUV444,如果有(width * hight)个Y值,那么就有(width * hight)个U值,还有(width * hight)个V值
+    YUV422,如果有(width * hight)个Y值,那么就有(width * hight)/2个U值,还有(width * hight)/2个V值
+    YUV420,如果有(width * hight)个Y值,那么就有(width * hight)/4个U值,还有(width * hight)/4个V值
+    U值与V值的大小是相等的.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ */
