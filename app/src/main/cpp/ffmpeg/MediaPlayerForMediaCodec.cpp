@@ -2333,6 +2333,7 @@ namespace alexander_media_mediacodec {
 
             // region
 
+            double step = 0.508258;
             needToGetResultAgain = true;
             if (averageTimeDiff > 0.500000) {
                 averageTimeDiffCount++;
@@ -2346,15 +2347,18 @@ namespace alexander_media_mediacodec {
                  */
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
-                    // TIME_DIFFERENCE = 0.200000;
-                    double step = -0.000500;
-                    step = 0.058258;
-                    if (audioWrapper->father->useMediaCodec) {
+                    //step = -0.000500;
+                    //step = 0.058258;
+                    //step = 0.408258;
+
+                    /*if (audioWrapper->father->useMediaCodec) {
                         step = -0.105000;
                         step = -0.115000;
-                    }
+                    }*/
 
-                    if (averageTimeDiff > 0.490000) {
+                    TIME_DIFFERENCE = averageTimeDiff + step;
+
+                    /*if (averageTimeDiff > 0.490000) {
                         TIME_DIFFERENCE = 0.199500 + step;
                     } else if (averageTimeDiff > 0.480000 && averageTimeDiff < 0.490000) {
                         TIME_DIFFERENCE = 0.199000 + step;
@@ -2396,7 +2400,7 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.190500 + step;
                     } else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.310000) {
                         TIME_DIFFERENCE = 0.190000 + step;
-                    }
+                    }*/
                 } else {
                     if (averageTimeDiff > 0.400000) {
                         TIME_DIFFERENCE = 0.300000;
@@ -2443,8 +2447,8 @@ namespace alexander_media_mediacodec {
                  */
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
-                    TIME_DIFFERENCE = 0.010000;
-                    TIME_DIFFERENCE = 0.088258;
+                    //TIME_DIFFERENCE = 0.010000;
+                    TIME_DIFFERENCE = averageTimeDiff + step;
                 } else {
                     TIME_DIFFERENCE = 0.100000;
                 }
@@ -2455,7 +2459,7 @@ namespace alexander_media_mediacodec {
                 needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
                     //TIME_DIFFERENCE = averageTimeDiff - 0.100000;
-                    TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                    TIME_DIFFERENCE = averageTimeDiff + step;
                 } else {
                     TIME_DIFFERENCE = averageTimeDiff;
                 }
@@ -2475,11 +2479,11 @@ namespace alexander_media_mediacodec {
                  0.099370
                  */
                 needToGetResultAgain = false;
-                TIME_DIFFERENCE = averageTimeDiff + 0.050000;
+                /*TIME_DIFFERENCE = averageTimeDiff + 0.050000;
                 if (TIME_DIFFERENCE < 0.100000) {
                     TIME_DIFFERENCE = 0.100000;
-                }
-                TIME_DIFFERENCE = averageTimeDiff + 0.200000;
+                }*/
+                TIME_DIFFERENCE = averageTimeDiff + step;
                 needToResetVideoPts2 = true;
             }
 
@@ -2491,13 +2495,13 @@ namespace alexander_media_mediacodec {
                 if (needToResetVideoPts) {
                     TIME_DIFFERENCE = 0.500000 - 0.100000 * averageTimeDiffCount;
                     if (TIME_DIFFERENCE > 0 && TIME_DIFFERENCE < 0.200000) {
-                        TIME_DIFFERENCE = 0.250250;
                         if (audioWrapper->father->useMediaCodec) {
                             TIME_DIFFERENCE = 0.080000;
                         }
                         needToGetResultAgain = false;
                         runCounts = RUN_COUNTS + 1;
                         averageTimeDiff = 0.405858;
+                        TIME_DIFFERENCE = averageTimeDiff + step;
                     }
                     //TIME_DIFFERENCE = 0.000800;
                 }
@@ -2509,7 +2513,7 @@ namespace alexander_media_mediacodec {
                     && */videoWrapper->srcWidth >= 3840
                          && videoWrapper->srcHeight >= 2160) {
                     // 增大TIME_DIFFERENCE值让视频加快
-                    TIME_DIFFERENCE = averageTimeDiff + 0.258258;
+                    TIME_DIFFERENCE = averageTimeDiff + 0.658258;
                 }
             }
 
