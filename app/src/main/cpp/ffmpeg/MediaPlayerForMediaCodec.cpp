@@ -2858,7 +2858,7 @@ namespace alexander_media_mediacodec {
 
             // region
 
-            if (needToResetVideoPts
+            /*if (needToResetVideoPts
                 && !needToGetResultAgain
                 && isLive) {
                 if (prePts != curPts && tempTimeDifference > 0) {
@@ -2888,7 +2888,7 @@ namespace alexander_media_mediacodec {
                     //LOGI("handleVideoOutputBuffer()    timeDiff: %llf\n", tempTimeDifference);
                     preVideoPts = videoPts;
                 }
-            }
+            }*/
 
             // endregion
 
