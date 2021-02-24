@@ -2321,6 +2321,7 @@ namespace alexander_media_mediacodec {
      */
     void hope_to_get_a_good_result() {
         if (averageTimeDiff > 0) {
+            LOGI("hope_to_get_a_good_result() sleepTotalCount: %d", sleepTotalCount);
             LOGI("hope_to_get_a_good_result() averageTimeDiff: %lf frameRate: %d \n",
                  averageTimeDiff, frameRate);
             /*bool isGoodResult = false;
@@ -2503,6 +2504,8 @@ namespace alexander_media_mediacodec {
                         }
                         needToGetResultAgain = false;
                         runCounts = RUN_COUNTS + 1;
+                        sleepRunCounts = RUN_COUNTS + 1;
+                        sleepTotalCount = 0;
                         averageTimeDiff = 0.405858;
                         //TIME_DIFFERENCE = averageTimeDiff + step;
                         TIME_DIFFERENCE = 0.250250;
@@ -3309,17 +3312,14 @@ namespace alexander_media_mediacodec {
 
             if (tempTimeDifference > 2.000000) {
                 videoPts = audioPts + averageTimeDiff;
+                tempTimeDifference = videoPts - audioPts;
             }
             /*if (tempTimeDifference > TIME_DIFFERENCE) {
                 LOGE("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
             } else {
                 LOGI("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
             }*/
-            if (videoPts - audioPts < TIME_DIFFERENCE) {
-                return 0;
-            }
             int sleepCount = 0;
-            //LOGW("handleVideoOutputBuffer() av_usleep start\n");
             videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
@@ -3329,11 +3329,9 @@ namespace alexander_media_mediacodec {
                     || videoWrapper->father->isPausedForSeek
                     || !videoWrapper->father->isHandling
                     || !audioWrapper->father->isHandling) {
-                    //LOGW("handleVideoOutputBuffer() av_usleep return\n");
                     videoWrapper->father->isSleeping = false;
                     return 0;
                 }
-                //LOGW("handleVideoOutputBuffer() av_usleep\n");
                 av_usleep(1000);
                 if ((++sleepCount) > sleepTotalCount && sleepTotalCount > 0) {
                     videoWrapper->father->isSleeping = false;
@@ -3341,7 +3339,6 @@ namespace alexander_media_mediacodec {
                 }
             }
             videoWrapper->father->isSleeping = false;
-            //LOGW("handleVideoOutputBuffer() av_usleep end\n");
             if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
                 if (sleepRunCounts < RUN_COUNTS) {
                     sleepTotalCount += sleepCount;
