@@ -2853,6 +2853,7 @@ public class PlayerWrapper {
             switch (mErrorCode) {
                 case Callback.ERROR_TIME_OUT:
                 case Callback.ERROR_MEDIA_CODEC:
+                case Callback.ERROR_TIME_DIFFERENCE:
                     if (mErrorCode == Callback.ERROR_TIME_OUT) {
                         mHasError = false;
                     }
@@ -2903,6 +2904,12 @@ public class PlayerWrapper {
         MyToast.show(errorInfo);
         mErrorCode = msg.arg1;
         switch (mErrorCode) {
+            case Callback.ERROR_TIME_DIFFERENCE:
+                Log.e(TAG, "PlayerWrapper Callback.ERROR_TIME_DIFFERENCE errorInfo: " + errorInfo);
+                // 需要重新播放
+                mHasError = true;
+                removeView(false);
+                break;
             case Callback.ERROR_MEDIA_CODEC:
                 // 音频或视频硬解码失败(会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_MEDIA_CODEC errorInfo: " + errorInfo);

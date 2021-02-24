@@ -2509,6 +2509,8 @@ namespace alexander_media_mediacodec {
                         averageTimeDiff = 0.405858;
                         //TIME_DIFFERENCE = averageTimeDiff + step;
                         TIME_DIFFERENCE = 0.250250;
+                        onError(0x103, "达不到我的理想状态");
+                        stop();
                     }
                 }
             }
