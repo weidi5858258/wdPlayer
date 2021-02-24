@@ -277,7 +277,9 @@ namespace alexander_media_mediacodec {
     static bool needToGetResultAgain = true;
     static bool needToResetVideoPts = false;
     static bool needToResetVideoPts2 = false;
-    static long long testCount = 0;
+
+    static int sleepRunCounts = 0;
+    static int sleepTotalCount = 0;
 
     // 单位: 秒
     static long long mediaDuration = -1;
@@ -558,7 +560,8 @@ namespace alexander_media_mediacodec {
         bitRate = 0;
         bit_rate_video = 0;
         bit_rate_audio = 0;
-        testCount = 0;
+        sleepRunCounts = 0;
+        sleepTotalCount = 0;
 
         needToResetVideoPts = false;
         needToResetVideoPts2 = false;
@@ -2333,7 +2336,7 @@ namespace alexander_media_mediacodec {
 
             // region
 
-            double step = 0.358258;
+            double step = 0.218888;
             needToGetResultAgain = true;
             if (averageTimeDiff > 0.500000) {
                 averageTimeDiffCount++;
@@ -2345,7 +2348,6 @@ namespace alexander_media_mediacodec {
                  0.405114 0.418364 0.429602 0.439030 0.449823
                  0.457614 0.461167 0.472319 0.486549 0.494847
                  */
-                needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
                     //step = -0.000500;
                     //step = 0.058258;
@@ -2408,6 +2410,7 @@ namespace alexander_media_mediacodec {
                         TIME_DIFFERENCE = 0.200000;
                     }
                 }
+                needToGetResultAgain = false;
 
                 // endregion
                 //} else if (averageTimeDiff > 0.300000 && averageTimeDiff < 0.400000) {
@@ -2445,24 +2448,24 @@ namespace alexander_media_mediacodec {
                 /***
                  0.204199 0.245688 0.263926 0.271427 0.284538
                  */
-                needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
                     //TIME_DIFFERENCE = 0.010000;
                     TIME_DIFFERENCE = averageTimeDiff + step;
                 } else {
                     TIME_DIFFERENCE = 0.100000;
                 }
+                needToGetResultAgain = false;
             } else if (averageTimeDiff > 0.100000 && averageTimeDiff < 0.200000) {
                 /***
                  0.100523 0.127849 0.168335
                  */
-                needToGetResultAgain = false;
                 if (videoWrapper->father->useMediaCodec) {
                     //TIME_DIFFERENCE = averageTimeDiff - 0.100000;
                     TIME_DIFFERENCE = averageTimeDiff + step;
                 } else {
                     TIME_DIFFERENCE = averageTimeDiff;
                 }
+                needToGetResultAgain = false;
                 needToResetVideoPts2 = true;
             } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
                 /***
@@ -2478,12 +2481,12 @@ namespace alexander_media_mediacodec {
                  0.088914
                  0.099370
                  */
-                needToGetResultAgain = false;
                 /*TIME_DIFFERENCE = averageTimeDiff + 0.050000;
                 if (TIME_DIFFERENCE < 0.100000) {
                     TIME_DIFFERENCE = 0.100000;
                 }*/
                 TIME_DIFFERENCE = averageTimeDiff + step;
+                needToGetResultAgain = false;
                 needToResetVideoPts2 = true;
             }
 
@@ -2501,9 +2504,9 @@ namespace alexander_media_mediacodec {
                         needToGetResultAgain = false;
                         runCounts = RUN_COUNTS + 1;
                         averageTimeDiff = 0.405858;
-                        TIME_DIFFERENCE = averageTimeDiff + step;
+                        //TIME_DIFFERENCE = averageTimeDiff + step;
+                        TIME_DIFFERENCE = 0.250250;
                     }
-                    //TIME_DIFFERENCE = 0.000800;
                 }
             }
 
@@ -2513,7 +2516,11 @@ namespace alexander_media_mediacodec {
                     && */videoWrapper->srcWidth >= 3840
                          && videoWrapper->srcHeight >= 2160) {
                     // 增大TIME_DIFFERENCE值让视频加快
-                    TIME_DIFFERENCE = averageTimeDiff + 0.658258;
+                    if (isLocal) {
+                        TIME_DIFFERENCE = averageTimeDiff + 0.658258;
+                    } else {
+                        TIME_DIFFERENCE = averageTimeDiff + 0.458258;
+                    }
                 }
             }
 
@@ -3303,6 +3310,15 @@ namespace alexander_media_mediacodec {
             if (tempTimeDifference > 2.000000) {
                 videoPts = audioPts + averageTimeDiff;
             }
+            /*if (tempTimeDifference > TIME_DIFFERENCE) {
+                LOGE("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
+            } else {
+                LOGI("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
+            }*/
+            if (videoPts - audioPts < TIME_DIFFERENCE) {
+                return 0;
+            }
+            int sleepCount = 0;
             //LOGW("handleVideoOutputBuffer() av_usleep start\n");
             videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
@@ -3319,9 +3335,37 @@ namespace alexander_media_mediacodec {
                 }
                 //LOGW("handleVideoOutputBuffer() av_usleep\n");
                 av_usleep(1000);
+                if ((++sleepCount) > sleepTotalCount && sleepTotalCount > 0) {
+                    videoWrapper->father->isSleeping = false;
+                    return 0;
+                }
             }
             videoWrapper->father->isSleeping = false;
             //LOGW("handleVideoOutputBuffer() av_usleep end\n");
+            if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
+                if (sleepRunCounts < RUN_COUNTS) {
+                    sleepTotalCount += sleepCount;
+                } else {
+                    sleepTotalCount /= RUN_COUNTS;
+                    LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
+                    if (sleepTotalCount >= 250) {
+                        sleepTotalCount -= 150;
+                    } else if (sleepTotalCount >= 200) {
+                        sleepTotalCount -= 100;
+                    } else if (sleepTotalCount >= 150) {
+                        sleepTotalCount -= 70;
+                    } else if (sleepTotalCount >= 100) {
+                        sleepTotalCount -= 50;
+                    } else if (sleepTotalCount >= 50) {
+                        sleepTotalCount -= 40;
+                    }
+                    if (TIME_DIFFERENCE == 0.250250) {
+                        sleepTotalCount = 0;
+                    }
+                    LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
+                }
+                sleepRunCounts++;
+            }
 
             // endregion
         }
