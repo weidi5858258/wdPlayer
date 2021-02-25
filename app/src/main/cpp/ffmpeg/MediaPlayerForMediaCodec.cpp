@@ -493,7 +493,7 @@ namespace alexander_media_mediacodec {
             LOGE("read_thread_interrupt_cb() 读取数据超时了\n");
             isInterrupted = true;
             onError(0x101, "读取数据超时了");
-            if (!isReading) {
+            if (isReading) {
                 stop();
             }
             return 1;
@@ -565,7 +565,7 @@ namespace alexander_media_mediacodec {
 
         needToResetVideoPts = false;
         needToResetVideoPts2 = false;
-        isReading = false;
+        isReading = true;
         isReadWaited = false;
         isVideoHandling = false;
         isInterrupted = false;
@@ -2352,7 +2352,6 @@ namespace alexander_media_mediacodec {
                 if (videoWrapper->father->useMediaCodec) {
                     //step = -0.000500;
                     //step = 0.058258;
-                    //step = 0.408258;
 
                     /*if (audioWrapper->father->useMediaCodec) {
                         step = -0.105000;
@@ -3321,7 +3320,7 @@ namespace alexander_media_mediacodec {
             } else {
                 LOGI("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
             }*/
-            int sleepCount = 0;
+            //int sleepCount = 0;
             videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
@@ -3335,13 +3334,13 @@ namespace alexander_media_mediacodec {
                     return 0;
                 }
                 av_usleep(1000);
-                if ((++sleepCount) > sleepTotalCount && sleepTotalCount > 0) {
+                /*if ((++sleepCount) > sleepTotalCount && sleepTotalCount > 0) {
                     videoWrapper->father->isSleeping = false;
                     return 0;
-                }
+                }*/
             }
             videoWrapper->father->isSleeping = false;
-            if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
+            /*if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
                 if (sleepRunCounts < RUN_COUNTS) {
                     sleepTotalCount += sleepCount;
                 } else {
@@ -3352,9 +3351,9 @@ namespace alexander_media_mediacodec {
                     } else if (sleepTotalCount >= 200) {
                         sleepTotalCount -= 100;
                     } else if (sleepTotalCount >= 150) {
-                        sleepTotalCount -= 70;
+                        sleepTotalCount -= 75;
                     } else if (sleepTotalCount >= 100) {
-                        sleepTotalCount -= 50;
+                        sleepTotalCount -= 55;
                     } else if (sleepTotalCount >= 50) {
                         sleepTotalCount -= 40;
                     }
@@ -3364,7 +3363,7 @@ namespace alexander_media_mediacodec {
                     LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
                 }
                 sleepRunCounts++;
-            }
+            }*/
 
             // endregion
         }
