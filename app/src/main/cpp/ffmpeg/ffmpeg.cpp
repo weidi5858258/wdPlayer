@@ -72,15 +72,6 @@
 // 这个值在任何情况下都不要置为"NULL"
 static JavaVM *gJavaVm = nullptr;
 
-// 下面的jobject,jmethodID按照java的反射过程去理解,套路(jni层调用java层方法)跟反射是一样的
-// java层FFMPEG对象
-jobject ffmpegJavaObject = nullptr;
-jmethodID initMediaCodecMethodID = nullptr;
-jmethodID feedInputBufferAndDrainOutputBufferMethodID = nullptr;
-jmethodID createAudioTrackMethodID = nullptr;
-jmethodID writeMethodID = nullptr;
-jmethodID sleepMethodID = nullptr;
-
 jclass jniObject_jclass = nullptr;
 jfieldID valueObject_jfieldID = nullptr;
 jfieldID valueString_jfieldID = nullptr;
@@ -90,11 +81,24 @@ jfieldID valueByte_jfieldID = nullptr;
 jfieldID valueBoolean_jfieldID = nullptr;
 jfieldID valueFloat_jfieldID = nullptr;
 jfieldID valueDouble_jfieldID = nullptr;
-jfieldID valueChar_jfieldID = nullptr;
-jfieldID valueShort_jfieldID = nullptr;
+// array
+jfieldID valueObjectArray_jfieldID = nullptr;
 jfieldID valueStringArray_jfieldID = nullptr;
 jfieldID valueIntArray_jfieldID = nullptr;
-jfieldID valueObjectArray_jfieldID = nullptr;
+jfieldID valueLongArray_jfieldID = nullptr;
+jfieldID valueByteArray_jfieldID = nullptr;
+jfieldID valueBooleanArray_jfieldID = nullptr;
+jfieldID valueFloatArray_jfieldID = nullptr;
+jfieldID valueDoubleArray_jfieldID = nullptr;
+
+// 下面的jobject,jmethodID按照java的反射过程去理解,套路(jni层调用java层方法)跟反射是一样的
+// java层FFMPEG对象
+jobject ffmpegJavaObject = nullptr;
+jmethodID initMediaCodecMethodID = nullptr;
+jmethodID feedInputBufferAndDrainOutputBufferMethodID = nullptr;
+jmethodID createAudioTrackMethodID = nullptr;
+jmethodID writeMethodID = nullptr;
+jmethodID sleepMethodID = nullptr;
 
 jobject videoProducerObject = nullptr;
 jobject videoConsumerObject = nullptr;
@@ -580,6 +584,50 @@ static int COUNTS = 1;
 
 static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
                             jint code, jobject jniObject) {
+    if (jniObject_jclass != nullptr) {
+        env->DeleteGlobalRef(jniObject_jclass);
+        jniObject_jclass = nullptr;
+    }
+    jclass tempJniObjectClass = env->FindClass("com/weidi/media/wdplayer/util/JniObject");
+    jniObject_jclass = reinterpret_cast<jclass>(env->NewGlobalRef(tempJniObjectClass));
+    env->DeleteLocalRef(tempJniObjectClass);
+
+    valueObject_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueObject", "Ljava/lang/Object;");
+    valueString_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueString", "Ljava/lang/String;");
+    valueInt_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueInt", "I");
+    valueLong_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueLong", "J");
+    valueByte_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueByte", "B");
+    valueBoolean_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueBoolean", "Z");
+    valueFloat_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueFloat", "F");
+    valueDouble_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueDouble", "D");
+
+    valueObjectArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueObjectArray", "[Ljava/lang/Object;");
+    valueStringArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueStringArray", "[Ljava/lang/String;");
+    valueIntArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueIntArray", "[I");
+    valueLongArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueLongArray", "[J");
+    valueByteArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueByteArray", "[B");
+    valueBooleanArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueBooleanArray", "[Z");
+    valueFloatArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueFloatArray", "[F");
+    valueDoubleArray_jfieldID = env->GetFieldID(
+            jniObject_jclass, "valueDoubleArray", "[D");
+
+    /////////////////////////////////////////////////////////////////////////////////
+
     if (ffmpegJavaObject != nullptr) {
         env->DeleteGlobalRef(ffmpegJavaObject);
         ffmpegJavaObject = nullptr;
@@ -605,78 +653,43 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     sleepMethodID = env->GetMethodID(
             FFMPEGClass, "sleep", "(J)V");
 
-    if (jniObject_jclass != nullptr) {
-        env->DeleteGlobalRef(jniObject_jclass);
-        jniObject_jclass = nullptr;
-    }
-    jclass tempJniObjectClass = env->FindClass("com/weidi/media/wdplayer/util/JniObject");
-    jniObject_jclass = reinterpret_cast<jclass>(env->NewGlobalRef(tempJniObjectClass));
-    env->DeleteLocalRef(tempJniObjectClass);
-
-    valueString_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueString", "Ljava/lang/String;");
-    valueInt_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueInt", "I");
-    valueLong_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueLong", "J");
-    valueByte_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueByte", "B");
-    valueBoolean_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueBoolean", "Z");
-    valueFloat_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueFloat", "F");
-    valueDouble_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueDouble", "D");
-    valueChar_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueChar", "C");
-    valueShort_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueShort", "S");
-    valueObject_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueObject", "Ljava/lang/Object;");
-    valueStringArray_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueStringArray", "[Ljava/lang/String;");
-    valueIntArray_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueIntArray", "[I");
-    valueObjectArray_jfieldID = env->GetFieldID(
-            jniObject_jclass, "valueObjectArray", "[Ljava/lang/Object;");
-
+    jobject jni_object;
+    jfieldID fieldID;
+    //
     if (videoProducerObject != nullptr) {
         env->DeleteGlobalRef(videoProducerObject);
         videoProducerObject = nullptr;
     }
-    if (videoConsumerObject != nullptr) {
-        env->DeleteGlobalRef(videoConsumerObject);
-        videoConsumerObject = nullptr;
-    }
-    if (audioProducerObject != nullptr) {
-        env->DeleteGlobalRef(audioProducerObject);
-        audioProducerObject = nullptr;
-    }
-    if (audioConsumerObject != nullptr) {
-        env->DeleteGlobalRef(audioConsumerObject);
-        audioConsumerObject = nullptr;
-    }
-    jobject jni_object;
-    jfieldID fieldID;
-    //
     fieldID = env->GetStaticFieldID(FFMPEGClass, "videoProducer",
                                     "Lcom/weidi/media/wdplayer/util/JniObject;");
     jni_object = env->GetStaticObjectField(FFMPEGClass, fieldID);
     videoProducerObject = reinterpret_cast<jobject>(env->NewGlobalRef(jni_object));
     env->DeleteLocalRef(jni_object);
     //
+    if (videoConsumerObject != nullptr) {
+        env->DeleteGlobalRef(videoConsumerObject);
+        videoConsumerObject = nullptr;
+    }
     fieldID = env->GetStaticFieldID(FFMPEGClass, "videoConsumer",
                                     "Lcom/weidi/media/wdplayer/util/JniObject;");
     jni_object = env->GetStaticObjectField(FFMPEGClass, fieldID);
     videoConsumerObject = reinterpret_cast<jobject>(env->NewGlobalRef(jni_object));
     env->DeleteLocalRef(jni_object);
     //
+    if (audioProducerObject != nullptr) {
+        env->DeleteGlobalRef(audioProducerObject);
+        audioProducerObject = nullptr;
+    }
     fieldID = env->GetStaticFieldID(FFMPEGClass, "audioProducer",
                                     "Lcom/weidi/media/wdplayer/util/JniObject;");
     jni_object = env->GetStaticObjectField(FFMPEGClass, fieldID);
     audioProducerObject = reinterpret_cast<jobject>(env->NewGlobalRef(jni_object));
     env->DeleteLocalRef(jni_object);
     //
+    if (audioConsumerObject != nullptr) {
+        env->DeleteGlobalRef(audioConsumerObject);
+        audioConsumerObject = nullptr;
+    }
     fieldID = env->GetStaticFieldID(FFMPEGClass, "audioConsumer",
                                     "Lcom/weidi/media/wdplayer/util/JniObject;");
     jni_object = env->GetStaticObjectField(FFMPEGClass, fieldID);
