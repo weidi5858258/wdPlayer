@@ -1222,7 +1222,7 @@ namespace alexander_audio_video {
 
             // region
 
-            double step = 0.218888;
+            double step = 0.458888;
             //step = -0.000500;
             //step = 0.058258;
             needToGetResultAgain = true;

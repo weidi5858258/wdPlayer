@@ -2327,7 +2327,7 @@ namespace alexander_media_mediacodec {
 
             // region
 
-            double step = 0.218888;
+            double step = 0.458888;
             //step = -0.000500;
             //step = 0.058258;
             needToGetResultAgain = true;
@@ -2399,11 +2399,7 @@ namespace alexander_media_mediacodec {
                     && */videoWrapper->srcWidth >= 3840
                          && videoWrapper->srcHeight >= 2160) {
                     // 增大TIME_DIFFERENCE值让视频加快
-                    if (isLocal) {
-                        TIME_DIFFERENCE = averageTimeDiff + 0.658258;
-                    } else {
-                        TIME_DIFFERENCE = averageTimeDiff + 0.458258;
-                    }
+                    TIME_DIFFERENCE = averageTimeDiff + 0.818888;
                 }
             }
 

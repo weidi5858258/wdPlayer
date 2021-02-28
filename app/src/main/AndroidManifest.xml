@@ -97,6 +97,13 @@
         </activity>
 
         <activity
+            android:name="com.weidi.media.wdplayer.video_player.FullScreenActivity"
+            android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
+            android:screenOrientation="landscape"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+
+        <activity
             android:name="com.weidi.media.wdplayer.business.contents.LiveActivity"
             android:configChanges="uiMode|keyboard|keyboardHidden|screenSize|orientation|fontScale"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar" />

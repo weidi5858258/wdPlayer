@@ -1336,6 +1336,10 @@ public class PlayerWrapper {
                         Log.d(TAG, "clickTen()");
                         clickTen();
                         break;
+                    case 11:
+                        Log.d(TAG, "clickEleven()");
+                        clickEleven();
+                        break;
                     default:
                         break;
                 }
@@ -3274,6 +3278,13 @@ public class PlayerWrapper {
     }
 
     private void clickTen() {
+        Intent intent = new Intent();
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setClass(mContext, FullScreenActivity.class);
+        mContext.startActivity(intent);
+    }
+
+    private void clickEleven() {
         onRelease();
     }
 

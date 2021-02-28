@@ -321,7 +321,15 @@ public class PlayerService extends Service {
                 }
                 break;
             case COMMAND_HANDLE_PORTRAIT_SCREEN:
+                int delay = 0;
+                if (objArray != null && objArray.length > 0) {
+                    delay = (Integer) objArray[0];
+                }
                 mUiHandler.removeMessages(COMMAND_HANDLE_PORTRAIT_SCREEN);
+                if (delay > 0) {
+                    mUiHandler.sendEmptyMessageDelayed(COMMAND_HANDLE_PORTRAIT_SCREEN, delay);
+                    return null;
+                }
                 mUiHandler.sendEmptyMessage(COMMAND_HANDLE_PORTRAIT_SCREEN);
                 break;
             case COMMAND_WHICH_WINDOW:
@@ -411,6 +419,8 @@ public class PlayerService extends Service {
                         mPlayerWrapper.handleLandscapeScreen(1);
                     } else if (msg.arg1 == 2) {
                         mPlayerWrapper.handlePortraitScreenWithTV();
+                    } else if (msg.arg1 == 3) {
+                        mPlayerWrapper.handleLandscapeScreen(0);
                     }
                 }
                 if (mRemoteVideoPlayer != null) {
