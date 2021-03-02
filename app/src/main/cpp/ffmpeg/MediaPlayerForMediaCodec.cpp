@@ -2321,7 +2321,7 @@ namespace alexander_media_mediacodec {
      */
     void hope_to_get_a_good_result() {
         if (averageTimeDiff > 0) {
-            //LOGI("hope_to_get_a_good_result() sleepTotalCount: %d", sleepTotalCount);
+            LOGI("hope_to_get_a_good_result() sleepTotalCount: %d", sleepTotalCount);
             LOGI("hope_to_get_a_good_result() averageTimeDiff: %lf frameRate: %d \n",
                  averageTimeDiff, frameRate);
 
@@ -3195,7 +3195,7 @@ namespace alexander_media_mediacodec {
             } else {
                 LOGI("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
             }*/
-            //int sleepCount = 0;
+            int sleepCount = 0;
             videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
@@ -3209,19 +3209,21 @@ namespace alexander_media_mediacodec {
                     return 0;
                 }
                 av_usleep(1000);
-                /*if ((++sleepCount) > sleepTotalCount && sleepTotalCount > 0) {
+                if ((++sleepCount) >= sleepTotalCount
+                    && sleepTotalCount > 0
+                    && !needToGetResultAgain) {
                     videoWrapper->father->isSleeping = false;
                     return 0;
-                }*/
+                }
             }
             videoWrapper->father->isSleeping = false;
-            /*if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
+            if (sleepRunCounts <= RUN_COUNTS && sleepCount > 0) {
                 if (sleepRunCounts < RUN_COUNTS) {
                     sleepTotalCount += sleepCount;
                 } else {
                     sleepTotalCount /= RUN_COUNTS;
                     LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
-                    if (sleepTotalCount >= 250) {
+                    /*if (sleepTotalCount >= 250) {
                         sleepTotalCount -= 150;
                     } else if (sleepTotalCount >= 200) {
                         sleepTotalCount -= 100;
@@ -3231,14 +3233,14 @@ namespace alexander_media_mediacodec {
                         sleepTotalCount -= 55;
                     } else if (sleepTotalCount >= 50) {
                         sleepTotalCount -= 40;
-                    }
+                    }*/
                     if (TIME_DIFFERENCE == 0.250250) {
                         sleepTotalCount = 0;
                     }
                     LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
                 }
                 sleepRunCounts++;
-            }*/
+            }
 
             // endregion
         }
