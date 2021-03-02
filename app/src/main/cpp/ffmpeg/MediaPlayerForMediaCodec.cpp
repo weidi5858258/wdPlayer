@@ -563,6 +563,7 @@ namespace alexander_media_mediacodec {
         sleepRunCounts = 0;
         sleepTotalCount = 0;
 
+        needToGetResultAgain = true;
         needToResetVideoPts = false;
         needToResetVideoPts2 = false;
         isReading = true;
@@ -2330,7 +2331,7 @@ namespace alexander_media_mediacodec {
             double step = 0.458888;
             //step = -0.000500;
             //step = 0.058258;
-            needToGetResultAgain = true;
+            //needToGetResultAgain = true;
             if (averageTimeDiff >= 0.500000) {
                 averageTimeDiffCount++;
                 needToResetVideoPts = true;
