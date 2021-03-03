@@ -3223,7 +3223,7 @@ namespace alexander_media_mediacodec {
                     sleepTotalCount += sleepCount;
                 } else {
                     sleepTotalCount /= RUN_COUNTS;
-                    /*LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
+                    LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
                     if (sleepTotalCount >= 250) {
                         sleepTotalCount -= 150;
                     } else if (sleepTotalCount >= 200) {
@@ -3234,7 +3234,7 @@ namespace alexander_media_mediacodec {
                         sleepTotalCount -= 55;
                     } else if (sleepTotalCount >= 50) {
                         sleepTotalCount -= 40;
-                    }*/
+                    }
                     if (TIME_DIFFERENCE == 0.250250) {
                         sleepTotalCount = 0;
                     }
