@@ -3176,33 +3176,10 @@ public class PlayerWrapper {
 
     @SuppressLint("SourceLockedOrientationActivity")
     private void clickFour() {
-        if (mWdPlayer == null) {
-            return;
-        }
-        if (!mWdPlayer.isRunning()) {
-            return;
-        }
-
-        if (mContext.getResources().getConfiguration().orientation ==
-                Configuration.ORIENTATION_PORTRAIT) {
-            Log.d(TAG, "onKeyDown() 4 竖屏");
-            handlePortraitScreen();
-        } else {
-            Log.d(TAG, "onKeyDown() 4 横屏");
-            switch (handleScreenFlag) {
-                case 1:
-                    handleLandscapeScreen(0);
-                    break;
-                case 2:
-                    handleLandscapeScreen(1);
-                    break;
-                case 3:
-                    handlePortraitScreenWithTV();
-                    break;
-                default:
-                    break;
-            }
-        }
+        Intent intent = new Intent();
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.setClass(mContext, FullScreenActivity.class);
+        mContext.startActivity(intent);
     }
 
     private void clickFive() {
@@ -3278,10 +3255,33 @@ public class PlayerWrapper {
     }
 
     private void clickTen() {
-        Intent intent = new Intent();
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setClass(mContext, FullScreenActivity.class);
-        mContext.startActivity(intent);
+        if (mWdPlayer == null) {
+            return;
+        }
+        if (!mWdPlayer.isRunning()) {
+            return;
+        }
+
+        if (mContext.getResources().getConfiguration().orientation ==
+                Configuration.ORIENTATION_PORTRAIT) {
+            Log.d(TAG, "onKeyDown() 4 竖屏");
+            handlePortraitScreen();
+        } else {
+            Log.d(TAG, "onKeyDown() 4 横屏");
+            switch (handleScreenFlag) {
+                case 1:
+                    handleLandscapeScreen(0);
+                    break;
+                case 2:
+                    handleLandscapeScreen(1);
+                    break;
+                case 3:
+                    handlePortraitScreenWithTV();
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     private void clickEleven() {

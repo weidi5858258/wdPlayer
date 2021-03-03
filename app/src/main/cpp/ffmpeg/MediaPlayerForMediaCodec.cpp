@@ -3223,8 +3223,8 @@ namespace alexander_media_mediacodec {
                     sleepTotalCount += sleepCount;
                 } else {
                     sleepTotalCount /= RUN_COUNTS;
-                    LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
-                    /*if (sleepTotalCount >= 250) {
+                    /*LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
+                    if (sleepTotalCount >= 250) {
                         sleepTotalCount -= 150;
                     } else if (sleepTotalCount >= 200) {
                         sleepTotalCount -= 100;
