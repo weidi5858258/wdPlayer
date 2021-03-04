@@ -2759,7 +2759,12 @@ public class PlayerWrapper {
                         handlePortraitScreen();
                     }
                 } else {
-                    handlePortraitScreenWithTV();
+                    if (JniPlayerActivity.isAliveJniPlayerActivity) {
+                        handleLandscapeScreen(0);
+                    } else {
+                        handlePortraitScreenWithTV();
+                    }
+                    //handlePortraitScreenWithTV();
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:

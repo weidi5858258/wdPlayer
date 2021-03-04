@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
 
 import com.weidi.eventbus.EventBusUtils;
@@ -193,11 +192,13 @@ public class FullScreenActivity extends Activity {
     }
 
     private void internalResume() {
+        JniPlayerActivity.isAliveJniPlayerActivity = true;
         mUiHandler.removeMessages(1);
         mUiHandler.sendEmptyMessageDelayed(1, 1000);
     }
 
     private void internalPause() {
+        JniPlayerActivity.isAliveJniPlayerActivity = false;
         mUiHandler.removeMessages(2);
         mUiHandler.sendEmptyMessageDelayed(2, 1000);
     }
@@ -221,7 +222,7 @@ public class FullScreenActivity extends Activity {
                     EventBusUtils.post(
                             PlayerService.class,
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
-                            new Object[]{3});
+                            new Object[]{0});
                     break;
                 case 2:
                     EventBusUtils.post(

@@ -419,8 +419,6 @@ public class PlayerService extends Service {
                         mPlayerWrapper.handleLandscapeScreen(1);
                     } else if (msg.arg1 == 2) {
                         mPlayerWrapper.handlePortraitScreenWithTV();
-                    } else if (msg.arg1 == 3) {
-                        mPlayerWrapper.handleLandscapeScreen(0);
                     }
                 }
                 if (mRemoteVideoPlayer != null) {
