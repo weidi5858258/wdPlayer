@@ -2870,6 +2870,8 @@ public class PlayerWrapper {
                     mUiHandler.removeMessages(MSG_ADD_VIEW);
                     mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
                     break;
+                case Callback.ERROR_FFMPEG_INIT:
+                    break;
                 default:
                     break;
             }
@@ -2936,6 +2938,7 @@ public class PlayerWrapper {
             case Callback.ERROR_FFMPEG_INIT:
                 // 音视频初始化失败(不会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
+                mHasError = true;
                 if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {

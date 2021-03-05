@@ -231,10 +231,17 @@ public class FullScreenActivity extends Activity {
                             new Object[]{2});
                     break;
                 case 3:
-                    EventBusUtils.post(
-                            PlayerService.class,
-                            PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
-                            new Object[]{1000});
+                    if (PlayerWrapper.IS_PHONE) {
+                        EventBusUtils.post(
+                                PlayerService.class,
+                                PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                                new Object[]{1000});
+                    } else {
+                        EventBusUtils.post(
+                                PlayerService.class,
+                                PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                                new Object[]{2});
+                    }
                     break;
                 default:
                     break;

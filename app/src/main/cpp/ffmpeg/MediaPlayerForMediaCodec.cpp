@@ -334,7 +334,7 @@ namespace alexander_media_mediacodec {
     // 若str1=str2，则返回零；
     // 若str1<str2，则返回负数；
     // 若str1>str2，则返回正数。
-    int startsWith(const char *str1, char *str2) {
+    bool startsWith(const char *str1, char *str2) {
         if (str1 == nullptr || str2 == nullptr) {
             return false;
         }
@@ -477,7 +477,7 @@ namespace alexander_media_mediacodec {
                          && (videoWrapper->father->isPausedForCache ||
                              !videoWrapper->father->isStarted))
                 )
-                && isReading
+                //&& isReading
                 && startReadTime > 0
                 && (endReadTime - startReadTime) > MAX_RELATIVE_TIME) {
             /*if (audioWrapper->father->list1->size() < audioWrapper->father->list1LimitCounts
@@ -485,11 +485,13 @@ namespace alexander_media_mediacodec {
                 && audioWrapper->father->list2->size() < audioWrapper->father->list1LimitCounts
                 && videoWrapper->father->list2->size() < videoWrapper->father->list1LimitCounts) {
             }*/
+            LOGE("read_thread_interrupt_cb() 4 退出\n");
             LOGE("read_thread_interrupt_cb() 读取数据超时\n");
             isInterrupted = true;
             onError(0x101, "读取数据超时");
             return 1;
         } else if ((endReadTime - startReadTime) > MAX_RELATIVE_TIME_OUT) {
+            LOGE("read_thread_interrupt_cb() 5 退出\n");
             LOGE("read_thread_interrupt_cb() 读取数据超时了\n");
             isInterrupted = true;
             onError(0x101, "读取数据超时了");
@@ -2095,7 +2097,7 @@ namespace alexander_media_mediacodec {
 
                 // 有些直播节目会这样
                 if (isLive && readFrame == AVERROR_EOF) {
-                    // LOGF("readData() readFrame  : %d\n", readFrame);
+                    //LOGF("readData() readFrame  : %d\n", readFrame);
                     av_usleep(10000);
                     continue;
                 }
@@ -3211,7 +3213,7 @@ namespace alexander_media_mediacodec {
                 }
                 av_usleep(1000);
                 if ((++sleepCount) >= sleepTotalCount
-                    && sleepTotalCount > 0
+                    //&& sleepTotalCount > 0
                     && sleepRunCounts > RUN_COUNTS
                     && !needToGetResultAgain) {
                     videoWrapper->father->isSleeping = false;
@@ -4329,6 +4331,10 @@ namespace alexander_media_mediacodec {
             LOGI("initPlayer()   media seconds: %lld %02lld:%02lld:%02lld\n",
                  mediaDuration, hours, mins, seconds);
         }
+        /*bool islive = startsWith(inFilePath, "https://zb3.shanxide.com/live/");
+        if (islive) {
+            mediaDuration = -2077252342L;
+        }*/
         audioWrapper->father->duration =
         videoWrapper->father->duration = mediaDuration;
         if (mediaDuration <= 0) {
@@ -4336,6 +4342,7 @@ namespace alexander_media_mediacodec {
         } else {
             isLive = false;
         }
+        LOGI("initPlayer()          isLive: %d\n", isLive);
 
         if (isLocal) {
             FILE *fp = nullptr, *fq = nullptr;
