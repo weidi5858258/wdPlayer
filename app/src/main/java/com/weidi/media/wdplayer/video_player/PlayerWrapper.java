@@ -2649,8 +2649,10 @@ public class PlayerWrapper {
         mPresentationTime = 0;
         mMediaDuration = 0;
         setControllerPanelBackgroundColor();
-        mPositionTimeTV.setText("00:00:00");
-        mDurationTimeTV.setText("00:00:00");
+        //mPositionTimeTV.setText("00:00:00");
+        mPositionSeekBar.setProgress(0);
+        mPositionTimeTV.setText("");
+        mDurationTimeTV.setText("");
 
         //mPositionSeekBar.setProgress(0);
         //mPositionSeekBar.setPadding(0, 0, 0, 0);
@@ -2841,6 +2843,9 @@ public class PlayerWrapper {
 
     private void onFinished() {
         Log.i(TAG, "onFinished()");
+        mPositionSeekBar.setProgress(0);
+        mPositionTimeTV.setText("");
+        mDurationTimeTV.setText("");
         if (mIDmrPlayerAppCallback != null) {
             try {
                 Log.i(TAG, "onFinished() onState STATE_STOPPED");

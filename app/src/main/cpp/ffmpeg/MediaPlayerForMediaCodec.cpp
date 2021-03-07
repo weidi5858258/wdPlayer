@@ -280,6 +280,7 @@ namespace alexander_media_mediacodec {
 
     static int sleepRunCounts = 0;
     static int sleepTotalCount = 0;
+    static bool needToWaitAudio = false;
 
     // 单位: 秒
     static long long mediaDuration = -1;
@@ -3189,15 +3190,30 @@ namespace alexander_media_mediacodec {
 
             // region 音视频同步操作
 
-            if (tempTimeDifference > 2.000000) {
-                videoPts = audioPts + averageTimeDiff;
-                tempTimeDifference = videoPts - audioPts;
+            if (tempTimeDifference > 2.000000 && !needToGetResultAgain) {
+                //videoPts = audioPts + averageTimeDiff;
+                //tempTimeDifference = videoPts - audioPts;
+                LOGE("handleVideoOutputBuffer() before timeDiff: %llf", (videoPts - audioPts));
+                needToWaitAudio = false;
+                while (videoPts - audioPts > 0) {
+                    needToWaitAudio = true;
+                    if (isFrameByFrameMode
+                        || videoWrapper->father->isPausedForUser
+                        || videoWrapper->father->isPausedForCache
+                        || audioWrapper->father->isPausedForCache
+                        || videoWrapper->father->isPausedForSeek
+                        || !videoWrapper->father->isHandling
+                        || !audioWrapper->father->isHandling) {
+                        needToWaitAudio = false;
+                        return 0;
+                    }
+                    av_usleep(1000);
+                }
+                needToWaitAudio = false;
+                LOGE("handleVideoOutputBuffer() after  timeDiff: %llf", (videoPts - audioPts));
+                return 0;
             }
-            /*if (tempTimeDifference > TIME_DIFFERENCE) {
-                LOGE("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
-            } else {
-                LOGI("handleVideoOutputBuffer() timeDiff: %llf", tempTimeDifference);
-            }*/
+
             int sleepCount = 0;
             videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
@@ -3765,6 +3781,12 @@ namespace alexander_media_mediacodec {
             // region 硬解码过程
 
             if (wrapper->type == TYPE_AUDIO) {
+                if (needToWaitAudio) {
+                    audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
+                    av_packet_unref(srcAVPacket);
+                    continue;
+                }
+
                 if (wrapper->useMediaCodec) {
                     audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
                     if (isLive && preAudioPts > audioPts) {
