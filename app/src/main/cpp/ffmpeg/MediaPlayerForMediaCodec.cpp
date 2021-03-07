@@ -3190,7 +3190,8 @@ namespace alexander_media_mediacodec {
 
             // region 音视频同步操作
 
-            if (tempTimeDifference > 2.000000 && !needToGetResultAgain) {
+            if (tempTimeDifference > 2
+                && !needToGetResultAgain) {
                 //videoPts = audioPts + averageTimeDiff;
                 //tempTimeDifference = videoPts - audioPts;
                 LOGE("handleVideoOutputBuffer() before timeDiff: %llf", (videoPts - audioPts));
