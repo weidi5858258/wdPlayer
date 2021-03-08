@@ -3249,11 +3249,11 @@ namespace alexander_media_mediacodec {
                     } else if (sleepTotalCount >= 200) {
                         sleepTotalCount -= 90;
                     } else if (sleepTotalCount >= 150) {
-                        sleepTotalCount -= 70;
-                    } else if (sleepTotalCount >= 100) {
                         sleepTotalCount -= 50;
-                    } else if (sleepTotalCount >= 50) {
+                    } else if (sleepTotalCount >= 100) {
                         sleepTotalCount -= 40;
+                    } else if (sleepTotalCount >= 50) {
+                        sleepTotalCount -= 30;
                     }
                     if (TIME_DIFFERENCE == 0.250250) {
                         sleepTotalCount = 0;
