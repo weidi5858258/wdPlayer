@@ -2333,7 +2333,7 @@ namespace alexander_media_mediacodec {
 
             double step = 0.458888;
             //step = -0.000500;
-            //step = 0.058258;
+            step = 0.558888;
             //needToGetResultAgain = true;
             if (averageTimeDiff >= 0.500000) {
                 averageTimeDiffCount++;
