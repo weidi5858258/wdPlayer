@@ -2333,7 +2333,7 @@ namespace alexander_media_mediacodec {
 
             double step = 0.458888;
             //step = -0.000500;
-            step = 0.608888;
+            step = 0.708888;
             //needToGetResultAgain = true;
             if (averageTimeDiff >= 0.500000) {
                 averageTimeDiffCount++;
@@ -3229,6 +3229,7 @@ namespace alexander_media_mediacodec {
                     return 0;
                 }
                 av_usleep(1000);
+                // 加快播放的步伐
                 if ((++sleepCount) >= sleepTotalCount
                     //&& sleepTotalCount > 0
                     && sleepRunCounts > RUN_COUNTS
