@@ -22,6 +22,8 @@ import android.widget.EditText;
 import com.weidi.eventbus.EventBusUtils;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.util.JniObject;
+import com.weidi.media.wdplayer.video_player.FFMPEG;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.recycler_view.VerticalLayoutManager;
@@ -38,6 +40,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setTimeDifference;
 
 public class LiveActivity extends Activity {
 
@@ -449,6 +452,21 @@ public class LiveActivity extends Activity {
                     mPreferences.edit().putInt(MEDIACODEC_TIME_OUT, time_out).commit();
                     mAddressET.setText("");
                     MyToast.show(MEDIACODEC_TIME_OUT);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (text.startsWith("time_difference ")) {// time_difference
+            String temp[] = text.split(" ");
+            if (temp.length >= 2) {
+                try {
+                    String time_difference_str = temp[1];
+                    double time_difference = Double.valueOf(time_difference_str);
+                    FFMPEG.getDefault().onTransact(
+                            DO_SOMETHING_CODE_setTimeDifference,
+                            JniObject.obtain().writeDouble(time_difference));
+                    mAddressET.setText("");
+                    MyToast.show(time_difference_str);
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }

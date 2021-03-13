@@ -239,6 +239,7 @@ long long preProgress = 0;
 // 视频播放时每帧之间的暂停时间,单位为us
 int videoSleepTime = 11000;
 
+double TIME_STEP = 0.708888;
 double TIME_DIFFERENCE = 1.000000;// 0.180000
 // 当前音频时间戳
 double audioPts = 0.0;
@@ -2326,21 +2327,22 @@ namespace alexander_media_mediacodec {
     void hope_to_get_a_good_result() {
         if (averageTimeDiff > 0) {
             LOGI("hope_to_get_a_good_result() sleepTotalCount: %d", sleepTotalCount);
-            LOGI("hope_to_get_a_good_result() averageTimeDiff: %lf frameRate: %d \n",
+            LOGI("hope_to_get_a_good_result() averageTimeDiff: %lf frameRate: %d",
                  averageTimeDiff, frameRate);
+            LOGI("hope_to_get_a_good_result()       TIME_STEP: %lf", TIME_STEP);
 
             // region
 
-            double step = 0.458888;
-            //step = -0.000500;
-            step = 0.708888;
+            //TIME_STEP = -0.000500;
+            //TIME_STEP = 0.458888;
+            //TIME_STEP = 0.708888;
             //needToGetResultAgain = true;
             if (averageTimeDiff >= 0.500000) {
                 averageTimeDiffCount++;
                 needToResetVideoPts = true;
             } else {
                 if (videoWrapper->father->useMediaCodec) {
-                    TIME_DIFFERENCE = averageTimeDiff + step;
+                    TIME_DIFFERENCE = averageTimeDiff + TIME_STEP;
                     if (audioWrapper->father->useMediaCodec) {
                     }
                 } else {
@@ -2363,7 +2365,7 @@ namespace alexander_media_mediacodec {
                         if (audioWrapper->father->useMediaCodec) {
                         }
                     } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
-                        TIME_DIFFERENCE = averageTimeDiff + step;
+                        TIME_DIFFERENCE = averageTimeDiff + TIME_STEP;
                         needToResetVideoPts2 = true;
                         if (audioWrapper->father->useMediaCodec) {
                         }

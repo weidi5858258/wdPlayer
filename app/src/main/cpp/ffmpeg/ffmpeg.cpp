@@ -121,6 +121,7 @@ struct Callback {
 
 int use_mode = USE_MODE_MEDIA;
 
+extern double TIME_STEP;
 extern bool isWatch;
 extern bool isWatchForCloseVideo;
 extern bool isWatchForCloseAudio;
@@ -1781,6 +1782,11 @@ Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobje
                 isWatchForCloseAudio = true;
                 onInfo("不要音频");
             }
+            return env->NewStringUTF(ret);
+        }
+        case DO_SOMETHING_CODE_setTimeDifference: {
+            jdouble time_difference = env->GetDoubleField(jniObject, valueDouble_jfieldID);
+            TIME_STEP = time_difference;
             return env->NewStringUTF(ret);
         }
 

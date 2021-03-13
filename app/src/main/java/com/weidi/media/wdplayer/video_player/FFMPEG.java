@@ -143,6 +143,7 @@ public class FFMPEG implements WdPlayer {
     public static final int DO_SOMETHING_CODE_isWatch = 1126;
     public static final int DO_SOMETHING_CODE_isWatchForCloseVideo = 1127;
     public static final int DO_SOMETHING_CODE_isWatchForCloseAudio = 1128;
+    public static final int DO_SOMETHING_CODE_setTimeDifference = 1129;
 
     private byte[] eof = new byte[]{-1, -1, -1, -1, -1};
 
