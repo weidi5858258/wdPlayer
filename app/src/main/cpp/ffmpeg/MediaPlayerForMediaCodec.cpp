@@ -239,7 +239,7 @@ long long preProgress = 0;
 // 视频播放时每帧之间的暂停时间,单位为us
 int videoSleepTime = 11000;
 
-double TIME_STEP = 0.708888;
+double TIME_STEP = 0.458888;
 double TIME_DIFFERENCE = 1.000000;// 0.180000
 // 当前音频时间戳
 double audioPts = 0.0;
@@ -3248,15 +3248,15 @@ namespace alexander_media_mediacodec {
                     sleepTotalCount /= RUN_COUNTS;
                     LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
                     if (sleepTotalCount >= 250) {
-                        sleepTotalCount -= 140;
+                        sleepTotalCount -= 150;
                     } else if (sleepTotalCount >= 200) {
-                        sleepTotalCount -= 90;
+                        sleepTotalCount -= 100;
                     } else if (sleepTotalCount >= 150) {
-                        sleepTotalCount -= 50;
+                        sleepTotalCount -= 60;
                     } else if (sleepTotalCount >= 100) {
-                        sleepTotalCount -= 40;
+                        sleepTotalCount -= 45;
                     } else if (sleepTotalCount >= 50) {
-                        sleepTotalCount -= 30;
+                        sleepTotalCount -= 35;
                     }
                     if (TIME_DIFFERENCE == 0.250250) {
                         sleepTotalCount = 0;
