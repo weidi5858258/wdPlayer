@@ -2,6 +2,7 @@ package com.weidi.media.wdplayer.video_player;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.AsyncTask;
@@ -17,10 +18,12 @@ import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
-import com.weidi.utils.MyToast;
 
 import java.io.File;
 
+import static android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+import static android.media.AudioDeviceInfo.TYPE_USB_HEADSET;
+import static android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
 import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
@@ -33,9 +36,8 @@ import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 public class FFMPEG implements WdPlayer {
 
-    private static final String TAG =
-            "player_alexander";
-    //FFMPEG.class.getSimpleName();
+    private static final String TAG = "player_alexander";
+    // FFMPEG.class.getSimpleName();
 
     // status_t onTransact(uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags = 0)
     // public native String onTransact(int code, Parcel data, Parcel reply);
@@ -223,6 +225,40 @@ public class FFMPEG implements WdPlayer {
 
         if (mAudioTrack != null) {
             if (mContext != null) {
+                /*AudioManager mAudioManager =
+                        (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+                AudioDeviceInfo[] devices =
+                        mAudioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+                for (AudioDeviceInfo info : devices) {
+                    Log.i(TAG, "---------------start");
+                    Log.i(TAG, "Device productName: " + info.getProductName());
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        Log.i(TAG, "Device     address: " + info.getAddress());
+                    }
+                    int type = info.getType();
+                    Log.i(TAG, "Device        type: " + type);
+                    switch (type) {
+                        case TYPE_BUILTIN_SPEAKER:
+                            if (mIsLocalPlayer) {
+                                Log.i(TAG, "TYPE_BUILTIN_SPEAKER");
+                                mAudioTrack.setPreferredDevice(info);
+                            }
+                            break;
+                        case TYPE_WIRED_HEADPHONES:// 耳机
+                            //audioDeviceInfo = info;
+                            break;
+                        case TYPE_USB_HEADSET:
+                            if (!mIsLocalPlayer) {
+                                Log.i(TAG, "TYPE_USB_HEADSET");
+                                mAudioTrack.setPreferredDevice(info);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                    Log.i(TAG, "---------------end");
+                }*/
+
                 SharedPreferences sp;
                 if (mIsLocalPlayer) {
                     sp = mContext.getSharedPreferences(
@@ -243,6 +279,7 @@ public class FFMPEG implements WdPlayer {
 
             mAudioTrack.play();
             Log.i(TAG, "createAudioTrack() end");
+
             return;
         }
 
