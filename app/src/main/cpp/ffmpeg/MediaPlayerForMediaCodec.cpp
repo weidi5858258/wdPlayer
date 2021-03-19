@@ -239,7 +239,7 @@ long long preProgress = 0;
 // 视频播放时每帧之间的暂停时间,单位为us
 int videoSleepTime = 11000;
 
-double TIME_STEP = 0.458888;
+double TIME_STEP = 0.808888;
 double TIME_DIFFERENCE = 1.000000;// 0.180000
 // 当前音频时间戳
 double audioPts = 0.0;
@@ -3203,7 +3203,7 @@ namespace alexander_media_mediacodec {
                     if (isFrameByFrameMode
                         || videoWrapper->father->isPausedForUser
                         || videoWrapper->father->isPausedForCache
-                        || audioWrapper->father->isPausedForCache
+                        //|| audioWrapper->father->isPausedForCache
                         || videoWrapper->father->isPausedForSeek
                         || !videoWrapper->father->isHandling
                         || !audioWrapper->father->isHandling) {
