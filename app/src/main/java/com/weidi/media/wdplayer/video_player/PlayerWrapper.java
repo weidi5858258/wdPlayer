@@ -542,7 +542,7 @@ public class PlayerWrapper {
             Log.i(TAG, "setDataSource() path is null");
             return;
         }
-        if (TextUtils.equals(path, mCurPath) && mPrePath != null) {
+        if (TextUtils.equals(path, mCurPath) && mPrePath != null && mIsAddedView) {
             Log.i(TAG, "setDataSource() path:\n" + path + "\n正在播放中......");
             return;
         }

@@ -239,7 +239,7 @@ long long preProgress = 0;
 // 视频播放时每帧之间的暂停时间,单位为us
 int videoSleepTime = 11000;
 
-double TIME_STEP = 0.808888;
+double TIME_STEP = 0.208888;
 double TIME_DIFFERENCE = 1.000000;// 0.180000
 // 当前音频时间戳
 double audioPts = 0.0;
@@ -3218,7 +3218,6 @@ namespace alexander_media_mediacodec {
             }
 
             int sleepCount = 0;
-            videoWrapper->father->isSleeping = true;
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
                 if (isFrameByFrameMode
@@ -3230,6 +3229,7 @@ namespace alexander_media_mediacodec {
                     videoWrapper->father->isSleeping = false;
                     return 0;
                 }
+                videoWrapper->father->isSleeping = true;
                 av_usleep(1000);
                 // 加快播放的步伐
                 if ((++sleepCount) >= sleepTotalCount

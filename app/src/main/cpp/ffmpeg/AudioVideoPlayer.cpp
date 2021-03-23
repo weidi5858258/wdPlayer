@@ -17,6 +17,8 @@ extern std::list<AVPacket> video_list2;
 extern std::list<AVPacket> audio_list1;
 extern std::list<AVPacket> audio_list2;
 
+extern double TIME_STEP;
+
 /***
  音频和视频必须都要有
  */
@@ -63,6 +65,7 @@ namespace alexander_audio_video {
     static int averageTimeDiffCount = 0;
     static bool needToGetResultAgain = true;
     static bool needToResetVideoPts = false;
+    static bool needToWaitAudio = false;
 
     static int frameRate = 0;
     static int64_t bitRate = 0;
@@ -1222,16 +1225,13 @@ namespace alexander_audio_video {
 
             // region
 
-            double step = 0.458888;
-            //step = -0.000500;
-            //step = 0.058258;
             needToGetResultAgain = true;
             if (averageTimeDiff >= 0.500000) {
                 averageTimeDiffCount++;
                 needToResetVideoPts = true;
             } else {
                 if (videoWrapper->father->useMediaCodec) {
-                    TIME_DIFFERENCE = averageTimeDiff + step;
+                    TIME_DIFFERENCE = averageTimeDiff + TIME_STEP;
                     if (audioWrapper->father->useMediaCodec) {
                     }
                 } else {
@@ -1253,7 +1253,7 @@ namespace alexander_audio_video {
                         if (audioWrapper->father->useMediaCodec) {
                         }
                     } else if (averageTimeDiff > 0.010000 && averageTimeDiff < 0.100000) {
-                        TIME_DIFFERENCE = averageTimeDiff + step;
+                        TIME_DIFFERENCE = averageTimeDiff + TIME_STEP;
                         if (audioWrapper->father->useMediaCodec) {
                         }
                     }
@@ -1276,8 +1276,8 @@ namespace alexander_audio_video {
                         needToGetResultAgain = false;
                         runCounts = RUN_COUNTS + 1;
                         averageTimeDiff = 0.405858;
-                        //TIME_DIFFERENCE = averageTimeDiff + step;
                         TIME_DIFFERENCE = 0.250250;
+                        //TIME_DIFFERENCE = averageTimeDiff + step;
                     }
                 }
             }
@@ -1288,11 +1288,7 @@ namespace alexander_audio_video {
                     && */videoWrapper->srcWidth >= 3840
                          && videoWrapper->srcHeight >= 2160) {
                     // 增大TIME_DIFFERENCE值让视频加快
-                    if (isLocal) {
-                        TIME_DIFFERENCE = averageTimeDiff + 0.658258;
-                    } else {
-                        TIME_DIFFERENCE = averageTimeDiff + 0.458258;
-                    }
+                    TIME_DIFFERENCE = averageTimeDiff + 0.818888;
                 }
             }
 
@@ -1742,8 +1738,25 @@ namespace alexander_audio_video {
 
             // region 等待操作
 
-            if (tempTimeDifference > 2.000000) {
-                videoPts = audioPts + averageTimeDiff;
+            if (tempTimeDifference > 2
+                && !needToGetResultAgain) {
+                LOGE("handleVideoOutputBuffer() before timeDiff: %llf", (videoPts - audioPts));
+                needToWaitAudio = false;
+                while (videoPts - audioPts > 0) {
+                    needToWaitAudio = true;
+                    if (videoWrapper->father->isPausedForUser
+                        || videoWrapper->father->isPausedForCache
+                        || videoWrapper->father->isPausedForSeek
+                        || !videoWrapper->father->isHandling
+                        || !audioWrapper->father->isHandling) {
+                        needToWaitAudio = false;
+                        return 0;
+                    }
+                    av_usleep(1000);
+                }
+                needToWaitAudio = false;
+                LOGE("handleVideoOutputBuffer() after  timeDiff: %llf", (videoPts - audioPts));
+                return 0;
             }
             while (videoPts - audioPts > TIME_DIFFERENCE
                    && !audioWrapper->father->isSleeping) {
@@ -2140,6 +2153,12 @@ namespace alexander_audio_video {
             }
 
             if (wrapper->type == TYPE_AUDIO) {
+                if (needToWaitAudio) {
+                    audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
+                    av_packet_unref(srcAVPacket);
+                    continue;
+                }
+
                 if (wrapper->useMediaCodec) {
                     audioPts = srcAVPacket->pts * av_q2d(stream->time_base);
                     if (mediaDuration < 0 && preAudioPts > audioPts) {
