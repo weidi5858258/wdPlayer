@@ -3198,7 +3198,7 @@ namespace alexander_media_mediacodec {
                 //tempTimeDifference = videoPts - audioPts;
                 LOGE("handleVideoOutputBuffer() before timeDiff: %llf", (videoPts - audioPts));
                 needToWaitAudio = false;
-                while (videoPts - audioPts > 0) {
+                while (videoPts - audioPts > TIME_DIFFERENCE) {
                     needToWaitAudio = true;
                     if (isFrameByFrameMode
                         || videoWrapper->father->isPausedForUser
