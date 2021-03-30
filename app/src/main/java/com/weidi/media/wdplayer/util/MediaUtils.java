@@ -2726,6 +2726,89 @@ public class MediaUtils {
         //mSurface = mEncoder.createInputSurface();
     }
 
+    public static AudioTrack createAudioTrack(
+            int streamType,
+            int sampleRateInHz,
+            int channelCount,
+            int audioFormat,
+            int mode,
+            boolean isLocalPlayer) {
+        if (DEBUG)
+            Log.d(TAG, "createAudioTrack(...) start");
+        Log.i("FFMPEG", "createAudioTrack(...) isLocalPlayer: " + isLocalPlayer);
+        // 在我的手机上使用AudioFormat.CHANNEL_OUT_MONO创建不了AudioTrack
+        boolean isInputPcm = isEncodingLinearPcm(audioFormat);
+        int channelConfig = getChannelConfig(channelCount, isInputPcm);
+        //int channelConfig = decideChannelConfig(channelCount, false, "");
+        if (channelCount == 6) {
+            channelConfig = 12;
+        }
+        int bufferSizeInBytes = getMinBufferSize(
+                sampleRateInHz, channelConfig, audioFormat);
+        if (channelCount == 6) {
+            channelConfig = 252;
+        }
+        Log.d(TAG, "createAudioTrack(...)     channelConfig: " + channelConfig);
+        Log.d(TAG, "createAudioTrack(...) bufferSizeInBytes: " + bufferSizeInBytes);
+        if (bufferSizeInBytes <= 0) {
+            if (DEBUG)
+                Log.e(TAG, String.format(Locale.US,
+                        "Bad arguments: getMinBufferSize(%d, %d, %d)",
+                        sampleRateInHz, channelConfig, audioFormat));
+            return null;
+            // bufferSizeInBytes = 4096;
+        }
+
+        bufferSizeInBytes *= 2;
+        AudioTrack audioTrack = null;
+        try {
+            // java.lang.IllegalArgumentException: Unsupported channel configuration.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                AudioAttributes attributes = new AudioAttributes.Builder()
+                        .setUsage(isLocalPlayer
+                                ? AudioAttributes.USAGE_MEDIA :
+                                AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build();
+                AudioFormat format = new AudioFormat.Builder()
+                        .setSampleRate(sampleRateInHz)
+                        .setChannelMask(channelConfig)
+                        .setEncoding(audioFormat)
+                        .build();
+                audioTrack = new AudioTrack(
+                        attributes,
+                        format,
+                        bufferSizeInBytes,
+                        mode,
+                        sessionId);
+            } else {
+                audioTrack = new AudioTrack(
+                        streamType,
+                        sampleRateInHz,
+                        channelConfig,
+                        audioFormat,
+                        bufferSizeInBytes,
+                        mode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        if (audioTrack.getState() == AudioTrack.STATE_UNINITIALIZED) {
+            if (DEBUG)
+                Log.e(TAG, String.format(Locale.US,
+                        "Bad arguments to new AudioTrack(%d, %d, %d, %d, %d)",
+                        sampleRateInHz, channelConfig, audioFormat, mode, sessionId));
+            MediaUtils.releaseAudioTrack(audioTrack);
+            audioTrack = null;
+            return null;
+        }
+
+        if (DEBUG)
+            Log.d(TAG, "createAudioTrack(...) end");
+        return audioTrack;
+    }
+
 }
 
 /***

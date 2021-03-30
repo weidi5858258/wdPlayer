@@ -222,6 +222,7 @@ public class FFMPEG implements WdPlayer {
                 AudioManager.STREAM_MUSIC,
                 sampleRateInHz, channelCount, audioFormat,
                 AudioTrack.MODE_STREAM);
+        //AudioTrack.MODE_STREAM, mIsLocalPlayer);
 
         if (mAudioTrack != null) {
             if (mContext != null) {
