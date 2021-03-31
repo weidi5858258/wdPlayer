@@ -2391,7 +2391,8 @@ namespace alexander_media_mediacodec {
                         sleepRunCounts = RUN_COUNTS + 1;
                         sleepTotalCount = 0;
                         averageTimeDiff = 0.405858;
-                        TIME_DIFFERENCE = 0.250250;
+                        TIME_DIFFERENCE = 0.614746;
+                        //TIME_DIFFERENCE = 0.250250;
                         //TIME_DIFFERENCE = averageTimeDiff + step;
                         //onError(0x103, "达不到我的理想状态");
                         //stop();
@@ -3233,7 +3234,7 @@ namespace alexander_media_mediacodec {
                 av_usleep(1000);
                 // 加快播放的步伐
                 if ((++sleepCount) >= sleepTotalCount
-                    //&& sleepTotalCount > 0
+                    && sleepTotalCount > 0
                     && sleepRunCounts > RUN_COUNTS
                     && !needToGetResultAgain) {
                     videoWrapper->father->isSleeping = false;
@@ -3258,9 +3259,9 @@ namespace alexander_media_mediacodec {
                     } else if (sleepTotalCount >= 50) {
                         sleepTotalCount -= 35;
                     }
-                    if (TIME_DIFFERENCE == 0.250250) {
+                    /*if (TIME_DIFFERENCE == 0.250250) {
                         sleepTotalCount = 0;
-                    }
+                    }*/
                     LOGI("handleVideoOutputBuffer()   sleepTotalCount: %d", sleepTotalCount);
                 }
                 sleepRunCounts++;
