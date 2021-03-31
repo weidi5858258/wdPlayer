@@ -1095,150 +1095,157 @@ public class PlayerWrapper {
     private boolean needToPlaybackOtherVideo() {
         Log.i(TAG, "needToPlaybackOtherVideo()");
         if (!mIsLocal && !NetworkUtils.isConnected(mContext)) {
-            Log.i(TAG, "needToPlaybackOtherVideo() return false for network doesn't connect");
+            Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                    " for network doesn't connect");
             return false;
         }
+
         if (mPrePath != null) {
-            Log.i(TAG, "needToPlaybackOtherVideo() return true for mPrePath != null");
+            Log.i(TAG, "needToPlaybackOtherVideo() return true" +
+                    " for mPrePath != null");
             removeCallback();
             mUiHandler.removeMessages(MSG_ADD_VIEW);
             mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
             return true;
-        } else if (IS_PHONE || IS_WATCH) {
-            if (!mIsAddedView || !mRootView.isShown()) {
-                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
-                        " for mRootView isn't showed");
-                mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-                return false;
-            }
+        }
 
-            if (mRepeat == Repeat.Repeat_Off) {
-                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
-                        " for mRepeat == Repeat.Repeat_Off");
-                return false;
-            }
+        if (!mIsAddedView || !mRootView.isShown()) {
+            Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                    " for mRootView isn't showed");
+            mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+            return false;
+        }
 
-            if (!allowToPlayback()) {
-                Log.i(TAG, "needToPlaybackOtherVideo() return false" +
-                        " for doesn't allowToPlayback");
-                return false;
-            }
+        if (!allowToPlayback()) {
+            Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                    " for doesn't allowToPlayback");
+            return false;
+        }
 
-            if (mRepeat == Repeat.Repeat_One
-                    || mLocalAudioContentsMap.size() <= 1
-                    || mIsVideo) {
-                startForGetMediaFormat();
-                return true;
-            }
+        if (mRepeat == Repeat.Repeat_Off) {
+            Log.i(TAG, "needToPlaybackOtherVideo() return false" +
+                    " for mRepeat == Repeat.Repeat_Off");
+            return false;
+        }
 
-            // region mRepeat == Repeat.Repeat_All
-            // 按mLocalAudioContentsMap顺序播放
-            if (mShuffle == Shuffle.Shuffle_Off) {
-                if (!mPlayPrevFile && !mPlayNextFile) {
-                    mPlayNextFile = true;
-                }
-                int index = -1;
-                int prevPathIndex = -2;
-                int nextPathIndex = -2;
-                String prevPath = null;
-                for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
-                    index++;
-                    if (TextUtils.equals(tempMap.getKey(), mCurPath)) {
-                        if (mPlayPrevFile) {
-                            if (index == 0) {
-                                prevPathIndex = mLocalAudioContentsMap.size() - 1;
-                            }
-                            break;
-                        } else if (mPlayNextFile) {
-                            nextPathIndex = index;
-                            if (nextPathIndex == mLocalAudioContentsMap.size() - 1) {
-                                // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
-                                index = 0;
-                                break;
-                            }
+        if (mRepeat == Repeat.Repeat_One) {
+            startForGetMediaFormat();
+            return true;
+        }
+
+        LinkedHashMap<String, String> map = null;
+        if (mIsVideo) {
+            map = mLocalVideoContentsMap;
+        } else if (mIsAudio) {
+            map = mLocalAudioContentsMap;
+        }
+        if (map == null) {
+            return false;
+        }
+
+        // region mShuffle == Shuffle.Shuffle_Off(顺序播放)
+        if (mShuffle == Shuffle.Shuffle_Off) {
+            if (!mPlayPrevFile && !mPlayNextFile) {
+                mPlayNextFile = true;
+            }
+            int index = -1;
+            int prevPathIndex = -2;
+            int nextPathIndex = -2;
+            String prevPath = null;
+            for (Map.Entry<String, String> tempMap : map.entrySet()) {
+                index++;
+                if (TextUtils.equals(tempMap.getKey(), mCurPath)) {
+                    if (mPlayPrevFile) {
+                        if (index == 0) {
+                            prevPathIndex = map.size() - 1;
                         }
-                    } else {
-                        prevPath = tempMap.getKey();
+                        break;
+                    } else if (mPlayNextFile) {
+                        nextPathIndex = index;
+                        if (nextPathIndex == map.size() - 1) {
+                            // 刚刚播放完的是最后一个文件,接下去就是播放Map中的第一个文件
+                            index = 0;
+                            break;
+                        }
                     }
-                    if (index == nextPathIndex + 1) {
+                } else {
+                    prevPath = tempMap.getKey();
+                }
+                if (index == nextPathIndex + 1) {
+                    mPrePath = mCurPath;
+                    mCurPath = tempMap.getKey();
+                    getMD5ForPath();
+                    break;
+                }
+            }
+            if (mPlayPrevFile) {
+                if (index == 0) {
+                    // 播放最后一个文件
+                    for (Map.Entry<String, String> tempMap : map.entrySet()) {
+                        mPrePath = mCurPath;
+                        mCurPath = tempMap.getKey();
+                        if (index++ == prevPathIndex) {
+                            break;
+                        }
+                    }
+                } else {
+                    mPrePath = mCurPath;
+                    mCurPath = prevPath;
+                }
+                getMD5ForPath();
+            } else if (mPlayNextFile) {
+                if (index == 0) {
+                    // 播放第一个文件
+                    for (Map.Entry<String, String> tempMap : map.entrySet()) {
+                        mPrePath = mCurPath;
+                        mCurPath = tempMap.getKey();
+                        getMD5ForPath();
+                        if (++index == 1) {
+                            break;
+                        }
+                    }
+                }
+            }
+            mPlayPrevFile = false;
+            mPlayNextFile = false;
+            startForGetMediaFormat();
+            return true;
+        }
+        // endregion
+
+        // region mShuffle == Shuffle.Shuffle_On (随机播放)
+        if (mLocalContentsHasPlayedList == null)
+            mLocalContentsHasPlayedList = new ArrayList<>();
+        if (mRandom == null)
+            mRandom = new Random();
+        int size = map.size();
+        for (; ; ) {
+            int randomNumber = mRandom.nextInt(size);
+            if (!mLocalContentsHasPlayedList.contains(randomNumber)) {
+                mLocalContentsHasPlayedList.add(randomNumber);
+                int index = -1;
+                for (Map.Entry<String, String> tempMap : map.entrySet()) {
+                    if (++index == randomNumber) {
                         mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
                         getMD5ForPath();
                         break;
                     }
                 }
-                if (mPlayPrevFile) {
-                    if (index == 0) {
-                        // 播放最后一个文件
-                        for (Map.Entry<String, String> tempMap :
-                                mLocalAudioContentsMap.entrySet()) {
-                            mPrePath = mCurPath;
-                            mCurPath = tempMap.getKey();
-                            if (index++ == prevPathIndex) {
-                                break;
-                            }
-                        }
-                    } else {
-                        mPrePath = mCurPath;
-                        mCurPath = prevPath;
-                    }
-                    getMD5ForPath();
-                } else if (mPlayNextFile) {
-                    if (index == 0) {
-                        // 播放第一个文件
-                        for (Map.Entry<String, String> tempMap :
-                                mLocalAudioContentsMap.entrySet()) {
-                            mPrePath = mCurPath;
-                            mCurPath = tempMap.getKey();
-                            getMD5ForPath();
-                            if (++index == 1) {
-                                break;
-                            }
-                        }
-                    }
-                }
-                mPlayPrevFile = false;
-                mPlayNextFile = false;
-                startForGetMediaFormat();
-                return true;
-            }
-            // endregion
-
-            // region mShuffle == Shuffle.Shuffle_On
-            // 按mLocalAudioContentsMap随机播放
-            if (mLocalContentsHasPlayedList == null)
-                mLocalContentsHasPlayedList = new ArrayList<>();
-            if (mRandom == null)
-                mRandom = new Random();
-            int size = mLocalAudioContentsMap.size();
-            for (; ; ) {
-                int randomNumber = mRandom.nextInt(size);
-                if (!mLocalContentsHasPlayedList.contains(randomNumber)) {
-                    mLocalContentsHasPlayedList.add(randomNumber);
-                    int index = -1;
-                    for (Map.Entry<String, String> tempMap : mLocalAudioContentsMap.entrySet()) {
-                        if (++index == randomNumber) {
-                            mPrePath = mCurPath;
-                            mCurPath = tempMap.getKey();
-                            getMD5ForPath();
-                            break;
-                        }
-                    }
-                    break;
-                } else {
-                    if (mLocalContentsHasPlayedList.size() >= size) {
-                        mLocalContentsHasPlayedList.clear();
-                    }
+                break;
+            } else {
+                if (mLocalContentsHasPlayedList.size() >= size) {
+                    mLocalContentsHasPlayedList.clear();
                 }
             }
-            startForGetMediaFormat();
-            return true;
-            // endregion
         }
+        startForGetMediaFormat();
+        return true;
+        // endregion
 
-        Log.i(TAG, "needToPlaybackOtherVideo() return false");
+        /*Log.i(TAG, "needToPlaybackOtherVideo() return false");
         // 不需要播放另一个视频
-        return false;
+        return false;*/
     }
 
     private void uiHandleMessage(Message msg) {
@@ -1534,7 +1541,7 @@ public class PlayerWrapper {
                 mDownloadClickCounts = 0;
                 break;
             case MSG_LOAD_CONTENTS:
-                if (mPlayerService != null) {
+                if (mIsLocalPlayer) {
                     loadContents();
                 }
                 break;
@@ -3400,6 +3407,8 @@ public class PlayerWrapper {
                 Log.i(TAG, "loadContents()   rootDir: " + rootDir);
                 sb.delete(0, sb.length());
                 sb.append(rootDir);
+                // 华为手机 /Movies/Camera
+                // 一加手机 /Movies
                 sb.append("/Movies");
                 // /storage/emulated/0/Movies/
                 // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
