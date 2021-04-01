@@ -36,6 +36,7 @@ import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
 import com.weidi.media.wdplayer.socket.SocketClient;
 import com.weidi.media.wdplayer.socket.SocketServer;
 import com.weidi.media.wdplayer.util.MediaUtils;
+import com.weidi.media.wdplayer.video_player.FullScreenActivity;
 import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
@@ -300,15 +301,17 @@ public class MainActivity extends AppCompatActivity {
                         startActivity(new Intent(MainActivity.this, LiveActivityForIptv.class));
                         break;
                     case 4:
-                        Intent intent = new Intent();
+                        /*Intent intent = new Intent();
                         intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
                         intent.setClass(MainActivity.this, JniPlayerActivity.class);
+                        startActivity(intent);*/
+                        Intent intent = new Intent();
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        intent.setClass(MainActivity.this, FullScreenActivity.class);
                         startActivity(intent);
                         break;
                     case 5:
-                        if (IS_PHONE) {
-                            startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
-                        }
+                        startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
                         break;
                     case 6:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -334,7 +337,7 @@ public class MainActivity extends AppCompatActivity {
                     case 9:
                         break;
                     case 10:
-                        finish();
+                        //finish();
                         break;
                     case 11:
                         break;

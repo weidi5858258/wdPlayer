@@ -2343,6 +2343,9 @@ namespace alexander_media_mediacodec {
             } else {
                 if (videoWrapper->father->useMediaCodec) {
                     TIME_DIFFERENCE = averageTimeDiff + TIME_STEP;
+                    if (averageTimeDiff < 0.2) {
+                        TIME_DIFFERENCE += 0.158888;
+                    }
                     if (audioWrapper->father->useMediaCodec) {
                     }
                 } else {

@@ -1975,10 +1975,14 @@ public class PlayerWrapper {
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
         if ((mScreenWidth / 3) < mNeedVideoWidth) {// top = 120
-            frameParams.setMargins((mScreenWidth - mNeedVideoWidth) / 2, 40, 0, 0);
+            //frameParams.setMargins((mScreenWidth - mNeedVideoWidth) / 2, 40, 0, 0);
+            frameParams.setMargins((mScreenWidth - mNeedVideoWidth) / 2,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight, 0, 0);
             frameParams.width = mNeedVideoWidth;
         } else {
-            frameParams.setMargins((mScreenWidth - mScreenHeight) / 2, 40, 0, 0);
+            //frameParams.setMargins((mScreenWidth - mScreenHeight) / 2, 40, 0, 0);
+            frameParams.setMargins((mScreenWidth - mScreenHeight) / 2,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight, 0, 0);
             frameParams.width = mScreenHeight;
         }
         frameParams.height = mControllerPanelLayoutHeight;
@@ -3196,10 +3200,12 @@ public class PlayerWrapper {
 
     @SuppressLint("SourceLockedOrientationActivity")
     private void clickFour() {
-        Intent intent = new Intent();
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setClass(mContext, FullScreenActivity.class);
-        mContext.startActivity(intent);
+        if (!IS_WATCH) {
+            Intent intent = new Intent();
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setClass(mContext, FullScreenActivity.class);
+            mContext.startActivity(intent);
+        }
     }
 
     private void clickFive() {

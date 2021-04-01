@@ -212,9 +212,9 @@ public class WearMainActivity extends WearableActivity {
                         }
                         break;
                     case 9:
-                        finish();
                         break;
                     case 10:
+                        finish();
                         break;
                     case 20:
                         startActivity(
