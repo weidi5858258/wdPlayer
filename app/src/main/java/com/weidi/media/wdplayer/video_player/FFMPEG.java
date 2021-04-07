@@ -36,7 +36,7 @@ import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
 public class FFMPEG implements WdPlayer {
 
-    private static final String TAG = "player_alexander";
+    private static final String TAG = "player_alexander";// player_alexander
     // FFMPEG.class.getSimpleName();
 
     // status_t onTransact(uint32_t code, const Parcel& data, Parcel* reply, uint32_t flags = 0)

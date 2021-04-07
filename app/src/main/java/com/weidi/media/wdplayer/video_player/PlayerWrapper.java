@@ -3415,7 +3415,7 @@ public class PlayerWrapper {
                 sb.append(rootDir);
                 // 华为手机 /Movies/Camera
                 // 一加手机 /Movies
-                sb.append("/Movies");
+                sb.append("/Movies/Camera");
                 // /storage/emulated/0/Movies/
                 // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
                 file = new File(sb.toString());
