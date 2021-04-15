@@ -7,11 +7,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.WindowManager;
 
 import com.weidi.eventbus.EventBusUtils;
 
 import androidx.annotation.NonNull;
+
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PAUSE;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PLAY;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_pause;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_play;
 
 /***
 
@@ -176,6 +182,44 @@ public class FullScreenActivity extends Activity {
                         null);
             }
         }*/
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEYCODE_DPAD_UP:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_DOWN:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_LEFT:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    break;
+                case KeyEvent.KEYCODE_DPAD_CENTER:
+                    if (Boolean.parseBoolean(
+                            FFMPEG.getDefault().onTransact(
+                                    FFMPEG.DO_SOMETHING_CODE_isRunning, null))) {
+                        if (Boolean.parseBoolean(
+                                FFMPEG.getDefault().onTransact(
+                                        FFMPEG.DO_SOMETHING_CODE_isPlaying, null))) {
+                            EventBusUtils.post(
+                                    PlayerWrapper.class,
+                                    BUTTON_CLICK_PAUSE,
+                                    null);
+                        } else {
+                            EventBusUtils.post(
+                                    PlayerWrapper.class,
+                                    BUTTON_CLICK_PLAY,
+                                    null);
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     ///////////////////////////////////////////////////////////////////////

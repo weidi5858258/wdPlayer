@@ -422,11 +422,13 @@ static int subtitle_packets = 0;
 
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
-static bool runOneTime = true;
+// alexander add
 static bool isStarted = false;
 static bool isFinished = false;
-static pthread_mutex_t lockMutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t lockCondition = PTHREAD_COND_INITIALIZER;
+extern pthread_mutex_t readLockMutex;
+extern pthread_cond_t readLockCondition;
+extern bool runOneTime;
+extern bool isLocal;
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -434,6 +436,25 @@ const char program_name[] = "ffplay";
 const int program_birth_year = 2003;
 double rdftspeed = 0.02;
 
+static bool startsWith(const char *str1, char *str2) {
+    if (str1 == nullptr || str2 == nullptr) {
+        return false;
+    }
+    int len1 = strlen(str1);
+    int len2 = strlen(str2);
+    if (len1 < len2 || len1 == 0 || len2 == 0) {
+        return false;
+    }
+    char temp[len2 + 1];
+    memset(temp, '\0', sizeof(temp));
+    strncpy(temp, str1, len2);
+    int ret = strcmp(temp, str2);
+    if (!ret) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 #if CONFIG_AVFILTER
 
@@ -633,9 +654,9 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
             ret = 0;
             break;
         } else {
-            //LOGI("packet_queue_get() pthread_cond_wait start\n");
+            LOGI("packet_queue_get() pthread_cond_wait start\n");
             pthread_cond_wait(&q->pcond, &q->pmutex);
-            //LOGI("packet_queue_get() pthread_cond_wait end\n");
+            LOGI("packet_queue_get() pthread_cond_wait end\n");
         }
     }
     pthread_mutex_unlock(&q->pmutex);
@@ -848,17 +869,17 @@ static Frame *frame_queue_peek_readable(FrameQueue *f) {
     /* wait until we have a readable a new frame */
     pthread_mutex_lock(&f->pmutex);
     while (f->size - f->rindex_shown <= 0 && !f->pktq->abort_request) {
-        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() video pthread_cond_wait start\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() audio pthread_cond_wait start\n");
-        }*/
+        }
         pthread_cond_wait(&f->pcond, &f->pmutex);
-        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() video pthread_cond_wait end\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() audio pthread_cond_wait end\n");
-        }*/
+        }
     }
     pthread_mutex_unlock(&f->pmutex);
 
@@ -2777,8 +2798,29 @@ static int stream_has_enough_packets(AVStream *st, int stream_id, PacketQueue *q
     } else {
         // st->disposition & AV_DISPOSITION_ATTACHED_PIC;// 长时间为0
         // !queue->duration || av_q2d(st->time_base) * queue->duration > 1.0;// 长时间为1
-        return (queue->nb_packets > MIN_FRAMES
-                && (!queue->duration || av_q2d(st->time_base) * queue->duration > 1.0))
+        bool isFull = false;
+        if (video_state->video_stream >= 0 && video_state->audio_stream >= 0) {
+            if (isLocal) {
+                isFull = video_state->videoq.nb_packets >= 50
+                         && video_state->audioq.nb_packets >= 140;
+            } else {
+                isFull = video_state->videoq.nb_packets >= 10000
+                         && video_state->audioq.nb_packets >= 10000;
+            }
+        } else if (video_state->video_stream >= 0) {
+            if (isLocal) {
+                isFull = video_state->videoq.nb_packets >= 50;
+            } else {
+                isFull = video_state->videoq.nb_packets >= 10000;
+            }
+        } else if (video_state->audio_stream >= 0) {
+            if (isLocal) {
+                isFull = video_state->audioq.nb_packets >= 140;
+            } else {
+                isFull = video_state->audioq.nb_packets >= 10000;
+            }
+        }
+        return (isFull && (!queue->duration || av_q2d(st->time_base) * queue->duration > 1.0))
                || (st->disposition & AV_DISPOSITION_ATTACHED_PIC);
     }
     /*return stream_id < 0 ||
@@ -2950,9 +2992,7 @@ if (seek_by_bytes) {
         if (infinite_buffer < 1 &&
             (//is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE ||
                     (stream_has_enough_packets(is->audio_st, is->audio_stream, &is->audioq) &&
-                     stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq) &&
-                     stream_has_enough_packets(is->subtitle_st, is->subtitle_stream,
-                                               &is->subtitleq)))) {
+                     stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq)))) {
             /* wait 10 ms */
             /*LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
             SDL_LockMutex(wait_mutex);
@@ -4029,6 +4069,7 @@ void show_help_default(const char *opt, const char *arg) {
 void setDataSource(const char *filePath) {
     memset(input_filename, 0, sizeof(input_filename));
     av_strlcpy(input_filename, filePath ? filePath : "", sizeof(input_filename));
+    isLocal = startsWith(input_filename, "/storage/");
     LOGI("setDataSource() input_filename: %s\n", input_filename);
 }
 
@@ -4104,8 +4145,8 @@ int initPlayer() {
     show_banner(argc, argv, options);
     parse_options(nullptr, argc, argv, options, opt_input_file);
 
-    //signal(SIGINT, sigterm_handler); /* Interrupt (ANSI).    */
-    //signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
+    signal(SIGINT, sigterm_handler);  /* Interrupt   (ANSI).  */
+    signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     av_init_packet(&flush_pkt);
     flush_pkt.data = (uint8_t *) &flush_pkt;
@@ -4182,18 +4223,18 @@ int start() {
 }
 
 int play_pause() {
-    pthread_mutex_lock(&lockMutex);
+    pthread_mutex_lock(&readLockMutex);
     toggle_pause(video_state);
-    pthread_mutex_unlock(&lockMutex);
+    pthread_mutex_unlock(&readLockMutex);
     return 0;
 }
 
 int stop() {
-    pthread_mutex_lock(&lockMutex);
+    pthread_mutex_lock(&readLockMutex);
     if (video_state) {
         do_exit(video_state);
     }
-    pthread_mutex_unlock(&lockMutex);
+    pthread_mutex_unlock(&readLockMutex);
     return 0;
 }
 
