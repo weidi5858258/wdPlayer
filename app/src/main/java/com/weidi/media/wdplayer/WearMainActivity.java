@@ -35,6 +35,7 @@ import androidx.annotation.NonNull;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PATH;
@@ -192,15 +193,20 @@ public class WearMainActivity extends WearableActivity {
                         break;
                     case 6:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFPLAY).commit();
+                        MyToast.show(PLAYER_FFPLAY);
+                        break;
+                    case 7:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
                         MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
                         break;
-                    case 7:
+                    case 8:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
                         MyToast.show(PLAYER_IJKPLAYER);
                         break;
-                    case 8:
+                    case 9:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         int softSolution = sp.getInt(HARD_SOLUTION, 1);
                         if (softSolution == 1) {
@@ -210,8 +216,6 @@ public class WearMainActivity extends WearableActivity {
                             MyToast.show("使用硬解码");
                             sp.edit().putInt(HARD_SOLUTION, 1).commit();
                         }
-                        break;
-                    case 9:
                         break;
                     case 10:
                         finish();

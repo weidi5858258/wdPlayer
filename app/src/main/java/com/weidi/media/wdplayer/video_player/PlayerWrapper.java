@@ -114,6 +114,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
@@ -291,7 +292,7 @@ public class PlayerWrapper {
     // 是否是竖屏 true为竖屏
     private boolean mIsPortraitScreen;
 
-    private String whatPlayer = PLAYER_FFMPEG_MEDIACODEC;
+    private String whatPlayer = PLAYER_FFPLAY;
 
     // 第一个存储视频地址,第二个存储标题
     public static final LinkedHashMap<String, String> mContentsMap = new LinkedHashMap();
@@ -594,7 +595,6 @@ public class PlayerWrapper {
 
         mFfmpegUseMediaCodecDecode = new FfmpegUseMediaCodecDecode();
         mFFMPEGPlayer = FFMPEG.getDefault();
-        mIjkPlayer = new IjkPlayer();
         mFfmpegUseMediaCodecDecode.setContext(mContext);
         mFfmpegUseMediaCodecDecode.mIsLocalPlayer = mIsLocalPlayer;
         mFFMPEGPlayer.setContext(mContext);
@@ -602,9 +602,6 @@ public class PlayerWrapper {
         mFFMPEGPlayer.mIsLocalPlayer = mIsLocalPlayer;
         mFFMPEGPlayer.setFfmpegUseMediaCodecDecode(mFfmpegUseMediaCodecDecode);
         mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_init, null);
-        mIjkPlayer.setContext(mContext);
-        mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
-        mIjkPlayer.mIsLocalPlayer = mIsLocalPlayer;
         /*if (IS_WATCH) {
             mFFMPEGPlayer.onTransact(DO_SOMETHING_CODE_isWatchForCloseAudio, null);
         }*/
@@ -1631,13 +1628,20 @@ public class PlayerWrapper {
         textInfo = null;
 
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
-            mWdPlayer = mIjkPlayer;
+            if (mIjkPlayer == null) {
+                mIjkPlayer = new IjkPlayer();
+            }
+            mIjkPlayer.setContext(mContext);
+            mIjkPlayer.setCallback(mFFMPEGPlayer.mCallback);
+            mIjkPlayer.mIsLocalPlayer = mIsLocalPlayer;
             mIjkPlayer.mIsLocal = mIsLocal;
+            mWdPlayer = mIjkPlayer;
         } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
             //mSimpleVideoPlayer = new SimpleVideoPlayer();
             //mWdPlayer = mSimpleVideoPlayer;
         } else {
             mWdPlayer = mFFMPEGPlayer;
+            mFFMPEGPlayer.whatPlayer = whatPlayer;
             mFFMPEGPlayer.setType(mType);
         }
 
@@ -2452,7 +2456,7 @@ public class PlayerWrapper {
     }
 
     private void buttonClickForPause() {
-        if (mWdPlayer != null) {
+        if (mWdPlayer != null && mWdPlayer.isRunning()) {
             if (isFrameByFrameMode) {
                 isFrameByFrameMode = false;
                 sendEmptyMessage(DO_SOMETHING_CODE_frameByFrameForFinish);

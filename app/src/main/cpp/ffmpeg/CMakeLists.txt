@@ -27,11 +27,23 @@ add_library(ffmpeg
 
         SHARED
 
-        # SimpleVideoPlayer.cpp
-        # SimpleVideoPlayer2.cpp
+        ../ffplay/url.h
+        ../ffplay/avio.h
+        ../ffplay/libm.h
+        ../ffplay/config.h
+        ../ffplay/network.h
+        ../ffplay/va_copy.h
+        ../ffplay/cmdutils.h
+        ../ffplay/cmdutils.c
+        ../ffplay/intfloat.h
+        ../ffplay/rational.h
+        ../ffplay/attributes.h
+        ../ffplay/os_support.h
+        ../ffplay/mathematics.h
+        ../ffplay/FFplayer.h
+        ../ffplay/FFplayer.cpp
 
         ffmpeg.cpp
-        # MediaPlayer.cpp
         OnlyVideoPlayer.cpp
         OnlyAudioPlayer.cpp
         AudioVideoPlayer.cpp

@@ -70,6 +70,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
@@ -315,15 +316,20 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case 6:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFPLAY).commit();
+                        MyToast.show(PLAYER_FFPLAY);
+                        break;
+                    case 7:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
                         MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
                         break;
-                    case 7:
+                    case 8:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         sp.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER).commit();
                         MyToast.show(PLAYER_IJKPLAYER);
                         break;
-                    case 8:
+                    case 9:
                         sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
                         boolean needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
                         if (needTwoPlayer) {
@@ -333,8 +339,6 @@ public class MainActivity extends AppCompatActivity {
                             MyToast.show("启用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
                         }
-                        break;
-                    case 9:
                         break;
                     case 10:
                         //finish();

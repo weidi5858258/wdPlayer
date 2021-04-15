@@ -28,6 +28,7 @@ public interface Constants {
     String PLAYBACK_USE_PLAYER = "playback_use_player";
     String PLAYER_IJKPLAYER = "player_ijkplayer";
     String PLAYER_FFMPEG_MEDIACODEC = "player_ffmpeg_mediacodec";
+    String PLAYER_FFPLAY = "player_ffplay";
     String PLAYER_MEDIACODEC = "player_mediacodec";
     // 针对PLAYER_IJKPLAYER和PLAYER_FFMPEG_MEDIACODEC是否进行硬解
     // 针对音频部分和视频部分,为0时表示使用软解,为1时表示使用硬解

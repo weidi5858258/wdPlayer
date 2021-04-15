@@ -26,6 +26,9 @@ import static android.media.AudioDeviceInfo.TYPE_USB_HEADSET;
 import static android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
 import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
+import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
@@ -90,6 +93,7 @@ public class FFMPEG implements WdPlayer {
         return sFFMPEG;
     }
 
+    public String whatPlayer = PLAYER_FFPLAY;
     private AudioTrack mAudioTrack;
     public static final float VOLUME_NORMAL = 1.0f;
     public static final float VOLUME_MUTE = 0.0f;
@@ -110,6 +114,7 @@ public class FFMPEG implements WdPlayer {
     public static final int USE_MODE_AAC_H264 = 5;
     public static final int USE_MODE_MEDIA_4K = 6;
     public static final int USE_MODE_MEDIA_MEDIACODEC = 7;
+    public static final int USE_MODE_MEDIA_FFPLAY = 8;
 
     // 0(开始下载,边播放边下) 1(停止下载) 2(只下载音频,暂时不用) 3(只下载视频,暂时不用)
     // 4(只下载,不播放.不调用seekTo) 5(只提取音视频,不播放.调用seekTo到0)
@@ -465,7 +470,11 @@ public class FFMPEG implements WdPlayer {
                 } else {
                     jniObject.writeBoolean(PlayerWrapper.IS_WATCH ? true : false);
                     onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
-                    jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
+                    if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                        jniObject.writeInt(USE_MODE_MEDIA_FFPLAY);
+                    } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+                        jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
+                    }
                 }
             } else if (mIsAudio) {
                 jniObject.writeInt(USE_MODE_ONLY_AUDIO);
@@ -508,37 +517,47 @@ public class FFMPEG implements WdPlayer {
 
     @Override
     public void start() {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                onTransact(DO_SOMETHING_CODE_audioHandleData, null);
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                onTransact(DO_SOMETHING_CODE_videoHandleData, null);
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                SystemClock.sleep(500);
-                onTransact(DO_SOMETHING_CODE_readData, null);
-                return null;
-            }
-        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-        if (mIsSeparatedAudioVideo) {
+        if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {
-                    SystemClock.sleep(1000);
                     onTransact(DO_SOMETHING_CODE_readData, null);
                     return null;
                 }
             }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    onTransact(DO_SOMETHING_CODE_audioHandleData, null);
+                    return null;
+                }
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    onTransact(DO_SOMETHING_CODE_videoHandleData, null);
+                    return null;
+                }
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    SystemClock.sleep(500);
+                    onTransact(DO_SOMETHING_CODE_readData, null);
+                    return null;
+                }
+            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            if (mIsSeparatedAudioVideo) {
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        SystemClock.sleep(1000);
+                        onTransact(DO_SOMETHING_CODE_readData, null);
+                        return null;
+                    }
+                }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }
         }
 
         /*ThreadPool.getFixedThreadPool().execute(new Runnable() {

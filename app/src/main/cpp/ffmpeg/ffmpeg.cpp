@@ -11,6 +11,7 @@
 #include "AudioVideoPlayer.h"
 #include "AACH264Player.h"
 #include "MediaPlayerForMediaCodec.h"
+#include "../ffplay/FFplayer.h"
 
 // 这个是自定义的LOG的标识
 #define LOG "player_alexander"
@@ -749,7 +750,8 @@ static jint onTransact_setMode(JNIEnv *env, jobject thiz,
         && use_mode != USE_MODE_AUDIO_VIDEO
         && use_mode != USE_MODE_AAC_H264
         && use_mode != USE_MODE_MEDIA_4K
-        && use_mode != USE_MODE_MEDIA_MEDIACODEC) {
+        && use_mode != USE_MODE_MEDIA_MEDIACODEC
+        && use_mode != USE_MODE_MEDIA_FFPLAY) {
         use_mode = USE_MODE_MEDIA;
     }
 
@@ -792,6 +794,11 @@ static jint onTransact_setSurface(JNIEnv *env, jobject ffmpegObject,
             alexander_media_mediacodec::setJniParameters(env, filePath, surfaceObject);
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            setDataSource(filePath);
+            setSurface(env, surfaceObject);
+            break;
+        }
         default:
             break;
     }
@@ -826,6 +833,9 @@ static jint onTransact_initPlayer(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             return (jint) alexander_media_mediacodec::initPlayer();
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            return (jint) initPlayer();
         }
         default:
             break;
@@ -882,6 +892,10 @@ static jint onTransact_readData(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             alexander_media_mediacodec::readData(NULL);
+            break;
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            start();
             break;
         }
         default:
@@ -1116,6 +1130,10 @@ static jint onTransact_play(JNIEnv *env, jobject thiz,
             alexander_media_mediacodec::play();
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            play_pause();
+            break;
+        }
         default:
             break;
     }
@@ -1151,6 +1169,10 @@ static jint onTransact_pause(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             alexander_media_mediacodec::pause();
+            break;
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            play_pause();
             break;
         }
         default:
@@ -1190,6 +1212,10 @@ static jint onTransact_stop(JNIEnv *env, jobject thiz,
             alexander_media_mediacodec::stop();
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            stop();
+            break;
+        }
         default:
             break;
     }
@@ -1227,6 +1253,10 @@ static jint onTransact_release(JNIEnv *env, jobject thiz,
             alexander_media_mediacodec::release();
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            release();
+            break;
+        }
         default:
             break;
     }
@@ -1258,6 +1288,9 @@ static jboolean onTransact_isRunning(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             return (jboolean) alexander_media_mediacodec::isRunning();
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            return (jboolean) isRunning();
         }
         default:
             break;
@@ -1291,6 +1324,9 @@ static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             return (jboolean) alexander_media_mediacodec::isPlaying();
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            return (jboolean) isPlaying();
         }
         default:
             break;
@@ -1365,6 +1401,10 @@ static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
             alexander_media_mediacodec::stepAdd((int64_t) addStep);
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            stepAdd((int64_t) addStep);
+            break;
+        }
         default:
             break;
     }
@@ -1404,6 +1444,10 @@ static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
             alexander_media_mediacodec::stepSubtract((int64_t) subtractStep);
             break;
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            stepSubtract((int64_t) subtractStep);
+            break;
+        }
         default:
             break;
     }
@@ -1438,6 +1482,9 @@ static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
         case USE_MODE_MEDIA_MEDIACODEC: {
             return (jint) alexander_media_mediacodec::seekTo((int64_t) timestamp);
         }
+        case USE_MODE_MEDIA_FFPLAY: {
+            return (jint) seekTo((int64_t) timestamp);
+        }
         default:
             break;
     }
@@ -1469,6 +1516,9 @@ static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
         }
         case USE_MODE_MEDIA_MEDIACODEC: {
             return (jlong) alexander_media_mediacodec::getDuration();
+        }
+        case USE_MODE_MEDIA_FFPLAY: {
+            return (jlong) getDuration();
         }
         default:
             break;
