@@ -415,20 +415,23 @@ static int64_t audio_callback_time;
 
 static AVPacket flush_pkt;
 
-static long long media_duration = -1;
-static int video_packets = 0;
-static int audio_packets = 0;
-static int subtitle_packets = 0;
 
 #define FF_QUIT_EVENT    (SDL_USEREVENT + 2)
 
 // alexander add
+static long long media_duration = -1;
+static int video_packets = 0;
+static int audio_packets = 0;
+static int subtitle_packets = 0;
 static bool isStarted = false;
 static bool isFinished = false;
 extern pthread_mutex_t readLockMutex;
 extern pthread_cond_t readLockCondition;
 extern bool runOneTime;
 extern bool isLocal;
+extern bool isLive;
+extern long long curProgress;
+extern long long preProgress;
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -1351,6 +1354,12 @@ static double get_clock(Clock *c) {
         return c->pts;
     } else {
         double time = av_gettime_relative() / 1000000.0;
+        //LOGI("get_master_clock()            time = %lf\n", time);
+        //LOGI("get_master_clock()    c->pts_drift = %lf\n", c->pts_drift);
+        //LOGI("get_master_clock() c->last_updated = %lf\n", c->last_updated);
+        // time与c->last_updated值差不多
+        // c->pts_drift = -inf
+        // c->speed = 1.000000
         return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
     }
 }
@@ -1412,12 +1421,15 @@ static double get_master_clock(VideoState *is) {
     switch (get_master_sync_type(is)) {
         case AV_SYNC_VIDEO_MASTER:
             val = get_clock(&is->vidclk);
+            LOGI("get_master_clock() video val = %lf\n", val);
             break;
         case AV_SYNC_AUDIO_MASTER:
             val = get_clock(&is->audclk);
+            //LOGI("get_master_clock() audio val = %lf\n", val);
             break;
         default:
             val = get_clock(&is->extclk);
+            LOGI("get_master_clock() exter val = %lf\n", val);
             break;
     }
     return val;
@@ -1520,8 +1532,7 @@ static double compute_target_delay(double delay, VideoState *is) {
         }
     }
 
-    av_log(nullptr, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n",
-           delay, -diff);
+    av_log(nullptr, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n", delay, -diff);
 
     return delay;
 }
@@ -1594,16 +1605,22 @@ static void video_refresh(void *opaque, double *remaining_time) {
             /* compute nominal last_duration */
             last_duration = vp_duration(is, lastvp, vp);
             delay = compute_target_delay(last_duration, is);
-
             time = av_gettime_relative() / 1000000.0;
+            /*LOGD("video_refresh()-------------------------------\n");
+            LOGI("video_refresh()           delay = %lf\n", delay);
+            LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+            LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
+            LOGI("video_refresh()            time = %lf\n", time);*/
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+                //LOGI("video_refresh()  remaining_time = %lf\n", *remaining_time);
                 goto display;
             }
 
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
                 is->frame_timer = time;
+                //LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
             }
 
             pthread_mutex_lock(&is->pictq.pmutex);
@@ -2325,6 +2342,19 @@ static int audio_decode_frame(VideoState *is) {
         frame_queue_next(&is->sampq);
     } while (af->serial != is->audioq.serial);
 
+    double audioPts = af->frame->pts * av_q2d(is->audio_st->time_base);
+    if (!isLive) {
+        curProgress = (long long) audioPts;// 秒
+        if (curProgress > preProgress) {
+            if (curProgress <= media_duration) {
+                onProgressUpdated(curProgress);
+            } else {
+                onProgressUpdated(media_duration);
+            }
+        }
+        preProgress = curProgress;
+    }
+
     // region 转换音频
 
     int ret = swr_convert(
@@ -2464,7 +2494,14 @@ last_clock = is->audio_clock;
 static void *audio_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     int audio_size, len1;
-    audio_callback_time = av_gettime_relative();
+    is->audio_hw_buf_size = 4096;
+    // 176400
+    is->audio_tgt.bytes_per_sec = 192000;
+    is->audio_tgt.bytes_per_sec = av_samples_get_buffer_size(nullptr,
+                                                             is->dstNbChannels,
+                                                             is->dstSampleRate,
+                                                             is->dstAVSampleFormat, 1);
+    LOGI("audio_play() bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
 
     LOGI("audio_play() start\n");
     while (1) {
@@ -2472,6 +2509,7 @@ static void *audio_play(void *arg) {
             break;
         }
 
+        audio_callback_time = av_gettime_relative();
         audio_size = audio_decode_frame(is);
         /*if (audio_size < 0) {
             is->audio_buf = nullptr;
@@ -2489,12 +2527,18 @@ static void *audio_play(void *arg) {
         is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
         /* Let's assume the audio driver that is used by SDL has two periods. */
         if (!isnan(is->audio_clock)) {
-            set_clock_at(
-                    &is->audclk,
-                    is->audio_clock -
-                    (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
-                    is->audio_tgt.bytes_per_sec,
-                    is->audio_clock_serial, audio_callback_time / 1000000.0);
+            // 问题可能出在这里
+            double pts = is->audio_clock -
+                         (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
+                         is->audio_tgt.bytes_per_sec;
+            /*LOGI("audio_play()-----------------------------------------\n");
+            LOGI("audio_play()             is->audio_clock = %lf\n", is->audio_clock);
+            LOGI("audio_play()       is->audio_hw_buf_size = %d\n", is->audio_hw_buf_size);
+            LOGI("audio_play()    is->audio_write_buf_size = %d\n", is->audio_write_buf_size);// 0
+            LOGI("audio_play() is->audio_tgt.bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
+            LOGI("audio_play()                         pts = %lf\n", pts);*/
+            set_clock_at(&is->audclk,
+                         pts, is->audio_clock_serial, audio_callback_time / 1000000.0);
             sync_clock_to_slave(&is->extclk, &is->audclk);
         }
     }
@@ -3159,8 +3203,12 @@ static int create_avformat_context(void *arg) {
         // 00:54:16
         // 单位: 秒
         LOGI("create_avformat_context() media  seconds = %ld\n", media_duration);
-        LOGI("create_avformat_context() media            %02d:%02d:%02d\n", hours, mins,
-             seconds);
+        LOGI("create_avformat_context() media            %02d:%02d:%02d\n", hours, mins, seconds);
+    }
+    if (media_duration <= 0) {
+        isLive = true;
+    } else {
+        isLive = false;
     }
 
     LOGI("create_avformat_context() genpts = %d\n", genpts);// 0
@@ -4132,6 +4180,8 @@ int initPlayer() {
     isStarted = false;
     isFinished = false;
     media_duration = -1;
+    curProgress = 0;
+    preProgress = 0;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
@@ -4261,8 +4311,18 @@ bool isPausedForUser() {
 
 }
 
+/***
+ 单位秒.比如seek到100秒,就传100
+ */
 int seekTo(int64_t timestamp) {
-
+    if (!isRunning()) {
+        return -1;
+    }
+    LOGI("seekTo() timeStamp: %lld\n", (long long) timestamp);
+    stream_seek(video_state,
+                (int64_t) (timestamp * AV_TIME_BASE),
+                (int64_t) (10.000000 * AV_TIME_BASE), 0);
+    return 0;
 }
 
 long getDuration() {
