@@ -3206,6 +3206,7 @@ static int create_avformat_context(void *arg) {
         LOGI("create_avformat_context() media            %02d:%02d:%02d\n", hours, mins, seconds);
     }
     if (media_duration <= 0) {
+        // -721010356
         isLive = true;
     } else {
         isLive = false;
