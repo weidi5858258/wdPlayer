@@ -2125,17 +2125,14 @@ static void *audio_thread(void *arg) {
         if (is->abort_request) {
             break;
         }
-        // frame 解码后的帧
-        //got_frame = decoder_decode_frame(&is->auddec, frame, nullptr);
-        //LOGI("audio_thread() got_frame = %d\n", got_frame);// 1
-        /***
-         audio_play线程先执行的话,在decoder_decode_frame函数中可能就会被锁住了
-         */
+
+        // frame为解码后的帧
         if ((got_frame = decoder_decode_frame(&is->auddec, frame, nullptr)) < 0) {
             LOGI("audio_thread() decoder_decode_frame goto the_end\n");
             goto the_end;
         }
         if (got_frame) {
+            // 创建一个AVRational结构体数据
             tb = (AVRational) {1, frame->sample_rate};
             //#if CONFIG_AVFILTER
             /*dec_channel_layout = get_valid_channel_layout(frame->channel_layout, frame->channels);
@@ -2178,7 +2175,8 @@ static void *audio_thread(void *arg) {
                 af->pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
                 af->pos = frame->pkt_pos;
                 af->serial = is->auddec.pkt_serial;
-                af->duration = av_q2d((AVRational) {frame->nb_samples, frame->sample_rate});
+                tb = (AVRational) {frame->nb_samples, frame->sample_rate};
+                af->duration = av_q2d(tb);
 
                 av_frame_move_ref(af->frame, frame);
                 frame_queue_push(&is->sampq);
@@ -2187,6 +2185,7 @@ static void *audio_thread(void *arg) {
                     break;
                 }
             }
+
             if (ret == AVERROR_EOF) {
                 is->auddec.finished = is->auddec.pkt_serial;
             }
@@ -2202,9 +2201,8 @@ static void *audio_thread(void *arg) {
     LOGI("audio_thread() end\n");
 
     pthread_exit((void *) 0);
-    //return ret;
     return nullptr;
-}// audio_thread
+}
 
 static void *video_thread(void *arg) {
     LOGI("video_thread() start\n");
@@ -2571,12 +2569,12 @@ static void *audio_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     int audio_size, len1;
     is->audio_hw_buf_size = 4096;
-    // 176400
     is->audio_tgt.bytes_per_sec = 192000;
     is->audio_tgt.bytes_per_sec = av_samples_get_buffer_size(nullptr,
                                                              is->dstNbChannels,
                                                              is->dstSampleRate,
-                                                             is->dstAVSampleFormat, 1);
+                                                             is->dstAVSampleFormat,
+                                                             1);
     LOGI("audio_play() bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
 
     LOGI("audio_play() start\n");
@@ -2599,11 +2597,14 @@ static void *audio_play(void *arg) {
         is->audio_buf_index = 0;
         len1 = is->audio_buf_size - is->audio_buf_index;
         is->audio_buf_index += len1;
-
         is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
+
         /* Let's assume the audio driver that is used by SDL has two periods. */
         if (!isnan(is->audio_clock)) {
-            // 问题可能出在这里
+            // 最关键的一个值.(pts是随着is->audio_clock值的变化而变化的,因为其他值是常量)
+            // is->audio_hw_buf_size = 4096
+            // is->audio_write_buf_size = 0
+            // is->audio_tgt.bytes_per_sec = 192000 176400
             double pts = is->audio_clock -
                          (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
                          is->audio_tgt.bytes_per_sec;
