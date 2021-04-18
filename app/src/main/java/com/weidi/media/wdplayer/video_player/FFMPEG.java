@@ -464,20 +464,20 @@ public class FFMPEG implements WdPlayer {
                 jniObject.writeInt(USE_MODE_AAC_H264);
             }
         } else {
-            if (mIsVideo) {
-                if (mPath.endsWith(".h264")) {
-                    jniObject.writeInt(USE_MODE_ONLY_VIDEO);
-                } else {
-                    jniObject.writeBoolean(PlayerWrapper.IS_WATCH ? true : false);
-                    onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
-                    if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
-                        jniObject.writeInt(USE_MODE_MEDIA_FFPLAY);
-                    } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
-                        jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
-                    }
-                }
+            /*if (mIsVideo) {
             } else if (mIsAudio) {
                 jniObject.writeInt(USE_MODE_ONLY_AUDIO);
+            }*/
+            if (mPath.endsWith(".h264")) {
+                jniObject.writeInt(USE_MODE_ONLY_VIDEO);
+            } else {
+                jniObject.writeBoolean(PlayerWrapper.IS_WATCH ? true : false);
+                onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
+                if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                    jniObject.writeInt(USE_MODE_MEDIA_FFPLAY);
+                } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+                    jniObject.writeInt(USE_MODE_MEDIA_MEDIACODEC);
+                }
             }
         }
         onTransact(DO_SOMETHING_CODE_setMode, jniObject);
@@ -517,7 +517,7 @@ public class FFMPEG implements WdPlayer {
 
     @Override
     public void start() {
-        if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+        if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY) && !mIsSeparatedAudioVideo) {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... params) {

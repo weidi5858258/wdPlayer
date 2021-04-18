@@ -126,6 +126,8 @@ import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_fra
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_init;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseAudio;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_isWatchForCloseVideo;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_stepAdd;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_stepSubtract;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_MUTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.CONTENT_PATH;
@@ -155,6 +157,7 @@ public class PlayerWrapper {
     private static final int MSG_LOAD_CONTENTS = 19;
     private static final int MSG_ADD_VIEW = 20;
     private static final int MSG_SCREEN_BRIGHT_WAKE_LOCK = 21;
+    private static final int MSG_RELEASE = 22;
 
     private HashMap<String, Long> mPathTimeMap = new HashMap<>();
     private ArrayList<String> mCouldPlaybackPathList = new ArrayList<>();
@@ -821,9 +824,14 @@ public class PlayerWrapper {
     }
 
     private void onRelease() {
-        if (mWdPlayer != null/* && mWdPlayer.isRunning()*/) {
-            Log.i(TAG, "onRelease()");
-            mWdPlayer.release();
+        if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+            mThreadHandler.removeMessages(MSG_RELEASE);
+            mThreadHandler.sendEmptyMessage(MSG_RELEASE);
+        } else {
+            if (mWdPlayer != null/* && mWdPlayer.isRunning()*/) {
+                Log.i(TAG, "onRelease()");
+                mWdPlayer.release();
+            }
         }
     }
 
@@ -1357,19 +1365,37 @@ public class PlayerWrapper {
                 break;
             case MSG_SEEK_TO_ADD:
                 if (mWdPlayer != null) {
-                    /*mWdPlayer.onTransact(
-                            DO_SOMETHING_CODE_stepAdd,
-                            JniObject.obtain().writeLong(addStep));*/
-                    mWdPlayer.seekTo(mPresentationTime + addStep);
+                    if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                        long count = 0;
+                        if (mMediaDuration > 300) {
+                            count = addStep / 30;
+                        } else {
+                            count = addStep / 10;
+                        }
+                        mWdPlayer.onTransact(
+                                DO_SOMETHING_CODE_stepAdd,
+                                JniObject.obtain().writeLong(count));
+                    } else {
+                        mWdPlayer.seekTo(mPresentationTime + addStep);
+                    }
                 }
                 addStep = 0;
                 break;
             case MSG_SEEK_TO_SUBTRACT:
                 if (mWdPlayer != null) {
-                    /*mWdPlayer.onTransact(
-                            DO_SOMETHING_CODE_stepSubtract,
-                            JniObject.obtain().writeLong(subtractStep));*/
-                    mWdPlayer.seekTo(mPresentationTime - subtractStep);
+                    if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                        long count = 0;
+                        if (mMediaDuration > 300) {
+                            count = addStep / 30;
+                        } else {
+                            count = addStep / 10;
+                        }
+                        mWdPlayer.onTransact(
+                                DO_SOMETHING_CODE_stepSubtract,
+                                JniObject.obtain().writeLong(count));
+                    } else {
+                        mWdPlayer.seekTo(mPresentationTime - subtractStep);
+                    }
                 }
                 subtractStep = 0;
                 break;
@@ -1540,6 +1566,12 @@ public class PlayerWrapper {
             case MSG_LOAD_CONTENTS:
                 if (mIsLocalPlayer) {
                     loadContents();
+                }
+                break;
+            case MSG_RELEASE:
+                if (mWdPlayer != null) {
+                    Log.i(TAG, "onRelease()");
+                    mWdPlayer.release();
                 }
                 break;
             default:
@@ -3007,6 +3039,11 @@ public class PlayerWrapper {
                 float pos = (float) currentPosition / mMediaDuration;
                 int target = Math.round(pos * mPositionSeekBar.getMax());
                 mPositionSeekBar.setProgress(target);
+                if (mPresentationTime >= (mMediaDuration - 2)
+                        && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                    mThreadHandler.removeMessages(MSG_RELEASE);
+                    mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 1100);
+                }
             }
 
             if (mPresentationTime < (mMediaDuration - 5)) {
