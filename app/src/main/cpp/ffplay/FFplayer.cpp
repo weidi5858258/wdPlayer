@@ -861,8 +861,7 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
                         if (ret >= 0) {
                             AVRational tb = (AVRational) {1, frame->sample_rate};
                             if (frame->pts != AV_NOPTS_VALUE) {
-                                frame->pts = av_rescale_q(frame->pts, d->avctx->pkt_timebase,
-                                                          tb);
+                                frame->pts = av_rescale_q(frame->pts, d->avctx->pkt_timebase, tb);
                             } else if (d->next_pts != AV_NOPTS_VALUE) {
                                 frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
                             }
@@ -2593,6 +2592,164 @@ static void *video_thread(void *arg) {
     return nullptr;
 }
 
+int decoder_decode_frame_by_mediacodec(int roomIndex, long long presentationTimeUs) {
+    // 为frame设置有关重要的参数
+    AVFrame *frame = av_frame_alloc();
+    if (!frame) {
+        return AVERROR(ENOMEM);
+    }
+    //#if CONFIG_AVFILTER
+    AVFilterGraph *graph = nullptr;
+    AVFilterContext *filt_in = nullptr, *filt_out = nullptr;
+    int last_w = 0;
+    int last_h = 0;
+    enum AVPixelFormat last_format = AV_PIX_FMT_NONE;
+    int last_serial = -1;
+    int last_vfilter_idx = 0;
+    //#endif
+    VideoState *is = video_state;
+    AVRational tb = is->video_st->time_base;
+    AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, nullptr);
+    double pts;
+    double duration;
+    int ret = 0;
+
+
+    int got_picture;
+
+    if ((got_picture = decoder_decode_frame(&is->viddec, frame, nullptr)) < 0) {
+        return -1;
+    }
+    /***
+     frame->pts =
+     frame->width =
+     frame->height =
+     frame->format =
+     frame->pkt_pos =
+     frame->sample_aspect_ratio =
+     */
+
+    if (got_picture) {
+        double dpts = NAN;
+
+        if (frame->pts != AV_NOPTS_VALUE) {
+            dpts = av_q2d(is->video_st->time_base) * frame->pts;
+        }
+
+        frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
+
+        if (framedrop > 0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) {
+            if (frame->pts != AV_NOPTS_VALUE) {
+                double diff = dpts - get_master_clock(is);
+                if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
+                    diff - is->frame_last_filter_delay < 0 &&
+                    is->viddec.pkt_serial == is->vidclk.serial &&
+                    is->videoq.nb_packets) {
+                    is->frame_drops_early++;
+                    av_frame_unref(frame);
+                    got_picture = 0;
+                }
+            }
+        }
+    }
+
+    if (got_picture < 0) {
+        goto the_end;
+    }
+    if (!got_picture) {
+        continue;
+    }
+
+    //#if CONFIG_AVFILTER
+    if (last_w != frame->width
+        || last_h != frame->height
+        || last_format != frame->format
+        || last_serial != is->viddec.pkt_serial
+        || last_vfilter_idx != is->vfilter_idx) {
+        av_log(nullptr, AV_LOG_DEBUG,
+               "Video frame changed from size:%dx%d format:%s serial:%d to size:%dx%d format:%s serial:%d\n",
+               last_w, last_h,
+               (const char *) av_x_if_null(av_get_pix_fmt_name(last_format), "none"),
+               last_serial,
+               frame->width, frame->height,
+               (const char *) av_x_if_null(
+                       av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)), "none"),
+               is->viddec.pkt_serial);
+        avfilter_graph_free(&graph);
+        graph = avfilter_graph_alloc();
+        if (!graph) {
+            ret = AVERROR(ENOMEM);
+            goto the_end;
+        }
+        graph->nb_threads = filter_nbthreads;
+        // ?
+        if ((ret = configure_video_filters(graph, is,
+                                           vfilters_list
+                                           ? vfilters_list[is->vfilter_idx]
+                                           : nullptr, frame)) < 0) {
+            /*SDL_Event event;
+            event.type = FF_QUIT_EVENT;
+            event.user.data1 = is;
+            SDL_PushEvent(&event);*/
+            goto the_end;
+        }
+        filt_in = is->in_video_filter;
+        filt_out = is->out_video_filter;
+        last_w = frame->width;
+        last_h = frame->height;
+        last_format = static_cast<AVPixelFormat>(frame->format);
+        last_serial = is->viddec.pkt_serial;
+        last_vfilter_idx = is->vfilter_idx;
+        frame_rate = av_buffersink_get_frame_rate(filt_out);
+    }
+
+    ret = av_buffersrc_add_frame(filt_in, frame);
+    if (ret < 0) {
+        goto the_end;
+    }
+
+    while (ret >= 0) {
+        if (is->abort_request) {
+            break;
+        }
+
+        is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
+        ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
+        if (ret < 0) {
+            if (ret == AVERROR_EOF) {
+                is->viddec.finished = is->viddec.pkt_serial;
+            }
+            ret = 0;
+            break;
+        }
+        is->frame_last_filter_delay =
+                av_gettime_relative() / 1000000.0 - is->frame_last_returned_time;
+        if (fabs(is->frame_last_filter_delay) > AV_NOSYNC_THRESHOLD / 10.0) {
+            is->frame_last_filter_delay = 0;
+        }
+        tb = av_buffersink_get_time_base(filt_out);
+        //#endif
+        duration = (frame_rate.num
+                    && frame_rate.den ? av_q2d(
+                (AVRational) {frame_rate.den, frame_rate.num}) : 0);
+        pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+        ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
+        av_frame_unref(frame);
+
+        //#if CONFIG_AVFILTER
+        if (is->videoq.serial != is->viddec.pkt_serial) {
+            break;
+        }
+    }
+    //#endif
+
+    if (ret < 0) {
+        goto the_end;
+    }
+
+    return 0;
+}
+
 /* copy samples for viewing in editor window */
 static void update_sample_display(VideoState *is, short *samples, int samples_size) {
     int size, len;
@@ -3072,7 +3229,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
                         LOGI("stream_component_open() h264_mediacodec\n");
                         is->useMediaCodec = true;
                         is->avBitStreamFilter = av_bsf_get_by_name("h264_mp4toannexb");
-                        //avcodec_find_decoder_by_name("h264_mediacodec");
                         break;
                     }
                         // 173 hevc(h265) ---> video/hevc

@@ -1359,12 +1359,12 @@ public class FfmpegUseMediaCodecDecode {
 
     // video
     private JniObject mVideoJniObject = new JniObject();
-    private int[] videoValueIntArray = new int[2];
-    private Object[] videoValueObjectArray = new Object[2];
+    private int[] videoValueIntArray = new int[4];
+    //private Object[] videoValueObjectArray = new Object[2];
     // audio
     private JniObject mAudioJniObject = new JniObject();
-    private int[] audioValueIntArray = new int[2];
-    private Object[] audioValueObjectArray = new Object[2];
+    private int[] audioValueIntArray = new int[4];
+    //private Object[] audioValueObjectArray = new Object[2];
 
     private EDMediaCodec.Callback mCallback = new EDMediaCodec.Callback() {
 
@@ -1499,7 +1499,7 @@ public class FfmpegUseMediaCodecDecode {
             if (mExoAudioTrack.mAudioTrack == null) {
                 Log.e(TAG, "handleAudioOutputFormat() AudioTrack is null");
                 mAudioWrapper.isHandling = false;
-                handleAudioOutputBuffer(-1, null, null, -1);
+                handleAudioOutputBuffer(-1, null, null);
             }
 
             /*// 创建AudioTrack
@@ -1561,31 +1561,20 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public int handleVideoOutputBuffer(int roomIndex, ByteBuffer room,
-                                           MediaCodec.BufferInfo roomInfo, int roomSize) {
-            /*if(needToDoIt){
-                byte[] outData = new byte[roomSize];
-                room.get(outData);
-
-                byte[] yData = new byte[width * height];
-                byte[] uData = new byte[width * height / 4];
-                byte[] vData = new byte[width * height / 4];
-
-                yuvCopy(outData, 0, alignWidth, alignHeight, yData, width, height);
-                yuvCopy(outData, alignWidth * alignHeight, alignWidth / 2, alignHeight / 2,
-                uData, width / 2, height / 2);
-                yuvCopy(outData, alignWidth * alignHeight * 5 / 4, alignWidth / 2,
-                alignHeight / 2, vData, width / 2, height / 2);
-            }*/
-            if (roomSize <= 0) {
+                                           MediaCodec.BufferInfo roomInfo) {
+            if (room == null || roomInfo == null || roomInfo.size <= 0) {
                 return -1;
             }
 
+            byte[] data = new byte[roomInfo.size];
+            room.get(data, roomInfo.offset, roomInfo.size);
             videoValueIntArray[0] = roomIndex;
-            videoValueIntArray[1] = roomSize;
-            videoValueObjectArray[0] = room;
-            videoValueObjectArray[1] = roomInfo;
+            videoValueIntArray[1] = roomInfo.offset;
+            videoValueIntArray[2] = roomInfo.size;
+            videoValueIntArray[3] = roomInfo.flags;
             mVideoJniObject.valueIntArray = videoValueIntArray;
-            mVideoJniObject.valueObjectArray = videoValueObjectArray;
+            mVideoJniObject.valueByteArray = data;
+            mVideoJniObject.valueLong = roomInfo.presentationTimeUs;
             return Integer.parseInt(
                     mFFMPEG.onTransact(
                             FFMPEG.DO_SOMETHING_CODE_handleVideoOutputBuffer, mVideoJniObject));
@@ -1593,17 +1582,20 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public int handleAudioOutputBuffer(int roomIndex, ByteBuffer room,
-                                           MediaCodec.BufferInfo roomInfo, int roomSize) {
-            if (roomSize <= 0) {
+                                           MediaCodec.BufferInfo roomInfo) {
+            if (room == null || roomInfo == null || roomInfo.size <= 0) {
                 return -1;
             }
 
+            byte[] data = new byte[roomInfo.size];
+            room.get(data, roomInfo.offset, roomInfo.size);
             audioValueIntArray[0] = roomIndex;
-            audioValueIntArray[1] = roomSize;
-            audioValueObjectArray[0] = room;
-            audioValueObjectArray[1] = roomInfo;
+            audioValueIntArray[1] = roomInfo.offset;
+            audioValueIntArray[2] = roomInfo.size;
+            audioValueIntArray[3] = roomInfo.flags;
             mAudioJniObject.valueIntArray = audioValueIntArray;
-            mAudioJniObject.valueObjectArray = audioValueObjectArray;
+            mAudioJniObject.valueByteArray = data;
+            mAudioJniObject.valueLong = roomInfo.presentationTimeUs;
             Integer.parseInt(
                     mFFMPEG.onTransact(
                             FFMPEG.DO_SOMETHING_CODE_handleAudioOutputBuffer, mAudioJniObject));
@@ -1611,9 +1603,9 @@ public class FfmpegUseMediaCodecDecode {
             if (mAudioWrapper.isHandling
                     && mExoAudioTrack.mAudioTrack != null
                     && room != null) {
-                byte[] audioData = new byte[roomSize];
-                room.get(audioData, 0, audioData.length);
-                mExoAudioTrack.mAudioTrack.write(audioData, roomInfo.offset, audioData.length);
+                /*byte[] audioData = new byte[roomSize];
+                room.get(audioData, 0, audioData.length);*/
+                mExoAudioTrack.mAudioTrack.write(data, roomInfo.offset, roomInfo.size);
             }
 
             return 0;
@@ -1715,10 +1707,10 @@ public class FfmpegUseMediaCodecDecode {
             if (room != null) {
                 room.position(roomInfo.offset);
                 room.limit(roomInfo.offset + roomSize);
-                mCallback.handleVideoOutputBuffer(roomIndex, room, roomInfo, roomSize);
+                mCallback.handleVideoOutputBuffer(roomIndex, room, roomInfo);
                 room.clear();
             } else {
-                mCallback.handleVideoOutputBuffer(roomIndex, null, null, -1);
+                mCallback.handleVideoOutputBuffer(roomIndex, null, null);
             }
 
             if (mVideoWrapper != null && mVideoWrapper.isHandling) {
@@ -1738,7 +1730,7 @@ public class FfmpegUseMediaCodecDecode {
                 return;
             }
 
-            mCallback.handleVideoOutputBuffer(-1, null, null, -1);
+            mCallback.handleVideoOutputBuffer(-1, null, null);
         }
 
         @Override
@@ -1837,10 +1829,10 @@ public class FfmpegUseMediaCodecDecode {
             if (room != null) {
                 room.position(roomInfo.offset);
                 room.limit(roomInfo.offset + roomSize);
-                mCallback.handleAudioOutputBuffer(roomIndex, room, roomInfo, roomSize);
+                mCallback.handleAudioOutputBuffer(roomIndex, room, roomInfo);
                 room.clear();
             } else {
-                mCallback.handleAudioOutputBuffer(roomIndex, null, null, -1);
+                mCallback.handleAudioOutputBuffer(roomIndex, null, null);
             }
 
             if (mAudioWrapper != null && mAudioWrapper.isHandling) {
@@ -1860,7 +1852,7 @@ public class FfmpegUseMediaCodecDecode {
                 return;
             }
 
-            mCallback.handleAudioOutputBuffer(-1, null, null, -1);
+            mCallback.handleAudioOutputBuffer(-1, null, null);
         }
 
         @Override

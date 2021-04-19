@@ -33,11 +33,9 @@ public class EDMediaCodec {
 
         void handleAudioOutputFormat(MediaFormat mediaFormat);
 
-        int handleVideoOutputBuffer(int roomIndex, ByteBuffer room,
-                                    MediaCodec.BufferInfo roomInfo, int roomSize);
+        int handleVideoOutputBuffer(int roomIndex, ByteBuffer room, MediaCodec.BufferInfo roomInfo);
 
-        int handleAudioOutputBuffer(int roomIndex, ByteBuffer room,
-                                    MediaCodec.BufferInfo roomInfo, int roomSize);
+        int handleAudioOutputBuffer(int roomIndex, ByteBuffer room, MediaCodec.BufferInfo roomInfo);
     }
 
     /***
@@ -166,10 +164,10 @@ public class EDMediaCodec {
             e.printStackTrace();
             if (type == TYPE.TYPE_AUDIO) {
                 Log.e(TAG, "feedInputBuffer() Audio Input occur exception: " + e);
-                callback.handleAudioOutputBuffer(-1, null, null, -1);
+                callback.handleAudioOutputBuffer(-1, null, null);
             } else {
                 Log.e(TAG, "feedInputBuffer() Video Input occur exception: " + e);
-                callback.handleVideoOutputBuffer(-1, null, null, -1);
+                callback.handleVideoOutputBuffer(-1, null, null);
             }
             return false;
         }
@@ -192,12 +190,12 @@ public class EDMediaCodec {
         for (; ; ) {
             if (type == TYPE.TYPE_AUDIO) {
                 if (callback.isAudioFinished()) {
-                    callback.handleAudioOutputBuffer(-1, null, null, -1);
+                    callback.handleAudioOutputBuffer(-1, null, null);
                     break;
                 }
             } else {
                 if (callback.isVideoFinished()) {
-                    callback.handleVideoOutputBuffer(-1, null, null, -1);
+                    callback.handleVideoOutputBuffer(-1, null, null);
                     break;
                 }
             }
@@ -286,16 +284,16 @@ public class EDMediaCodec {
                     room.position(roomInfo.offset);
                     room.limit(roomInfo.offset + roomSize);
                     if (type == TYPE.TYPE_AUDIO) {
-                        callback.handleAudioOutputBuffer(roomIndex, room, roomInfo, roomSize);
+                        callback.handleAudioOutputBuffer(roomIndex, room, roomInfo);
                     } else {
-                        callback.handleVideoOutputBuffer(roomIndex, room, roomInfo, roomSize);
+                        callback.handleVideoOutputBuffer(roomIndex, room, roomInfo);
                     }
                     room.clear();
                 } else {
                     if (type == TYPE.TYPE_AUDIO) {
-                        callback.handleAudioOutputBuffer(roomIndex, null, null, -1);
+                        callback.handleAudioOutputBuffer(roomIndex, null, null);
                     } else {
-                        callback.handleVideoOutputBuffer(roomIndex, null, null, -1);
+                        callback.handleVideoOutputBuffer(roomIndex, null, null);
                     }
                 }
 
@@ -307,10 +305,10 @@ public class EDMediaCodec {
                 e.printStackTrace();
                 if (type == TYPE.TYPE_AUDIO) {
                     Log.e(TAG, "drainOutputBuffer() Audio Output occur exception: " + e);
-                    callback.handleAudioOutputBuffer(-1, null, null, -1);
+                    callback.handleAudioOutputBuffer(-1, null, null);
                 } else {
                     Log.e(TAG, "drainOutputBuffer() Video Output occur exception: " + e);
-                    callback.handleVideoOutputBuffer(-1, null, null, -1);
+                    callback.handleVideoOutputBuffer(-1, null, null);
                 }
                 return false;
             }
