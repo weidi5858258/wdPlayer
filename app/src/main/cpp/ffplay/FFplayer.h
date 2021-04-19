@@ -39,6 +39,8 @@ void stepAdd(int64_t addStep);
 
 void stepSubtract(int64_t subtractStep);
 
+int handleVideoOutputBuffer(int roomIndex, long long presentationTimeUs);
+
 //}
 
 
