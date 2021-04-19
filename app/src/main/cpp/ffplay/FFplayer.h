@@ -39,7 +39,12 @@ void stepAdd(int64_t addStep);
 
 void stepSubtract(int64_t subtractStep);
 
-int handleVideoOutputBuffer(int roomIndex, long long presentationTimeUs);
+int decoder_decode_frame_by_mediacodec(int roomIndex,
+                                       int offset,
+                                       int size,
+                                       int flags,
+                                       long long presentationTimeUs,
+                                       const uint8_t *data);
 
 //}
 

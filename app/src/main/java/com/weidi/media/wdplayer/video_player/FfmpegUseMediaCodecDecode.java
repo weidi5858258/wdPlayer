@@ -1360,11 +1360,11 @@ public class FfmpegUseMediaCodecDecode {
     // video
     private JniObject mVideoJniObject = new JniObject();
     private int[] videoValueIntArray = new int[4];
-    //private Object[] videoValueObjectArray = new Object[2];
+    private Object[] videoValueObjectArray = new Object[2];
     // audio
     private JniObject mAudioJniObject = new JniObject();
     private int[] audioValueIntArray = new int[4];
-    //private Object[] audioValueObjectArray = new Object[2];
+    private Object[] audioValueObjectArray = new Object[2];
 
     private EDMediaCodec.Callback mCallback = new EDMediaCodec.Callback() {
 
@@ -1566,14 +1566,14 @@ public class FfmpegUseMediaCodecDecode {
                 return -1;
             }
 
-            byte[] data = new byte[roomInfo.size];
-            room.get(data, roomInfo.offset, roomInfo.size);
             videoValueIntArray[0] = roomIndex;
             videoValueIntArray[1] = roomInfo.offset;
             videoValueIntArray[2] = roomInfo.size;
             videoValueIntArray[3] = roomInfo.flags;
+            videoValueObjectArray[0] = room;
+            videoValueObjectArray[1] = roomInfo;
             mVideoJniObject.valueIntArray = videoValueIntArray;
-            mVideoJniObject.valueByteArray = data;
+            mVideoJniObject.valueObjectArray = videoValueObjectArray;
             mVideoJniObject.valueLong = roomInfo.presentationTimeUs;
             return Integer.parseInt(
                     mFFMPEG.onTransact(
@@ -1587,14 +1587,14 @@ public class FfmpegUseMediaCodecDecode {
                 return -1;
             }
 
-            byte[] data = new byte[roomInfo.size];
-            room.get(data, roomInfo.offset, roomInfo.size);
             audioValueIntArray[0] = roomIndex;
             audioValueIntArray[1] = roomInfo.offset;
             audioValueIntArray[2] = roomInfo.size;
             audioValueIntArray[3] = roomInfo.flags;
+            audioValueObjectArray[0] = room;
+            audioValueObjectArray[1] = roomInfo;
             mAudioJniObject.valueIntArray = audioValueIntArray;
-            mAudioJniObject.valueByteArray = data;
+            mAudioJniObject.valueObjectArray = audioValueObjectArray;
             mAudioJniObject.valueLong = roomInfo.presentationTimeUs;
             Integer.parseInt(
                     mFFMPEG.onTransact(
@@ -1603,9 +1603,9 @@ public class FfmpegUseMediaCodecDecode {
             if (mAudioWrapper.isHandling
                     && mExoAudioTrack.mAudioTrack != null
                     && room != null) {
-                /*byte[] audioData = new byte[roomSize];
-                room.get(audioData, 0, audioData.length);*/
-                mExoAudioTrack.mAudioTrack.write(data, roomInfo.offset, roomInfo.size);
+                byte[] audioData = new byte[roomInfo.size];
+                room.get(audioData, 0, roomInfo.size);
+                mExoAudioTrack.mAudioTrack.write(audioData, roomInfo.offset, roomInfo.size);
             }
 
             return 0;

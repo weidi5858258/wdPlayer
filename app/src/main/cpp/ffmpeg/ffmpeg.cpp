@@ -1021,20 +1021,21 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
     jint handleRet = 0;
     jobject intArrayObject = env->GetObjectField(jniObject, valueIntArray_jfieldID);
     jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
+    jlong presentationTimeUs = env->GetLongField(jniObject, valueLong_jfieldID);
     if (intArrayObject != nullptr && objectArrayObject != nullptr) {
         jint *intArray = reinterpret_cast<jint *>(
                 env->GetIntArrayElements(static_cast<jintArray>(intArrayObject), nullptr));
-        jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
-
-
         int roomIndex = intArray[0];
-        int roomSize = intArray[1];
+        int offset = intArray[1];
+        int size = intArray[2];
+        int flags = intArray[3];
 
+        jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
         // ByteBuffer room
-        jobject element0 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
+        jobject room = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
         // MediaCodec.BufferInfo roomInfo
-        jobject element1 = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
-        jlong presentationTimeUs = env->GetLongField(element1, presentationTimeUs_jfieldID);
+        jobject roomInfo = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
+        uint8_t *data = (uint8_t *) env->GetDirectBufferAddress(room);
 
         switch (code) {
             case DO_SOMETHING_CODE_handleAudioOutputBuffer:
@@ -1096,7 +1097,12 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                         break;
                     }
                     case USE_MODE_MEDIA_FFPLAY: {
-                        handleRet = handleVideoOutputBuffer(roomIndex, presentationTimeUs);
+                        handleRet = decoder_decode_frame_by_mediacodec(roomIndex,
+                                                                       offset,
+                                                                       size,
+                                                                       flags,
+                                                                       presentationTimeUs,
+                                                                       data);
                         break;
                     }
                     default:
@@ -1108,8 +1114,8 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         }
 
         // release
-        env->DeleteLocalRef(element0);
-        env->DeleteLocalRef(element1);
+        env->DeleteLocalRef(room);
+        env->DeleteLocalRef(roomInfo);
         env->DeleteLocalRef(intArrayObject);
         env->DeleteLocalRef(objectArrayObject);
     }
