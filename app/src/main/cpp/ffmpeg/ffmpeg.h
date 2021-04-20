@@ -76,7 +76,7 @@ void write(unsigned char *pcmData,
            int offsetInBytes,
            int sizeInBytes);
 
-void videoSleep(long ms);
+void sleep(long ms);
 
 int onLoadProgressUpdated(int code, int progress);
 

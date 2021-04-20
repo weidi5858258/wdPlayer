@@ -1599,15 +1599,15 @@ namespace alexander_audio_video {
                     videoSleepTime = tempSleep;
                 }
                 if (videoSleepTime < 12 && videoSleepTime > 0) {
-                    videoSleep(videoSleepTime);
+                    sleep(videoSleepTime);
                 } else {
                     if (videoSleepTime > 0) {
-                        videoSleep(11);
+                        sleep(11);
                     }
                 }
                 preVideoPts = videoPts;
             } else {
-                videoSleep(10);
+                sleep(10);
             }
 
             ////////////////////////////////////////////////////////

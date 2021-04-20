@@ -1666,7 +1666,7 @@ namespace alexander_media {
                 // 有些直播节目会这样
                 if (mediaDuration < 0 && readFrame == AVERROR_EOF) {
                     // LOGF("readData() readFrame  : %d\n", readFrame);
-                    videoSleep(10);
+                    sleep(10);
                     continue;
                 }
                 // AVERROR_HTTP_FORBIDDEN -858797304
@@ -2019,11 +2019,11 @@ namespace alexander_media {
             //LOGW("handleVideoDataImpl() videoSleepTime     : %d\n", videoSleepTime);
         }
         if (videoSleepTime < 12 && videoSleepTime > 0) {
-            videoSleep(videoSleepTime);
+            sleep(videoSleepTime);
         } else {
             if (videoSleepTime > 0) {
                 // 好像是个比较合理的值
-                videoSleep(11);
+                sleep(11);
             }
             // videoSleepTime <= 0时不需要sleep
         }

@@ -364,7 +364,7 @@ namespace alexander_only_video {
 
     int seekToImpl() {
         while (!videoWrapper->father->needToSeek) {
-            videoSleep(1);
+            sleep(1);
         }
         LOGI("seekToImpl() av_seek_frame start\n");
         if (videoWrapper->father->list2->size() != 0) {
@@ -594,7 +594,7 @@ namespace alexander_only_video {
             }
 
             if (isH264) {
-                videoSleep(11);
+                sleep(11);
             } else {
                 endTime = clock();
                 int temp1 = (videoPts - videoPtsPre) * 1000000;
@@ -610,10 +610,10 @@ namespace alexander_only_video {
                     }
                     if (sleepTime > 0) {
                         if (sleepTime >= 12 && sleepTime <= 20) {
-                            videoSleep(sleepTime);
+                            sleep(sleepTime);
                             //LOGW("handleVideoDataImpl() sleepTime: %d\n", sleepTime);
                         } else {
-                            videoSleep(11);
+                            sleep(11);
                         }
                     }
                 }

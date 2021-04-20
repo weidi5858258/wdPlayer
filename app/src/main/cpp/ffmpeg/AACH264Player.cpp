@@ -1151,12 +1151,12 @@ namespace alexander_aac_h264 {
                     //LOGW("handleVideoDataImpl()    takeTime_: %lld\n", (long long) takeTime_);
                     //LOGW("handleVideoDataImpl()    sleepTime: %d\n", sleepTime);
                     if (sleepTime > 0 && sleepTime < 25) {
-                        videoSleep(sleepTime);
+                        sleep(sleepTime);
                     } else {
-                        videoSleep(8);
+                        sleep(8);
                     }
                 } else {
-                    videoSleep(8);
+                    sleep(8);
                 }
             }
 

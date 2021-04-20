@@ -318,7 +318,10 @@ public class FFMPEG implements WdPlayer {
 
     // 供jni层调用
     private void sleep(long ms) {
-        SystemClock.sleep(ms);
+        //SystemClock.sleep(ms);
+        if (mFfmpegUseMediaCodecDecode != null) {
+            mFfmpegUseMediaCodecDecode.releaseOutputBuffer();
+        }
     }
 
     private Context mContext;

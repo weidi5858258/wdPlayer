@@ -359,15 +359,15 @@ void closeJni() {
     }
 }
 
-void videoSleep(long ms) {
-    JNIEnv *videoEnv;
-    bool videoIsAttached = getEnv(&videoEnv);
-    if (videoEnv != nullptr
+void sleep(long ms) {
+    JNIEnv *env;
+    bool isAttached = getEnv(&env);
+    if (env != nullptr
         && ffmpegJavaObject != nullptr
         && sleepMethodID != nullptr) {
-        videoEnv->CallVoidMethod(ffmpegJavaObject, sleepMethodID, (jlong) ms);
+        env->CallVoidMethod(ffmpegJavaObject, sleepMethodID, (jlong) ms);
     }
-    if (videoIsAttached) {
+    if (isAttached) {
         gJavaVm->DetachCurrentThread();
     }
 }
