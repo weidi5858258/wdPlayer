@@ -804,7 +804,7 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
             ret = 0;
             break;
         } else {
-            // 在packet_queue_put_private函数中发送信号
+            // 在packet_queue_put_private函数中发送信号,表示有数据了,可以去取数据了
             //LOGI("packet_queue_get() pthread_cond_wait start\n");
             pthread_cond_wait(&q->pcond, &q->pmutex);
             //LOGI("packet_queue_get() pthread_cond_wait end\n");
@@ -2185,7 +2185,9 @@ static int configure_filtergraph(AVFilterGraph *graph, const char *filtergraph,
     return ret;
 }
 
-static int configure_video_filters(AVFilterGraph *graph, VideoState *is, const char *vfilters,
+static int configure_video_filters(AVFilterGraph *graph,
+                                   VideoState *is,
+                                   const char *vfilters,
                                    AVFrame *frame) {
     //enum AVPixelFormat pix_fmts[FF_ARRAY_ELEMS(sdl_texture_format_map)];
     enum AVPixelFormat pix_fmts[0];
@@ -2212,11 +2214,13 @@ static int configure_video_filters(AVFilterGraph *graph, VideoState *is, const c
     while ((e = av_dict_get(sws_dict, "", e, AV_DICT_IGNORE_SUFFIX))) {
         if (!strcmp(e->key, "sws_flags")) {
             av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", "flags", e->value);
-        } else
+        } else {
             av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", e->key, e->value);
+        }
     }
-    if (strlen(sws_flags_str))
+    if (strlen(sws_flags_str)) {
         sws_flags_str[strlen(sws_flags_str) - 1] = '\0';
+    }
 
     graph->scale_sws_opts = av_strdup(sws_flags_str);
 
@@ -2225,25 +2229,28 @@ static int configure_video_filters(AVFilterGraph *graph, VideoState *is, const c
              frame->width, frame->height, frame->format,
              is->video_st->time_base.num, is->video_st->time_base.den,
              codecpar->sample_aspect_ratio.num, FFMAX(codecpar->sample_aspect_ratio.den, 1));
-    if (fr.num && fr.den)
-        av_strlcatf(buffersrc_args, sizeof(buffersrc_args), ":frame_rate=%d/%d", fr.num,
-                    fr.den);
+    if (fr.num && fr.den) {
+        av_strlcatf(
+                buffersrc_args, sizeof(buffersrc_args), ":frame_rate=%d/%d", fr.num, fr.den);
+    }
 
-    if ((ret = avfilter_graph_create_filter(&filt_src,
-                                            avfilter_get_by_name("buffer"),
-                                            "ffplay_buffer", buffersrc_args, nullptr,
-                                            graph)) < 0)
+    if ((ret = avfilter_graph_create_filter(
+            &filt_src, avfilter_get_by_name("buffer"),
+            "ffplay_buffer", buffersrc_args, nullptr, graph)) < 0) {
         goto fail;
+    }
 
     ret = avfilter_graph_create_filter(&filt_out,
                                        avfilter_get_by_name("buffersink"),
                                        "ffplay_buffersink", nullptr, nullptr, graph);
-    if (ret < 0)
+    if (ret < 0) {
         goto fail;
+    }
 
-    if ((ret = av_opt_set_int_list(filt_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE,
-                                   AV_OPT_SEARCH_CHILDREN)) < 0)
+    if ((ret = av_opt_set_int_list(
+            filt_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN)) < 0) {
         goto fail;
+    }
 
     last_filter = filt_out;
 
@@ -2282,8 +2289,9 @@ static int configure_video_filters(AVFilterGraph *graph, VideoState *is, const c
         }
     }
 
-    if ((ret = configure_filtergraph(graph, vfilters, filt_src, last_filter)) < 0)
+    if ((ret = configure_filtergraph(graph, vfilters, filt_src, last_filter)) < 0) {
         goto fail;
+    }
 
     is->in_video_filter = filt_src;
     is->out_video_filter = filt_out;
@@ -2616,6 +2624,18 @@ static void *video_thread(void *arg) {
 
 AVFrame *frame = av_frame_alloc();
 
+/***
+ * video_thread_mc ---> feedInputBufferAndDrainOutputBuffer ---> decoder_decode_frame_by_mediacodec
+ *
+ * 把frame数据保存到FrameQueue(pictq)中
+ * @param roomIndex
+ * @param offset
+ * @param size
+ * @param flags
+ * @param presentationTimeUs
+ * @param data
+ * @return
+ */
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,
@@ -2630,9 +2650,9 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     //#if CONFIG_AVFILTER
     AVFilterGraph *graph = nullptr;
     AVFilterContext *filt_in = nullptr, *filt_out = nullptr;
+    enum AVPixelFormat last_format = AV_PIX_FMT_NONE;
     int last_w = 0;
     int last_h = 0;
-    enum AVPixelFormat last_format = AV_PIX_FMT_NONE;
     int last_serial = -1;
     int last_vfilter_idx = 0;
     //#endif
@@ -2643,16 +2663,19 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     double duration;
     int ret = 0;
 
-    //frame->data[0] = const_cast<uint8_t *>(data);
+    frame->data[0] = const_cast<uint8_t *>(data);
+    frame->data[1] = const_cast<uint8_t *>(data);
+    frame->data[2] = const_cast<uint8_t *>(data);
     frame->linesize[0] = is->width;
-
+    frame->linesize[1] = is->height;
+    frame->linesize[2] = is->height;
     frame->flags = flags;
     frame->pts = presentationTimeUs;
     frame->pkt_pts = presentationTimeUs;
     frame->pkt_dts = presentationTimeUs;
     frame->best_effort_timestamp = presentationTimeUs;
     frame->pkt_size = size;
-    frame->pkt_pos = 0;
+    frame->pkt_pos = 0;//
     frame->pkt_duration = 0;//
     frame->width = is->width;
     frame->height = is->height;
@@ -2680,17 +2703,16 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         }
     }
 
-    /*if (last_w != frame->width
+    if (last_format != frame->format
+        || last_w != frame->width
         || last_h != frame->height
-        || last_format != frame->format
         || last_serial != is->viddec.pkt_serial
         || last_vfilter_idx != is->vfilter_idx) {
         av_log(nullptr, AV_LOG_DEBUG,
                "Video frame changed from size:%dx%d format:%s serial:%d to size:%dx%d format:%s serial:%d\n",
                last_w, last_h,
                (const char *) av_x_if_null(av_get_pix_fmt_name(last_format), "none"),
-               last_serial,
-               frame->width, frame->height,
+               last_serial, frame->width, frame->height,
                (const char *) av_x_if_null(
                        av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)), "none"),
                is->viddec.pkt_serial);
@@ -2718,7 +2740,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         last_serial = is->viddec.pkt_serial;
         last_vfilter_idx = is->vfilter_idx;
         frame_rate = av_buffersink_get_frame_rate(filt_out);
-    }*/
+    }
 
     /*ret = av_buffersrc_add_frame(filt_in, frame);
     if (ret < 0) {
@@ -4263,12 +4285,20 @@ static void *video_play(void *arg) {
     return nullptr;
 }
 
+/***
+ * 从PacketQueue中取出一个AVPacket,
+ * 然后把AVPacket的数据传递到java层,
+ * 由java层的MediaCodec解码,
+ * 再把解码后的数据(可能是没用的数据)
+ * 传递到decoder_decode_frame_by_mediacodec函数,
+ * 封装成一个AVFrame,最后保存到FrameQueue队列中.
+ * @param arg
+ * @return
+ */
 static void *video_thread_mc(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     Decoder *d = &is->viddec;
-    int ret = AVERROR(EAGAIN);
     AVPacket pkt;
-    bool feedAndDrainRet = false;
     LOGI("video_thread_mc() start\n");
     while (1) {
         // alexander add
@@ -4281,14 +4311,10 @@ static void *video_thread_mc(void *arg) {
             // read_thread线程会根据需要进行10ms的暂停
             pthread_cond_signal(d->pempty_queue_cond);
         }
-        if (d->packet_pending) {
-            av_packet_move_ref(&pkt, &d->pkt);
-            d->packet_pending = 0;
-        } else {
-            // 向PacketQueue队列取数据.如果没有数据刚被阻塞
-            if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0) {
-                return nullptr;
-            }
+        // 小于0的情况是is->abort_request为1
+        // 向PacketQueue队列取数据.如果没有数据刚被阻塞
+        if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0) {
+            break;
         }
         if (d->queue->serial != d->pkt_serial) {
             av_packet_unref(&pkt);
@@ -4301,23 +4327,14 @@ static void *video_thread_mc(void *arg) {
             d->finished = 0;
             d->next_pts = d->start_pts;
             d->next_pts_tb = d->start_pts_tb;
-        } else {
-            /*if (avcodec_send_packet(d->avctx, &pkt) == AVERROR(EAGAIN)) {
-                LOGI("decoder_decode_frame() "
-                     "Receive_frame and send_packet both returned EAGAIN,"
-                     " which is an API violation.\n");
-                d->packet_pending = 1;
-                av_packet_move_ref(&d->pkt, &pkt);
-            }*/
-
-            if (pkt.data != nullptr && pkt.size > 0) {
-                feedAndDrainRet = feedInputBufferAndDrainOutputBuffer(
-                        0x0002,
-                        pkt.data,
-                        pkt.size,
-                        (long long int) pkt.pts);
-            }
+            continue;
         }
+
+        feedInputBufferAndDrainOutputBuffer(
+                0x0002,
+                pkt.data,
+                pkt.size,
+                (long long int) pkt.pts);
         av_packet_unref(&pkt);
         // endregion
     }

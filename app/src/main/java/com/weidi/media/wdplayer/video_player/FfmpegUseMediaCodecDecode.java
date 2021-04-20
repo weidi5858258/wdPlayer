@@ -1333,9 +1333,6 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.data = wrapper.data;
                     avPacket.presentationTimeUs = wrapper.sampleTime;
                     avPacket.flags = 0;
-                    /*Log.w(TAG, "feedInputBufferAndDrainOutputBuffer() data:\n" +
-                            Arrays.toString(wrapper.data));
-                    SystemClock.sleep(1000);*/
                     try {
                         // 超出限制就会阻塞
                         mVideoInputDatasQueue.put(avPacket);
