@@ -284,8 +284,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == items.length)
+            while (count == items.length && needToWait) {
                 notFull.await();
+            }
             enqueue(e);
         } finally {
             lock.unlock();
@@ -334,8 +335,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == 0)
+            while (count == 0 && needToWait) {
                 notEmpty.await();
+            }
             return dequeue();
         } finally {
             lock.unlock();
@@ -1367,6 +1369,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
             lock.unlock();
         }
     }
+
+    public boolean needToWait = true;
 
 }
 

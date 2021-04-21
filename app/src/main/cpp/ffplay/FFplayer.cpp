@@ -1849,9 +1849,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 }
             }
 
-            LOGI("frame_queue_next() 1 start\n");
             frame_queue_next(&is->pictq);
-            LOGI("frame_queue_next() 1 end\n");
             is->force_refresh = 1;
 
             if (is->step && !is->paused) {
@@ -1869,9 +1867,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             video_display(is);
         } else if (is->useMediaCodec) {
             if (!is->force_refresh) {
-                LOGI("frame_queue_next() 2 start\n");
                 frame_queue_next(&is->pictq);
-                LOGI("frame_queue_next() 2 end\n");
             }
             video_display(is);
         }
@@ -2703,7 +2699,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         }
     }
 
-    if (last_format != frame->format
+    /*if (last_format != frame->format
         || last_w != frame->width
         || last_h != frame->height
         || last_serial != is->viddec.pkt_serial
@@ -2740,7 +2736,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         last_serial = is->viddec.pkt_serial;
         last_vfilter_idx = is->vfilter_idx;
         frame_rate = av_buffersink_get_frame_rate(filt_out);
-    }
+    }*/
 
     /*ret = av_buffersrc_add_frame(filt_in, frame);
     if (ret < 0) {
@@ -3337,8 +3333,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            is->useMediaCodec = false;
-            //initVideoMediaCodec(is);
+            //is->useMediaCodec = false;
+            initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;

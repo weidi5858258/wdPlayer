@@ -122,7 +122,7 @@ struct Callback {
     jmethodID onInfoMethodID = nullptr;
 } callback;
 
-int use_mode = USE_MODE_MEDIA;
+int use_mode = USE_MODE_MEDIA_FFPLAY;
 
 extern double TIME_STEP;
 extern bool isWatch;
@@ -364,6 +364,7 @@ void sleep(long ms) {
     bool isAttached = getEnv(&env);
     if (env != nullptr
         && ffmpegJavaObject != nullptr
+        && use_mode == USE_MODE_MEDIA_FFPLAY
         && sleepMethodID != nullptr) {
         env->CallVoidMethod(ffmpegJavaObject, sleepMethodID, (jlong) ms);
     }
