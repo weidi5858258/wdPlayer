@@ -99,6 +99,7 @@ jfieldID presentationTimeUs_jfieldID = nullptr;
 jobject ffmpegJavaObject = nullptr;
 jmethodID initMediaCodecMethodID = nullptr;
 jmethodID feedInputBufferAndDrainOutputBufferMethodID = nullptr;
+jmethodID feedInputBufferAndDrainOutputBufferMethodID2 = nullptr;
 jmethodID createAudioTrackMethodID = nullptr;
 jmethodID writeMethodID = nullptr;
 jmethodID sleepMethodID = nullptr;
@@ -264,6 +265,37 @@ bool feedInputBufferAndDrainOutputBuffer(int type,
                                                        feedInputBufferAndDrainOutputBufferMethodID,
                                                        (jint) type, data, (jint) size,
                                                        (jlong) presentationTimeUs);
+        bufferEnv->DeleteLocalRef(data);
+    }
+    if (audioIsAttached) {
+        gJavaVm->DetachCurrentThread();
+    }
+    return feedAndDrainRet;
+}
+
+bool feedInputBufferAndDrainOutputBuffer2(int type,
+                                          unsigned char *encodedData,
+                                          int size,
+                                          long long int pts,
+                                          long long int dts,
+                                          long long int pos,
+                                          long long int duration) {
+    bool feedAndDrainRet = false;
+    JNIEnv *bufferEnv;
+    bool audioIsAttached = getEnv(&bufferEnv);
+    if (bufferEnv != nullptr
+        && ffmpegJavaObject != nullptr
+        && feedInputBufferAndDrainOutputBufferMethodID2 != nullptr) {
+        jbyteArray data = bufferEnv->NewByteArray(size);
+        bufferEnv->SetByteArrayRegion(
+                data, 0, size, reinterpret_cast<const jbyte *>(encodedData));
+        feedAndDrainRet = bufferEnv->CallBooleanMethod(ffmpegJavaObject,
+                                                       feedInputBufferAndDrainOutputBufferMethodID2,
+                                                       (jint) type, data, (jint) size,
+                                                       (jlong) pts,
+                                                       (jlong) dts,
+                                                       (jlong) pos,
+                                                       (jlong) duration);
         bufferEnv->DeleteLocalRef(data);
     }
     if (audioIsAttached) {
@@ -657,6 +689,8 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     //FFMPEGClass, "initMediaCodec", "(ILcom/weidi/media/wdplayer/util/JniObject;)B");
     feedInputBufferAndDrainOutputBufferMethodID = env->GetMethodID(
             FFMPEGClass, "feedInputBufferAndDrainOutputBuffer", "(I[BIJ)Z");
+    feedInputBufferAndDrainOutputBufferMethodID2 = env->GetMethodID(
+            FFMPEGClass, "feedInputBufferAndDrainOutputBuffer2", "(I[BIJJJJ)Z");
     createAudioTrackMethodID = env->GetMethodID(
             FFMPEGClass, "createAudioTrack", "(III)V");
     writeMethodID = env->GetMethodID(
@@ -1021,15 +1055,27 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                                           jint code, jobject jniObject) {
     jint handleRet = 0;
     jobject intArrayObject = env->GetObjectField(jniObject, valueIntArray_jfieldID);
+    jobject longArrayObject = env->GetObjectField(jniObject, valueLongArray_jfieldID);
     jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
     jlong presentationTimeUs = env->GetLongField(jniObject, valueLong_jfieldID);
-    if (intArrayObject != nullptr && objectArrayObject != nullptr) {
+    if (intArrayObject != nullptr
+        && longArrayObject != nullptr
+        && objectArrayObject != nullptr) {
         jint *intArray = reinterpret_cast<jint *>(
-                env->GetIntArrayElements(static_cast<jintArray>(intArrayObject), nullptr));
+                env->GetIntArrayElements(
+                        static_cast<jintArray>(intArrayObject), nullptr));
+        jlong *longArray = reinterpret_cast<jlong *>(
+                env->GetLongArrayElements(
+                        static_cast<jlongArray>(longArrayObject), nullptr));
         int roomIndex = intArray[0];
         int offset = intArray[1];
         int size = intArray[2];
         int flags = intArray[3];
+
+        long long int pts = longArray[0];
+        long long int dts = longArray[1];
+        long long int pos = longArray[2];
+        long long int duration = longArray[3];
 
         jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
         // ByteBuffer room
@@ -1103,6 +1149,10 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                                                                        size,
                                                                        flags,
                                                                        presentationTimeUs,
+                                                                       pts,
+                                                                       dts,
+                                                                       pos,
+                                                                       duration,
                                                                        data);
                         break;
                     }
@@ -1118,6 +1168,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         env->DeleteLocalRef(room);
         env->DeleteLocalRef(roomInfo);
         env->DeleteLocalRef(intArrayObject);
+        env->DeleteLocalRef(longArrayObject);
         env->DeleteLocalRef(objectArrayObject);
     }
 

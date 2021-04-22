@@ -14,7 +14,10 @@ public class AVPacket implements Parcelable {
 
     public byte[] data;
     public int size;
-    public long presentationTimeUs;
+    public long presentationTimeUs;// pts
+    public long dts;
+    public long pos;
+    public long duration;
     public MediaCodec.CryptoInfo cryptoInfo;
     public int flags;
 

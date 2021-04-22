@@ -206,6 +206,44 @@ public class FFMPEG implements WdPlayer {
         return false;
     }
 
+    // presentationTimeUs = pts
+    private boolean feedInputBufferAndDrainOutputBuffer2(
+            int type, byte[] data, int size,
+            long pts, long dts, long pos, long duration) {
+        if (mFfmpegUseMediaCodecDecode != null) {
+            switch (type) {
+                case FfmpegUseMediaCodecDecode.TYPE_AUDIO:
+                    if (mFfmpegUseMediaCodecDecode.mAudioWrapper != null) {
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.data = data;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.size = size;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.sampleTime = pts;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.dts = dts;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.pos = pos;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.duration = duration;
+                        return mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
+                                mFfmpegUseMediaCodecDecode.mAudioWrapper);
+                    }
+                    break;
+                case FfmpegUseMediaCodecDecode.TYPE_VIDEO:
+                    if (mFfmpegUseMediaCodecDecode.mVideoWrapper != null) {
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.data = data;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.size = size;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.sampleTime = pts;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.dts = dts;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.pos = pos;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.duration = duration;
+                        return mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
+                                mFfmpegUseMediaCodecDecode.mVideoWrapper);
+                    }
+                    break;
+                default:
+                    break;
+
+            }
+        }
+        return false;
+    }
+
     // 供jni层调用(不要改动方法名称,如改动了,jni层也要改动)
     private void createAudioTrack(int sampleRateInHz,
                                   int channelCount,
@@ -395,10 +433,13 @@ public class FFMPEG implements WdPlayer {
 
     @Override
     public void seekTo(long second) {
-        onTransact(DO_SOMETHING_CODE_seekTo, JniObject.obtain().writeLong(second));
-        if (mFfmpegUseMediaCodecDecode != null) {
-            mFfmpegUseMediaCodecDecode.clearQueue();
-            mFfmpegUseMediaCodecDecode.signalQueue();
+        if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+        } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+            onTransact(DO_SOMETHING_CODE_seekTo, JniObject.obtain().writeLong(second));
+            if (mFfmpegUseMediaCodecDecode != null) {
+                mFfmpegUseMediaCodecDecode.clearQueue();
+                mFfmpegUseMediaCodecDecode.signalQueue();
+            }
         }
     }
 
@@ -412,6 +453,11 @@ public class FFMPEG implements WdPlayer {
         if (mFfmpegUseMediaCodecDecode != null) {
             mFfmpegUseMediaCodecDecode.mType = mType;
             mFfmpegUseMediaCodecDecode.setSurface(mSurface);
+            if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                mFfmpegUseMediaCodecDecode.useFFplay = true;
+            } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+                mFfmpegUseMediaCodecDecode.useFFplay = false;
+            }
         }
 
         // region 判断是什么样的文件(一般用于本地文件)

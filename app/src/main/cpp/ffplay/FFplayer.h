@@ -43,7 +43,11 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,
                                        int flags,
-                                       long long presentationTimeUs,
+                                       long long int presentationTimeUs,
+                                       long long int pts,
+                                       long long int dts,
+                                       long long int pos,
+                                       long long int duration,
                                        const uint8_t *data);
 
 //}

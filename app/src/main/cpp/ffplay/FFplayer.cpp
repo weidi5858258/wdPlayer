@@ -1005,17 +1005,17 @@ static Frame *frame_queue_peek_writable(FrameQueue *f) {
     pthread_mutex_lock(&f->pmutex);
     // 解码的帧数达到3个时,就暂停解码,等待其他线程唤醒然后继续解码
     while (f->size >= f->max_size && !f->pktq->abort_request) {
-        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_writable() video pthread_cond_wait start\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             //LOGI("frame_queue_peek_writable() audio pthread_cond_wait start\n");
-        }
+        }*/
         pthread_cond_wait(&f->pcond, &f->pmutex);
-        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_writable() video pthread_cond_wait end\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             //LOGI("frame_queue_peek_writable() audio pthread_cond_wait end\n");
-        }
+        }*/
     }
     pthread_mutex_unlock(&f->pmutex);
 
@@ -1432,41 +1432,55 @@ static void stream_close(VideoState *is) {
 
     /* close each stream */
     if (is->video_stream >= 0) {
+        LOGI("stream_component_close() video start\n");
         stream_component_close(is, is->video_stream);
+        LOGI("stream_component_close() video end\n");
     }
     if (is->audio_stream >= 0) {
+        LOGI("stream_component_close() audio start\n");
         stream_component_close(is, is->audio_stream);
+        LOGI("stream_component_close() audio end\n");
     }
     if (is->subtitle_stream >= 0) {
         stream_component_close(is, is->subtitle_stream);
     }
 
-    if (is->ic) {
-        avformat_close_input(&is->ic);
+    if (is->ic != nullptr) {
+        LOGI("avformat_free_context() start\n");
+        //ffmpeg 4.0版本不能调用
+        //avformat_close_input(&is->ic);
+        avformat_free_context(is->ic);
+        LOGI("avformat_free_context() end\n");
         is->ic = nullptr;
     }
 
+    LOGI("packet_queue_destroy()\n");
     packet_queue_destroy(&is->videoq);
     packet_queue_destroy(&is->audioq);
     packet_queue_destroy(&is->subtitleq);
     /* free all pictures */
+    LOGI("frame_queue_destory()\n");
     frame_queue_destory(&is->pictq);
     frame_queue_destory(&is->sampq);
     frame_queue_destory(&is->subpq);
     pthread_cond_destroy(&is->pcontinue_read_thread);
+    LOGI("sws_freeContext()\n");
     sws_freeContext(is->img_convert_ctx);
     sws_freeContext(is->sub_convert_ctx);
     av_free(is->filename);
     if (is->video_codec_context != nullptr) {
+        LOGI("avcodec_free_context() video\n");
         avcodec_free_context(&is->video_codec_context);
         //avcodec_close(is->video_codec_context);
         //av_free(is->video_codec_context);
         is->video_codec_context = nullptr;
     }
     if (is->audio_codec_context != nullptr) {
+        LOGI("avcodec_free_context() audio\n");
         avcodec_free_context(&is->audio_codec_context);
         is->audio_codec_context = nullptr;
     }
+    LOGI("av_frame_free()\n");
     if (is->rgbAVFrame) {
         av_frame_free(&is->rgbAVFrame);
         is->rgbAVFrame = nullptr;
@@ -2636,7 +2650,11 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,
                                        int flags,
-                                       long long presentationTimeUs,
+                                       long long int presentationTimeUs,
+                                       long long int pts_,
+                                       long long int dts_,
+                                       long long int pos_,
+                                       long long int duration_,
                                        const uint8_t *data) {
     // 为frame设置有关重要的参数
     if (!frame) {
@@ -2653,7 +2671,9 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     int last_vfilter_idx = 0;
     //#endif
     VideoState *is = video_state;
+    // {1, 120000} {1, 90000} {1, 15360}
     AVRational tb = is->video_st->time_base;
+    // {30000, 1001} {25, 1} {60, 1}
     AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, nullptr);
     double pts;
     double duration;
@@ -2666,35 +2686,35 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     frame->linesize[1] = is->height;
     frame->linesize[2] = is->height;
     frame->flags = flags;
-    frame->pts = presentationTimeUs;
-    frame->pkt_pts = presentationTimeUs;
-    frame->pkt_dts = presentationTimeUs;
-    frame->best_effort_timestamp = presentationTimeUs;
-    frame->pkt_size = size;
-    frame->pkt_pos = 0;//
-    frame->pkt_duration = 0;//
+    frame->pts = pts_;
+    frame->pkt_pts = pts_;
+    frame->pkt_dts = dts_;//
+    frame->best_effort_timestamp = pts_;
+    frame->pkt_size = size;//
+    frame->pkt_pos = pos_;//
+    frame->pkt_duration = duration_;//
     frame->width = is->width;
     frame->height = is->height;
     frame->reordered_opaque = -9223372036854775808;
     frame->sample_aspect_ratio = (AVRational) {1, 1};
 
     double dpts = NAN;
-
     if (frame->pts != AV_NOPTS_VALUE) {
         dpts = av_q2d(is->video_st->time_base) * frame->pts;
     }
-
     //frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
-
-    if (framedrop > 0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) {
+    if ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0) {
         if (frame->pts != AV_NOPTS_VALUE) {
             double diff = dpts - get_master_clock(is);
-            if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD &&
-                diff - is->frame_last_filter_delay < 0 &&
-                is->viddec.pkt_serial == is->vidclk.serial &&
-                is->videoq.nb_packets) {
+            if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD
+                && diff - is->frame_last_filter_delay < 0
+                && is->viddec.pkt_serial == is->vidclk.serial
+                && is->videoq.nb_packets) {
                 is->frame_drops_early++;
                 av_frame_unref(frame);
+                LOGI("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
+                     is->frame_drops_early);
+                return 0;
             }
         }
     }
@@ -2704,14 +2724,16 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         || last_h != frame->height
         || last_serial != is->viddec.pkt_serial
         || last_vfilter_idx != is->vfilter_idx) {
-        av_log(nullptr, AV_LOG_DEBUG,
-               "Video frame changed from size:%dx%d format:%s serial:%d to size:%dx%d format:%s serial:%d\n",
-               last_w, last_h,
-               (const char *) av_x_if_null(av_get_pix_fmt_name(last_format), "none"),
-               last_serial, frame->width, frame->height,
-               (const char *) av_x_if_null(
-                       av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)), "none"),
-               is->viddec.pkt_serial);
+        LOGI("decoder_decode_frame_by_mediacodec() Video frame changed from\n"
+             " size:%dx%d format:%s serial:%d last_vfilter_idx:%d to\n"
+             " size:%dx%d format:%s serial:%d vfilter_idx:%d\n",
+             last_w, last_h,
+             (const char *) av_x_if_null(av_get_pix_fmt_name(last_format), "none"),
+             last_serial, last_vfilter_idx,
+             frame->width, frame->height,
+             (const char *) av_x_if_null(
+                     av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)), "none"),
+             is->viddec.pkt_serial, is->vfilter_idx);
         avfilter_graph_free(&graph);
         graph = avfilter_graph_alloc();
         if (!graph) {
@@ -3573,14 +3595,14 @@ static void *read_thread(void *arg) {
         // pos为需要seek到的那个时间点
         stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
     }*/
+    LOGI("read_thread() video_stream = %d\n", is->video_stream);
+    LOGI("read_thread() audio_stream = %d\n", is->audio_stream);
+    LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
     if (timeStamp >= 0) {
         stream_seek(
                 is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
         timeStamp = -1;
     }
-
-    LOGI("read_thread() video_stream = %d\n", is->video_stream);
-    LOGI("read_thread() audio_stream = %d\n", is->audio_stream);
 
     struct timespec abstime;
     struct timeval now;
@@ -3794,7 +3816,7 @@ static void *read_thread(void *arg) {
 static int create_avformat_context(void *arg) {
     LOGI("create_avformat_context() start\n");
     VideoState *is = static_cast<VideoState *>(arg);
-    AVFormatContext *ic = nullptr;
+    is->ic = nullptr;
     AVDictionaryEntry *t = nullptr;
     int ret;
     int scan_all_pmts_set = 0;
@@ -3803,20 +3825,20 @@ static int create_avformat_context(void *arg) {
     memset(st_index, -1, sizeof(st_index));
     is->eof = 0;
 
-    if (!(ic = avformat_alloc_context())) {
+    if (!(is->ic = avformat_alloc_context())) {
         av_log(nullptr, AV_LOG_FATAL, "Could not allocate context.\n");
         ret = AVERROR(ENOMEM);
         goto fail;
     }
-    ic->interrupt_callback.callback = decode_interrupt_cb;// 设置回调函数
-    ic->interrupt_callback.opaque = is;// 回调函数的参数
+    is->ic->interrupt_callback.callback = decode_interrupt_cb;// 设置回调函数
+    is->ic->interrupt_callback.opaque = is;// 回调函数的参数
     if (!av_dict_get(format_opts, "scan_all_pmts", nullptr, AV_DICT_MATCH_CASE)) {
         av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
         scan_all_pmts_set = 1;
     }
     // 网络不好时,这个函数
     startTime = av_gettime_relative();
-    ret = avformat_open_input(&ic, is->filename, is->iformat, &format_opts);
+    ret = avformat_open_input(&is->ic, is->filename, is->iformat, &format_opts);
     endTime = av_gettime_relative();
     LOGE("create_avformat_context() avformat_open_input: %lld ms\n",
          (long long) ((endTime - startTime) / 1000));// 单位: ms
@@ -3844,21 +3866,19 @@ static int create_avformat_context(void *arg) {
         goto fail;
     }*/
 
-    is->ic = ic;
-
     LOGI("create_avformat_context() genpts = %d\n", genpts);// 0
     if (genpts) {
-        ic->flags |= AVFMT_FLAG_GENPTS;
+        is->ic->flags |= AVFMT_FLAG_GENPTS;
     }
 
-    av_format_inject_global_side_data(ic);
+    av_format_inject_global_side_data(is->ic);
 
     LOGI("create_avformat_context() find_stream_info = %d\n", find_stream_info);// 1
     if (find_stream_info) {
-        AVDictionary **opts = setup_find_stream_info_opts(ic, codec_opts);
-        int orig_nb_streams = ic->nb_streams;
+        AVDictionary **opts = setup_find_stream_info_opts(is->ic, codec_opts);
+        int orig_nb_streams = is->ic->nb_streams;
 
-        ret = avformat_find_stream_info(ic, opts);
+        ret = avformat_find_stream_info(is->ic, opts);
 
         for (int i = 0; i < orig_nb_streams; i++) {
             av_dict_free(&opts[i]);
@@ -3873,24 +3893,24 @@ static int create_avformat_context(void *arg) {
         }
     }
 
-    if (ic->pb) {
-        ic->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end
+    if (is->ic->pb) {
+        is->ic->pb->eof_reached = 0; // FIXME hack, ffplay maybe should not use avio_feof() to test for the end
     }
 
     LOGI("create_avformat_context() 1 seek_by_bytes = %d\n", seek_by_bytes);// -1
     if (seek_by_bytes < 0) {
-        int flag1 = ic->iformat->flags & AVFMT_TS_DISCONT;
-        int flag2 = strcmp("ogg", ic->iformat->name);
+        int flag1 = is->ic->iformat->flags & AVFMT_TS_DISCONT;
+        int flag2 = strcmp("ogg", is->ic->iformat->name);
         LOGI("create_avformat_context() flag1 = %d\n", flag1);
         LOGI("create_avformat_context() flag2 = %d\n", flag2);
         seek_by_bytes = !!(flag1) && flag2;
     }
     LOGI("create_avformat_context() 2 seek_by_bytes = %d\n", seek_by_bytes);// 0
 
-    is->max_frame_duration = (ic->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
+    is->max_frame_duration = (is->ic->iformat->flags & AVFMT_TS_DISCONT) ? 10.0 : 3600.0;
     LOGI("create_avformat_context() max_frame_duration = %lf\n", is->max_frame_duration);
 
-    if (!window_title && (t = av_dict_get(ic->metadata, "title", nullptr, 0))) {
+    if (!window_title && (t = av_dict_get(is->ic->metadata, "title", nullptr, 0))) {
         window_title = av_asprintf("%s - %s", t->value, input_filename);
     }
     LOGI("create_avformat_context() window_title = %s\n", window_title);
@@ -3902,10 +3922,10 @@ static int create_avformat_context(void *arg) {
 
         timestamp = start_time;
         /* add the stream start time */
-        if (ic->start_time != AV_NOPTS_VALUE) {
-            timestamp += ic->start_time;
+        if (is->ic->start_time != AV_NOPTS_VALUE) {
+            timestamp += is->ic->start_time;
         }
-        ret = avformat_seek_file(ic, -1, INT64_MIN, timestamp, INT64_MAX, 0);
+        ret = avformat_seek_file(is->ic, -1, INT64_MIN, timestamp, INT64_MAX, 0);
         if (ret < 0) {
             av_log(nullptr, AV_LOG_WARNING,
                    "%s: could not seek to position %0.3f\n",
@@ -3913,21 +3933,21 @@ static int create_avformat_context(void *arg) {
         }
     }
 
-    is->realtime = is_realtime(ic);
+    is->realtime = is_realtime(is->ic);
     LOGI("create_avformat_context() realtime = %d\n", is->realtime);// 0
 
     LOGI("create_avformat_context() show_status = %d\n", show_status);// -1
     /*if (show_status)
         av_dump_format(ic, 0, is->filename, 0);*/
 
-    for (int i = 0; i < ic->nb_streams; i++) {
-        AVStream *st = ic->streams[i];
+    for (int i = 0; i < is->ic->nb_streams; i++) {
+        AVStream *st = is->ic->streams[i];
         enum AVMediaType type = st->codecpar->codec_type;
         st->discard = AVDISCARD_ALL;
         LOGI("create_avformat_context() wanted_stream_spec[%d] = %s\n", type,
              wanted_stream_spec[type]);
         if (type >= 0 && wanted_stream_spec[type] && st_index[type] == -1) {
-            if (avformat_match_stream_specifier(ic, st, wanted_stream_spec[type]) > 0) {
+            if (avformat_match_stream_specifier(is->ic, st, wanted_stream_spec[type]) > 0) {
                 st_index[type] = i;
             }
         }
@@ -3947,20 +3967,20 @@ static int create_avformat_context(void *arg) {
     LOGI("create_avformat_context() subtitle_disable = %d\n", subtitle_disable);// 0
     if (!video_disable) {
         st_index[AVMEDIA_TYPE_VIDEO] =
-                av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO,
+                av_find_best_stream(is->ic, AVMEDIA_TYPE_VIDEO,
                                     st_index[AVMEDIA_TYPE_VIDEO],
                                     -1, nullptr, 0);
     }
     if (!audio_disable) {
         st_index[AVMEDIA_TYPE_AUDIO] =
-                av_find_best_stream(ic, AVMEDIA_TYPE_AUDIO,
+                av_find_best_stream(is->ic, AVMEDIA_TYPE_AUDIO,
                                     st_index[AVMEDIA_TYPE_AUDIO],
                                     st_index[AVMEDIA_TYPE_VIDEO],
                                     nullptr, 0);
     }
     if (!video_disable && !subtitle_disable) {
         st_index[AVMEDIA_TYPE_SUBTITLE] =
-                av_find_best_stream(ic, AVMEDIA_TYPE_SUBTITLE,
+                av_find_best_stream(is->ic, AVMEDIA_TYPE_SUBTITLE,
                                     st_index[AVMEDIA_TYPE_SUBTITLE],
                                     (st_index[AVMEDIA_TYPE_AUDIO] >= 0
                                      ? st_index[AVMEDIA_TYPE_AUDIO]
@@ -3984,11 +4004,11 @@ static int create_avformat_context(void *arg) {
     is->show_mode = show_mode;
 
     // 得到媒体文件的总时长
-    media_duration = (long) (ic->duration / AV_TIME_BASE);
+    media_duration = (long) (is->ic->duration / AV_TIME_BASE);
     LOGI("create_avformat_context() media_duration = %ld\n", media_duration);
-    if (ic->duration != AV_NOPTS_VALUE) {
+    if (is->ic->duration != AV_NOPTS_VALUE) {
         // 得到的是秒数
-        media_duration = (long) ((ic->duration + 5000) / AV_TIME_BASE);
+        media_duration = (long) ((is->ic->duration + 5000) / AV_TIME_BASE);
         long hours, mins, seconds;
         seconds = media_duration;
         mins = seconds / 60;
@@ -4010,9 +4030,9 @@ static int create_avformat_context(void *arg) {
     ret = -1;
     /* open the streams */
     if (st_index[AVMEDIA_TYPE_VIDEO] >= 0) {
-        AVStream *st = ic->streams[st_index[AVMEDIA_TYPE_VIDEO]];
+        AVStream *st = is->ic->streams[st_index[AVMEDIA_TYPE_VIDEO]];
         AVCodecParameters *codecpar = st->codecpar;
-        AVRational sar = av_guess_sample_aspect_ratio(ic, st, nullptr);
+        AVRational sar = av_guess_sample_aspect_ratio(is->ic, st, nullptr);
         if (codecpar->width) {
             set_default_window_size(codecpar->width, codecpar->height, sar);
         }
@@ -4058,10 +4078,10 @@ static int create_avformat_context(void *arg) {
 
     ret = 0;
     fail:
-    if (ic && !is->ic) {
+    /*if (ic && !is->ic) {
         avformat_close_input(&ic);
         ic = nullptr;
-    }
+    }*/
 
     LOGI("create_avformat_context() ret = %d\n", ret);
     LOGI("create_avformat_context() end\n");
@@ -4326,11 +4346,14 @@ static void *video_thread_mc(void *arg) {
             continue;
         }
 
-        feedInputBufferAndDrainOutputBuffer(
+        feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
                 pkt.data,
                 pkt.size,
-                (long long int) pkt.pts);
+                (long long int) pkt.pts,
+                (long long int) pkt.dts,
+                (long long int) pkt.pos,
+                (long long int) pkt.duration);
         av_packet_unref(&pkt);
         // endregion
     }
@@ -5079,12 +5102,13 @@ bool isPausedForUser() {
  单位秒.比如seek到100秒,就传100
  */
 int seekTo(int64_t timestamp) {
+    LOGI("seekTo() timeStamp: %lld\n", (long long) timestamp);
+    timeStamp = -1;
     if (!isRunning()) {
         timeStamp = timestamp;
         return -1;
     }
 
-    LOGI("seekTo() timeStamp: %lld\n", (long long) timestamp);
     stream_seek(video_state,
                 (int64_t) (timestamp * AV_TIME_BASE),
                 (int64_t) (10.000000 * AV_TIME_BASE), 0);

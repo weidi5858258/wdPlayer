@@ -68,6 +68,14 @@ bool feedInputBufferAndDrainOutputBuffer(int type,
                                          int size,
                                          long long presentationTimeUs);
 
+bool feedInputBufferAndDrainOutputBuffer2(int type,
+                                          unsigned char *encodedData,
+                                          int size,
+                                          long long int pts,
+                                          long long int dts,
+                                          long long int pos,
+                                          long long int duration);
+
 void createAudioTrack(int sampleRateInHz,
                       int channelCount,
                       int audioFormat);
