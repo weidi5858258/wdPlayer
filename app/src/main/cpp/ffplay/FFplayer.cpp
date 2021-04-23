@@ -233,8 +233,8 @@ typedef struct Decoder {
 } Decoder;
 
 typedef struct VideoState {
-    AVFormatContext *ic;
-    AVInputFormat *iformat;
+    AVFormatContext *ic = nullptr;
+    AVInputFormat *iformat = nullptr;
     // 是否强制停止(0运行1停止) init(0) stream_close(1)
     int abort_request;
     int force_refresh;
@@ -381,7 +381,7 @@ struct AVBSFInternal {
 VideoState *video_state = nullptr;
 
 /* options specified by the user */
-static AVInputFormat *file_iformat;
+static AVInputFormat *file_iformat = nullptr;
 static char input_filename[1024];
 static const char *window_title;
 static int default_width = 640;
@@ -1768,10 +1768,13 @@ static void video_refresh(void *opaque, double *remaining_time) {
     double time;
     Frame *sp = nullptr, *sp2 = nullptr;
 
+    // region 第一个条件不满足
     if (is->realtime && !is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK) {
         check_external_clock_speed(is);
     }
+    // endregion
 
+    // region 第一个条件不满足
     if (is->show_mode != VideoState::SHOW_MODE_VIDEO && !display_disable && is->audio_st) {
         time = av_gettime_relative() / 1000000.0;
         if (is->force_refresh || is->last_vis_time + rdftspeed < time) {
@@ -1780,6 +1783,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
         *remaining_time = FFMIN(*remaining_time, is->last_vis_time + rdftspeed - time);
     }
+    // endregion
 
     if (is->video_st) {
         retry:
@@ -1795,6 +1799,12 @@ static void video_refresh(void *opaque, double *remaining_time) {
             /* dequeue the picture */
             lastvp = frame_queue_peek_last(&is->pictq);
             vp = frame_queue_peek(&is->pictq);
+
+            /*LOGI("video_refresh()\n"
+                 " pts: %lf pos: %lld duration: %lf serial: %d\n"
+                 " pts: %lf pos: %lld duration: %lf serial: %d\n",
+                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
+                 vp->pts, vp->pos, vp->duration, vp->serial);*/
 
             if (vp->serial != is->videoq.serial) {
                 frame_queue_next(&is->pictq);
@@ -1828,6 +1838,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             delay = compute_target_delay(last_duration, is);
             time = av_gettime_relative() / 1000000.0;
             /*LOGD("video_refresh()-------------------------------\n");
+            LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             LOGI("video_refresh()           delay = %lf\n", delay);
             LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
             LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
@@ -1873,7 +1884,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
         display:
         /* display picture */
-        if (!display_disable
+        /*if (!display_disable
             && is->force_refresh
             && !is->useMediaCodec
             && is->show_mode == VideoState::SHOW_MODE_VIDEO
@@ -1883,6 +1894,16 @@ static void video_refresh(void *opaque, double *remaining_time) {
             if (!is->force_refresh) {
                 frame_queue_next(&is->pictq);
             }
+            video_display(is);
+        }*/
+
+        if (!is->force_refresh) {
+            frame_queue_next(&is->pictq);
+        }
+        if (!display_disable
+            && is->force_refresh
+            && is->show_mode == VideoState::SHOW_MODE_VIDEO
+            && is->pictq.rindex_shown) {
             video_display(is);
         }
     }
@@ -2199,6 +2220,7 @@ static int configure_video_filters(AVFilterGraph *graph,
                                    VideoState *is,
                                    const char *vfilters,
                                    AVFrame *frame) {
+    LOGI("configure_video_filters() start\n");
     //enum AVPixelFormat pix_fmts[FF_ARRAY_ELEMS(sdl_texture_format_map)];
     enum AVPixelFormat pix_fmts[0];
     char sws_flags_str[512] = "";
@@ -2219,6 +2241,7 @@ static int configure_video_filters(AVFilterGraph *graph,
             }
         }
     }*/
+
     pix_fmts[nb_pix_fmts] = AV_PIX_FMT_NONE;
 
     while ((e = av_dict_get(sws_dict, "", e, AV_DICT_IGNORE_SUFFIX))) {
@@ -2234,6 +2257,8 @@ static int configure_video_filters(AVFilterGraph *graph,
 
     graph->scale_sws_opts = av_strdup(sws_flags_str);
 
+    // video_size=1920x1080:pix_fmt=0:time_base=1/120000:pixel_aspect=1/1:frame_rate=30000/1001
+    // video_size=3840x2160:pix_fmt=0:time_base=1/25000:pixel_aspect=1/1:frame_rate=25/1
     snprintf(buffersrc_args, sizeof(buffersrc_args),
              "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
              frame->width, frame->height, frame->format,
@@ -2243,22 +2268,34 @@ static int configure_video_filters(AVFilterGraph *graph,
         av_strlcatf(
                 buffersrc_args, sizeof(buffersrc_args), ":frame_rate=%d/%d", fr.num, fr.den);
     }
+    LOGI("configure_video_filters() buffersrc_args: %s\n", buffersrc_args);
 
-    if ((ret = avfilter_graph_create_filter(
-            &filt_src, avfilter_get_by_name("buffer"),
-            "ffplay_buffer", buffersrc_args, nullptr, graph)) < 0) {
-        goto fail;
+    const AVFilter *filt = avfilter_get_by_name("buffer");
+    if (!filt) {
+        LOGI("configure_video_filters() filt 1 is nullptr\n");
     }
-
-    ret = avfilter_graph_create_filter(&filt_out,
-                                       avfilter_get_by_name("buffersink"),
-                                       "ffplay_buffersink", nullptr, nullptr, graph);
+    ret = avfilter_graph_create_filter(
+            &filt_src, filt, "ffplay_buffer", buffersrc_args, nullptr, graph);
     if (ret < 0) {
+        LOGE("configure_video_filters() avfilter_graph_create_filter 1 failed\n");
         goto fail;
     }
 
-    if ((ret = av_opt_set_int_list(
-            filt_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN)) < 0) {
+    filt = avfilter_get_by_name("buffersink");
+    if (!filt) {
+        LOGI("configure_video_filters() filt 2 is nullptr\n");
+    }
+    ret = avfilter_graph_create_filter(
+            &filt_out, filt, "ffplay_buffersink", nullptr, nullptr, graph);
+    if (ret < 0) {
+        LOGE("configure_video_filters() avfilter_graph_create_filter 2 failed\n");
+        goto fail;
+    }
+
+    ret = av_opt_set_int_list(
+            filt_out, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+    if (ret < 0) {
+        LOGE("configure_video_filters() av_opt_set_int_list failed\n");
         goto fail;
     }
 
@@ -2299,7 +2336,9 @@ static int configure_video_filters(AVFilterGraph *graph,
         }
     }
 
-    if ((ret = configure_filtergraph(graph, vfilters, filt_src, last_filter)) < 0) {
+    ret = configure_filtergraph(graph, vfilters, filt_src, last_filter);
+    if (ret < 0) {
+        LOGE("configure_video_filters() configure_filtergraph failed\n");
         goto fail;
     }
 
@@ -2307,6 +2346,7 @@ static int configure_video_filters(AVFilterGraph *graph,
     is->out_video_filter = filt_out;
 
     fail:
+    LOGI("configure_video_filters() end\n");
     return ret;
 }
 
@@ -2633,6 +2673,15 @@ static void *video_thread(void *arg) {
 }
 
 AVFrame *frame = av_frame_alloc();
+//#if CONFIG_AVFILTER
+AVFilterContext *filt_in = nullptr, *filt_out = nullptr;
+enum AVPixelFormat last_format = AV_PIX_FMT_NONE;
+int last_w = 0;
+int last_h = 0;
+int last_serial = -1;
+int last_vfilter_idx = 0;
+//#endif
+AVRational frame_rate_avrational;
 
 /***
  * video_thread_mc ---> feedInputBufferAndDrainOutputBuffer ---> decoder_decode_frame_by_mediacodec
@@ -2661,20 +2710,9 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         return AVERROR(ENOMEM);
     }
 
-    //#if CONFIG_AVFILTER
-    AVFilterGraph *graph = nullptr;
-    AVFilterContext *filt_in = nullptr, *filt_out = nullptr;
-    enum AVPixelFormat last_format = AV_PIX_FMT_NONE;
-    int last_w = 0;
-    int last_h = 0;
-    int last_serial = -1;
-    int last_vfilter_idx = 0;
-    //#endif
     VideoState *is = video_state;
     // {1, 120000} {1, 90000} {1, 15360}
     AVRational tb = is->video_st->time_base;
-    // {30000, 1001} {25, 1} {60, 1}
-    AVRational frame_rate = av_guess_frame_rate(is->ic, is->video_st, nullptr);
     double pts;
     double duration;
     int ret = 0;
@@ -2697,11 +2735,16 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     frame->height = is->height;
     frame->reordered_opaque = -9223372036854775808;
     frame->sample_aspect_ratio = (AVRational) {1, 1};
+    frame->format = 0;
 
     double dpts = NAN;
     if (frame->pts != AV_NOPTS_VALUE) {
         dpts = av_q2d(is->video_st->time_base) * frame->pts;
     }
+    /*LOGI("decoder_decode_frame_by_mediacodec()"
+         " dpts: %lf pts: %lld pkt_pts: %lld pkt_dts: %lld pkt_pos: %lld pkt_duration: %lld pkt_size: %d\n",
+         dpts, frame->pts, frame->pkt_pts, frame->pkt_dts, frame->pkt_pos, frame->pkt_duration,
+         frame->pkt_size);*/
     //frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
     if ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0) {
         if (frame->pts != AV_NOPTS_VALUE) {
@@ -2712,21 +2755,23 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                 && is->videoq.nb_packets) {
                 is->frame_drops_early++;
                 av_frame_unref(frame);
-                LOGI("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
-                     is->frame_drops_early);
+                /*LOGI("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
+                     is->frame_drops_early);*/
                 return 0;
             }
         }
     }
 
-    /*if (last_format != frame->format
+    // region configure_video_filters
+    if (last_format != frame->format
         || last_w != frame->width
         || last_h != frame->height
         || last_serial != is->viddec.pkt_serial
         || last_vfilter_idx != is->vfilter_idx) {
         LOGI("decoder_decode_frame_by_mediacodec() Video frame changed from\n"
-             " size:%dx%d format:%s serial:%d last_vfilter_idx:%d to\n"
-             " size:%dx%d format:%s serial:%d vfilter_idx:%d\n",
+             " size:%d x %d format:%s serial:%d last_vfilter_idx:%d\n"
+             " to\n"
+             " size:%d x %d format:%s serial:%d vfilter_idx:%d\n",
              last_w, last_h,
              (const char *) av_x_if_null(av_get_pix_fmt_name(last_format), "none"),
              last_serial, last_vfilter_idx,
@@ -2734,7 +2779,10 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
              (const char *) av_x_if_null(
                      av_get_pix_fmt_name(static_cast<AVPixelFormat>(frame->format)), "none"),
              is->viddec.pkt_serial, is->vfilter_idx);
+        AVFilterGraph *graph = nullptr;
+        LOGI("decoder_decode_frame_by_mediacodec() avfilter_graph_free\n");
         avfilter_graph_free(&graph);
+        LOGI("decoder_decode_frame_by_mediacodec() avfilter_graph_alloc\n");
         graph = avfilter_graph_alloc();
         if (!graph) {
             ret = AVERROR(ENOMEM);
@@ -2742,7 +2790,9 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
             //goto the_end;
         }
         graph->nb_threads = filter_nbthreads;
-        // ?
+        if (!vfilters_list) {
+            LOGI("decoder_decode_frame_by_mediacodec() vfilters_list is nullptr\n");
+        }
         if ((ret = configure_video_filters(graph, is,
                                            vfilters_list
                                            ? vfilters_list[is->vfilter_idx]
@@ -2752,18 +2802,26 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         }
         filt_in = is->in_video_filter;
         filt_out = is->out_video_filter;
+        last_format = static_cast<AVPixelFormat>(frame->format);
         last_w = frame->width;
         last_h = frame->height;
-        last_format = static_cast<AVPixelFormat>(frame->format);
         last_serial = is->viddec.pkt_serial;
         last_vfilter_idx = is->vfilter_idx;
-        frame_rate = av_buffersink_get_frame_rate(filt_out);
-    }*/
+        // {30000, 1001} {25, 1} {60, 1}
+        frame_rate_avrational = av_guess_frame_rate(is->ic, is->video_st, nullptr);
+        LOGI("decoder_decode_frame_by_mediacodec() num: %d den: %d\n",
+             frame_rate_avrational.num, frame_rate_avrational.den);
+        frame_rate_avrational = av_buffersink_get_frame_rate(filt_out);
+        LOGI("decoder_decode_frame_by_mediacodec() num: %d den: %d\n",
+             frame_rate_avrational.num, frame_rate_avrational.den);
+    }
+    // endregion
 
-    /*ret = av_buffersrc_add_frame(filt_in, frame);
+    ret = av_buffersrc_add_frame(filt_in, frame);
     if (ret < 0) {
+        LOGE("decoder_decode_frame_by_mediacodec() av_buffersrc_add_frame failed\n");
         //goto the_end;
-    }*/
+    }
 
     /*while (ret >= 0) {
     }
@@ -2772,25 +2830,28 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     }*/
 
     is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
-    /*ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
+    ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
     if (ret < 0) {
+        LOGE("decoder_decode_frame_by_mediacodec() av_buffersink_get_frame_flags failed\n");
         if (ret == AVERROR_EOF) {
             is->viddec.finished = is->viddec.pkt_serial;
         }
         ret = 0;
-        break;
-    }*/
+        //break;
+    }
     is->frame_last_filter_delay =
             av_gettime_relative() / 1000000.0 - is->frame_last_returned_time;
     if (fabs(is->frame_last_filter_delay) > AV_NOSYNC_THRESHOLD / 10.0) {
         is->frame_last_filter_delay = 0;
     }
-    //tb = av_buffersink_get_time_base(filt_out);
-    tb = (AVRational) {frame_rate.den, frame_rate.num};
-    duration = (frame_rate.num
-                && frame_rate.den ? av_q2d(
-            (AVRational) {frame_rate.den, frame_rate.num}) : 0);
+    tb = av_buffersink_get_time_base(filt_out);
+    //tb = (AVRational) {frame_rate.den, frame_rate.num};
+    duration = (frame_rate_avrational.num
+                && frame_rate_avrational.den ? av_q2d(
+            (AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
     pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+    /*LOGI("decoder_decode_frame_by_mediacodec()"
+         "  pts: %lf duration: %lf\n", pts, duration);*/
     ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
     av_frame_unref(frame);
 

@@ -189,7 +189,8 @@ public class PlayerService extends Service {
     private void internalStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
             // app crash后的操作
-            handleAppCrash();
+            Log.e(TAG, "handleAppCrash()");
+            //handleAppCrash();
             return;
         }
 

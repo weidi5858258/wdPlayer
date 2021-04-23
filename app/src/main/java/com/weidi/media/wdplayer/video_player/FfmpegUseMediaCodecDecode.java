@@ -1393,6 +1393,15 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.pos = wrapper.pos;
                     avPacket.duration = wrapper.duration;
                     avPacket.flags = 0;
+
+                    /*Log.d(TAG, "feedInputBufferAndDrainOutputBuffer()" +
+                            " pts: " + avPacket.presentationTimeUs +
+                            " pkt_pts: " + avPacket.presentationTimeUs +
+                            " pkt_dts: " + avPacket.dts +
+                            " pkt_pos: " + avPacket.pos +
+                            " pkt_duration: " + avPacket.duration +
+                            " pkt_size: " + avPacket.size);*/
+
                     try {
                         // 超出限制就会阻塞
                         //Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() 1");
@@ -1678,8 +1687,7 @@ public class FfmpegUseMediaCodecDecode {
             }
 
             mVideoLock.lock();
-            AVPacket avPacket = mVideoList.get(0);
-            mVideoList.remove(0);
+            AVPacket avPacket = getAvPacket();
             mVideoLock.unlock();
 
             videoValueIntArray[0] = roomIndex;
@@ -1687,6 +1695,7 @@ public class FfmpegUseMediaCodecDecode {
             videoValueIntArray[2] = roomInfo.size;
             videoValueIntArray[3] = roomInfo.flags;
             if (avPacket != null) {
+                videoValueIntArray[2] = avPacket.size;
                 videoValueLongArray[0] = avPacket.presentationTimeUs;
                 videoValueLongArray[1] = avPacket.dts;
                 videoValueLongArray[2] = avPacket.pos;
@@ -1767,6 +1776,24 @@ public class FfmpegUseMediaCodecDecode {
     public boolean useFFplay = true;
     final Lock mVideoLock = new ReentrantLock();
     private ArrayList<AVPacket> mVideoList = new ArrayList<AVPacket>();
+
+    private AVPacket getAvPacket() {
+        if (mVideoList.isEmpty()) {
+            return null;
+        }
+        AVPacket avPacket = mVideoList.get(0);
+        long pts = avPacket.presentationTimeUs;
+        for (AVPacket pkt : mVideoList) {
+            if (pts > pkt.presentationTimeUs) {
+                avPacket = pkt;
+                pts = pkt.presentationTimeUs;
+            }
+        }
+        if (avPacket != null) {
+            mVideoList.remove(avPacket);
+        }
+        return avPacket;
+    }
 
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
