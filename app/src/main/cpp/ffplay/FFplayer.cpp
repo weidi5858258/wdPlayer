@@ -1724,22 +1724,27 @@ static double compute_target_delay(double delay, VideoState *is) {
         /* if video is slave, we try to correct big delays by
        duplicating or deleting a frame */
         diff = get_clock(&is->vidclk) - get_master_clock(is);
-
         /* skip or repeat frame. We take into account the
        delay to compute the threshold. I still don't know
        if it is the best guess */
         sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
+        LOGI("compute_target()           diff = %lf\n", diff);
+        LOGI("compute_target() sync_threshold = %lf\n", sync_threshold);
+        LOGI("compute_target()    isnan(diff) = %d\n", isnan(diff));
+        LOGI("compute_target()     fabs(diff) = %lf\n", fabs(diff));
+        // is->max_frame_duration: 3600.000000
         if (!isnan(diff) && fabs(diff) < is->max_frame_duration) {
-            if (diff <= -sync_threshold)
+            if (diff <= -sync_threshold) {
                 delay = FFMAX(0, delay + diff);
-            else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
+            } else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD) {
                 delay = delay + diff;
-            else if (diff >= sync_threshold)
+            } else if (diff >= sync_threshold) {
                 delay = 2 * delay;
+            }
         }
     }
 
-    av_log(nullptr, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n", delay, -diff);
+    //av_log(nullptr, AV_LOG_TRACE, "video: delay=%0.3f A-V=%f\n", delay, -diff);
 
     return delay;
 }
@@ -1747,6 +1752,8 @@ static double compute_target_delay(double delay, VideoState *is) {
 static double vp_duration(VideoState *is, Frame *vp, Frame *nextvp) {
     if (vp->serial == nextvp->serial) {
         double duration = nextvp->pts - vp->pts;
+        //LOGI("vp_duration()          duration = %lf\n", duration);
+        //LOGI("vp_duration()   isnan(duration) = %d\n", isnan(duration));// 0
         if (isnan(duration) || duration <= 0 || duration > is->max_frame_duration)
             return vp->duration;
         else
@@ -1800,12 +1807,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
             lastvp = frame_queue_peek_last(&is->pictq);
             vp = frame_queue_peek(&is->pictq);
 
-            /*LOGI("video_refresh()\n"
-                 " pts: %lf pos: %lld duration: %lf serial: %d\n"
-                 " pts: %lf pos: %lld duration: %lf serial: %d\n",
-                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
-                 vp->pts, vp->pos, vp->duration, vp->serial);*/
-
             if (vp->serial != is->videoq.serial) {
                 frame_queue_next(&is->pictq);
                 goto retry;
@@ -1833,16 +1834,25 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 }
             }
 
+            LOGD("video_refresh()-------------------------------\n");
+
+            LOGI("video_refresh()\n"
+                 " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
+                 "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n"
+                 " vp->pts    -     lastvp->pts: %lf\n",
+                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
+                 vp->pts, vp->pos, vp->duration, vp->serial,
+                 (vp->pts - lastvp->pts));
+
             /* compute nominal last_duration */
-            last_duration = vp_duration(is, lastvp, vp);
+            delay = last_duration = vp_duration(is, lastvp, vp);
+            LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             delay = compute_target_delay(last_duration, is);
             time = av_gettime_relative() / 1000000.0;
-            /*LOGD("video_refresh()-------------------------------\n");
-            LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             LOGI("video_refresh()           delay = %lf\n", delay);
             LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
             LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
-            LOGI("video_refresh()            time = %lf\n", time);*/
+            LOGI("video_refresh()            time = %lf\n", time);
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
                 //LOGI("video_refresh()  remaining_time = %lf\n", *remaining_time);
