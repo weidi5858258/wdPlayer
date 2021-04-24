@@ -324,6 +324,7 @@ public class FfmpegUseMediaCodecDecode {
             if (mAudioInputDatasQueue != null) {
                 mAudioInputDatasQueue.clear();
             }
+            mVideoLock.lock();
             if (mVideoList != null) {
                 Iterator<AVPacket> iter = mVideoList.iterator();
                 while (iter.hasNext()) {
@@ -333,6 +334,7 @@ public class FfmpegUseMediaCodecDecode {
                 }
                 mVideoList.clear();
             }
+            mVideoLock.unlock();
         } catch (Exception e) {
             e.printStackTrace();
         }
