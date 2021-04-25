@@ -472,9 +472,12 @@ static int64_t endTime = 0;
 static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
 
+static double test_remaining_time = 0.0;
+static long long int test_remaining_time_count = 0;
+
 static bool read_thread_log = true;
 static bool video_decode_mc_log = false;
-static bool video_refresh_log = true;
+static bool video_refresh_log = false;
 static bool video_play_log = true;
 static bool audio_play_log = false;
 
@@ -1120,9 +1123,9 @@ static void frame_queue_next(FrameQueue *f) {
     }
 
     if (video_state->useMediaCodec && f->size <= 0) {
-        /*pthread_mutex_lock(&f->pmutex);
+        pthread_mutex_lock(&f->pmutex);
         pthread_cond_signal(&f->pcond);
-        pthread_mutex_unlock(&f->pmutex);*/
+        pthread_mutex_unlock(&f->pmutex);
         return;
     }
 
@@ -1977,11 +1980,26 @@ static void video_refresh(void *opaque, double *remaining_time) {
             }
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-                if (video_refresh_log) {
-                    LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
+                /*if (is->useMediaCodec) {
+                    if (*remaining_time < REFRESH_RATE) {
+                        test_remaining_time += *remaining_time;
+                    } else {
+                        *remaining_time = 0.000001;
+                        test_remaining_time += *remaining_time;
+                    }
+                    double temp = test_remaining_time / (++test_remaining_time_count);
+                    *remaining_time = temp;
                 }
+                LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);*/
                 goto display;
             }
+
+            /*if (is->useMediaCodec) {
+                test_remaining_time += 0.000001;
+                double temp = test_remaining_time / (++test_remaining_time_count);
+                *remaining_time = temp;
+            }
+            LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);*/
 
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
@@ -2003,6 +2021,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     && time > is->frame_timer + duration) {
                     is->frame_drops_late++;
                     frame_queue_next(&is->pictq);
+                    //LOGI("video_refresh()  goto retry\n");
                     goto retry;
                 }
             }
@@ -2026,6 +2045,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             && is->force_refresh
             && is->show_mode == VideoState::SHOW_MODE_VIDEO
             && is->pictq.rindex_shown) {
+            //LOGI("video_refresh()  video_display\n");
             video_display(is);
         }
     }
@@ -3484,8 +3504,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            //is->useMediaCodec = false;
-            initVideoMediaCodec(is);
+            is->useMediaCodec = false;
+            //initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -5125,6 +5145,8 @@ int initPlayer() {
     av_init_packet(&comparePkt[0]);
     av_init_packet(&comparePkt[1]);
     run_one_time_for_compare_two_avpacket = true;
+    test_remaining_time = 0.0;
+    test_remaining_time_count = 0;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
