@@ -473,8 +473,8 @@ static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
 
 static bool read_thread_log = true;
-static bool video_decode_mc_log = true;
-static bool video_refresh_log = false;
+static bool video_decode_mc_log = false;
+static bool video_refresh_log = true;
 static bool video_play_log = true;
 static bool audio_play_log = false;
 
@@ -523,13 +523,14 @@ static void showInfo() {
     char info[200];
     memset(info, '\0', sizeof(info));
     sprintf(info,
-            "[%lld] [%lld] [%lld] [%d]"
+            "[%lld] [%lld] [%lld] [%d] [%s]"
             "\n[%s] [%s] [%d] [%d]"
             "\n[%s] [%s] [%d] [%d]",
             (long long) bit_rate,
             (long long) bit_rate_video,
             (long long) bit_rate_audio,
             frame_rate,
+            (video_state->useMediaCodec ? "V" : " "),
             // video
             avcodec_get_name(codecid_video),
             av_get_pix_fmt_name(video_state->srcAVPixelFormat),
@@ -986,6 +987,13 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
 }
 
 static void frame_queue_unref_item(Frame *vp) {
+    vp->pts = 0.0;
+    vp->duration = 0.0;
+    vp->duration = 0.0;
+    vp->pos = 0;
+    vp->width = 0;
+    vp->height = 0;
+    vp->format = 0;
     av_frame_unref(vp->frame);
     avsubtitle_free(&vp->sub);
 }
@@ -1108,12 +1116,19 @@ static void frame_queue_push(FrameQueue *f) {
 static void frame_queue_next(FrameQueue *f) {
     if (f->keep_last && !f->rindex_shown) {
         f->rindex_shown = 1;
-        // alexander add
-        pthread_mutex_lock(&f->pmutex);
-        pthread_cond_signal(&f->pcond);
-        pthread_mutex_unlock(&f->pmutex);
         return;
     }
+
+    if (video_state->useMediaCodec && f->size <= 0) {
+        /*pthread_mutex_lock(&f->pmutex);
+        pthread_cond_signal(&f->pcond);
+        pthread_mutex_unlock(&f->pmutex);*/
+        return;
+    }
+
+    /*if (f->stream_index == video_state->video_stream) {
+        LOGI("video_refresh()         f->size = %d\n", f->size);
+    }*/
     frame_queue_unref_item(&f->queue[f->rindex]);
     if (++f->rindex == f->max_size) {
         f->rindex = 0;
@@ -1230,18 +1245,19 @@ static void video_image_display(VideoState *is) {
         onPlayed();
     }
 
-    Frame *vp = frame_queue_peek_last(&is->pictq);
+    if (is->useMediaCodec) {
+        sleep(0);
+        return;
+    }
 
+    Frame *vp = frame_queue_peek_last(&is->pictq);
     /*calculate_display_rect(//&rect,
             is->xleft, is->ytop, is->width, is->height, vp->width, vp->height, vp->sar);*/
-
     if (!vp->uploaded && !is->useMediaCodec) {
         // 渲染
         rendering(is, vp->frame);
         vp->uploaded = 1;
         vp->flip_v = vp->frame->linesize[0] < 0;
-    } else if (is->useMediaCodec) {
-        sleep(0);
     }
 }
 
@@ -1802,14 +1818,14 @@ static double compute_target_delay(double delay, VideoState *is) {
            delay to compute the threshold. I still don't know
            if it is the best guess */
         sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
-        if (video_refresh_log) {
+        /*if (video_refresh_log) {
             LOGI("compute_target()    get_clock() = %lf\n", get_clock(&is->vidclk));
             LOGI("compute_target() master_clock() = %lf\n", get_master_clock(is));
             LOGI("compute_target()        diff(*) = %lf\n", diff);
             LOGI("compute_target() sync_threshold = %lf\n", sync_threshold);
             LOGI("compute_target()    isnan(diff) = %d\n", isnan(diff));
             LOGI("compute_target()     fabs(diff) = %lf\n", fabs(diff));
-        }
+        }*/
         // is->max_frame_duration: 3600.000000
         if (!isnan(diff) && fabs(diff) < is->max_frame_duration) {
             if (diff <= -sync_threshold) {
@@ -1882,6 +1898,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         retry:
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
             // nothing to do, no picture to display in the queue
+            //LOGI("video_refresh() nothing to do, no picture to display in the queue\n");
         } else {
             double last_duration, duration, delay;
             // lastvp: 正在显示的帧(也就是当前屏幕上看到的帧)
@@ -1934,8 +1951,24 @@ static void video_refresh(void *opaque, double *remaining_time) {
             if (video_refresh_log) {
                 LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             }
+            if (is->useMediaCodec
+                && lastvp->pts == 0.0
+                && vp->pts == 0.0
+                && last_duration == 0.0) {
+                last_duration = 0.04;
+            }
+            if (video_refresh_log) {
+                LOGI("video_refresh()   last_duration = %lf\n", last_duration);
+            }
             delay = compute_target_delay(last_duration, is);
             time = av_gettime_relative() / 1000000.0;
+            if (video_refresh_log) {
+                LOGI("video_refresh()        delay(*) = %lf\n", delay);
+            }
+            if (is->useMediaCodec
+                && delay == 0.0) {
+                delay = 0.04;
+            }
             if (video_refresh_log) {
                 LOGI("video_refresh()        delay(*) = %lf\n", delay);
                 LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
@@ -1944,6 +1977,9 @@ static void video_refresh(void *opaque, double *remaining_time) {
             }
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+                if (video_refresh_log) {
+                    LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
+                }
                 goto display;
             }
 
@@ -1980,9 +2016,10 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
 
         display:
-        if (!is->force_refresh
-            && is->useMediaCodec
-            /*&& is->pictq.isBlocked*/) {
+        //LOGI("video_refresh()  is->pictq.size = %d\n", is->pictq.size);
+        if (!is->paused
+            && !is->force_refresh
+            && is->useMediaCodec) {
             frame_queue_next(&is->pictq);
         }
         if (!display_disable
@@ -2680,15 +2717,19 @@ static void *video_thread_mc(void *arg) {
         // 小于0的情况是is->abort_request为1
         // 向PacketQueue队列取数据.如果没有数据刚被阻塞
         /***
+         PacketQueue(when video no data)
+
          mVideoAsyncDecoderCallback:
             onInputBufferAvailable(is blocked)                --->
             onOutputBufferAvailable(no output)                --->
             decoder_decode_frame_by_mediacodec(isn't invoked) --->
-            queue_picture                                     --->
-            frame_queue_peek_writable
-            frame_queue_push
+                queue_picture(isn't invoked)                  --->
+                frame_queue_peek_writable(isn't invoked)      --->
+                frame_queue_push(isn't invoked)
          最后,导致
-            FrameQueue(video no data)
+            FrameQueue(video no data).
+            那么此时调用sleep(0)时,也会被block.(现象就是画面不动)
+
          */
         if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0) {
             break;
@@ -2814,6 +2855,11 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                 av_frame_unref(frame);
                 LOGE("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
                      is->frame_drops_early);
+                /***
+                 FrameQueue(video no data)
+                 is->pictq.size = 0
+                 如果在video_refresh函数中合理调用sleep(0),可能能做到同步.
+                 */
                 return 0;
             }
         }
@@ -3438,8 +3484,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            is->useMediaCodec = false;
-            //initVideoMediaCodec(is);
+            //is->useMediaCodec = false;
+            initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -5053,6 +5099,9 @@ int initPlayer() {
     }
 
     onReady();
+
+    av_register_all();
+    avcodec_register_all();
 
     LOGI("initPlayer()  display_disable = %d\n", display_disable);// 总开头
     LOGI("initPlayer()    video_disable = %d\n", video_disable);

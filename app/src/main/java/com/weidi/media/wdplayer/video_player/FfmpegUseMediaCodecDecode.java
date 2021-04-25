@@ -1438,7 +1438,6 @@ public class FfmpegUseMediaCodecDecode {
     public void releaseOutputBuffer() {
         int roomIndex = -1;
         try {
-            // 超出限制就会阻塞
             //Log.d(TAG, "releaseOutputBuffer() 1");
             if (mVideoDatasIndexQueue != null) {
                 Object object = mVideoDatasIndexQueue.take();
