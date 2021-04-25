@@ -583,6 +583,24 @@ int av_bsf_send_packet_(AVBSFContext *ctx, AVPacket *pkt) {
     return 0;
 }
 
+static void log_callback(void *ptr, int level, const char *fmt, va_list vl) {
+    static int print_prefix = 1;
+    static char prev[1024];
+    char line[1024];
+    av_log_format_line(ptr, level, fmt, vl, line, sizeof(line), &print_prefix);
+    strcpy(prev, line);
+    // sanitize((uint8_t *)line);
+    if (level <= AV_LOG_WARNING) {
+        LOGE("%s", line);
+    } else {
+        LOGI("%s", line);
+    }
+}
+
+static void log_callback_null(void *ptr, int level, const char *fmt, va_list vl) {
+
+}
+
 #if CONFIG_AVFILTER
 
 static int opt_add_vfilter(void *optctx, const char *opt, const char *arg) {
@@ -1027,7 +1045,7 @@ static Frame *frame_queue_peek_next(FrameQueue *f) {
 static Frame *frame_queue_peek_writable(FrameQueue *f) {
     /* wait until we have space to put a new frame */
     pthread_mutex_lock(&f->pmutex);
-    // 解码的帧数达到3个时,就暂停解码,等待其他线程唤醒然后继续解码
+    // video: 解码的帧数达到3个时,就暂停解码,等待其他线程唤醒然后继续解码
     while (f->size >= f->max_size && !f->pktq->abort_request) {
         /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_writable() video pthread_cond_wait start\n");
@@ -2658,11 +2676,24 @@ static void *video_thread_mc(void *arg) {
             // read_thread线程会根据需要进行10ms的暂停
             pthread_cond_signal(d->pempty_queue_cond);
         }
+
         // 小于0的情况是is->abort_request为1
         // 向PacketQueue队列取数据.如果没有数据刚被阻塞
+        /***
+         mVideoAsyncDecoderCallback:
+            onInputBufferAvailable(is blocked)                --->
+            onOutputBufferAvailable(no output)                --->
+            decoder_decode_frame_by_mediacodec(isn't invoked) --->
+            queue_picture                                     --->
+            frame_queue_peek_writable
+            frame_queue_push
+         最后,导致
+            FrameQueue(video no data)
+         */
         if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0) {
             break;
         }
+
         if (d->queue->serial != d->pkt_serial) {
             av_packet_unref(&pkt);
             continue;
@@ -3936,6 +3967,7 @@ static int create_avformat_context(void *arg) {
 
     LOGI("create_avformat_context() find_stream_info = %d\n", find_stream_info);// 1
     if (find_stream_info) {
+        av_log_set_callback(log_callback);
         if (codec_opts == nullptr) {
             LOGE("create_avformat_context() codec_opts is nullptr\n");
         }
@@ -3952,8 +3984,8 @@ static int create_avformat_context(void *arg) {
         }
 
         LOGI("create_avformat_context() avformat_find_stream_info start\n");
-        ret = avformat_find_stream_info(avFormatContext, opts);
-        //ret = avformat_find_stream_info(avFormatContext, nullptr);
+        //ret = avformat_find_stream_info(avFormatContext, opts);
+        ret = avformat_find_stream_info(avFormatContext, NULL);
         LOGI("create_avformat_context() avformat_find_stream_info end\n");
 
         LOGI("create_avformat_context() orig_nb_streams: %d\n", orig_nb_streams);
@@ -3963,6 +3995,7 @@ static int create_avformat_context(void *arg) {
         }
         LOGI("create_avformat_context() av_freep\n");
         av_freep(&opts);
+        av_log_set_callback(log_callback_null);
         if (ret < 0) {
             LOGE("create_avformat_context() %s: could not find codec parameters\n", is->filename);
             //ret = -1;
