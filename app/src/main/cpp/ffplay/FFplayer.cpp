@@ -476,7 +476,7 @@ static double test_remaining_time = 0.0;
 static long long int test_remaining_time_count = 0;
 
 static bool read_thread_log = true;
-static bool video_decode_mc_log = false;
+static bool video_decode_mc_log = true;
 static bool video_refresh_log = false;
 static bool video_play_log = true;
 static bool audio_play_log = false;
@@ -499,6 +499,13 @@ AVRational frame_rate_avrational;
 const char program_name[] = "ffplay";
 const int program_birth_year = 2003;
 double rdftspeed = 0.02;
+
+// test
+//static int test_size;
+//static int64_t test_pts;
+//static int64_t test_dts;
+//static int64_t test_pos;
+//static int64_t test_duration;
 
 static bool startsWith(const char *str1, char *str2) {
     if (str1 == nullptr || str2 == nullptr) {
@@ -2500,7 +2507,7 @@ static void *audio_thread(void *arg) {
 
         // frame为解码后的帧
         if ((got_frame = decoder_decode_frame(&is->auddec, frame, nullptr)) < 0) {
-            LOGI("audio_thread() decoder_decode_frame goto the_end\n");
+            LOGE("audio_thread() decoder_decode_frame failed\n");
             goto the_end;
         }
         if (got_frame) {
@@ -2857,6 +2864,8 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     //frame->sample_aspect_ratio = av_guess_sample_aspect_ratio(is->ic, is->video_st, frame);
     if ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0) {
         if (frame->pts != AV_NOPTS_VALUE) {
+            // dpts值是正常的
+            // master_clock值太大,导致各种问题
             double master_clock = get_master_clock(is);
             double diff = dpts - master_clock;
             if (video_decode_mc_log) {
