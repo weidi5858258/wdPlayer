@@ -1954,10 +1954,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             if (video_refresh_log) {
                 LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             }
-            if (is->useMediaCodec
-                && lastvp->pts == 0.0
-                && vp->pts == 0.0
-                && last_duration == 0.0) {
+            if (is->useMediaCodec && last_duration == 0.0) {
                 last_duration = 0.04;
             }
             if (video_refresh_log) {
@@ -1968,8 +1965,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             if (video_refresh_log) {
                 LOGI("video_refresh()        delay(*) = %lf\n", delay);
             }
-            if (is->useMediaCodec
-                && delay == 0.0) {
+            if (is->useMediaCodec && delay == 0.0) {
                 delay = 0.04;
             }
             if (video_refresh_log) {
@@ -1989,8 +1985,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     }
                     double temp = test_remaining_time / (++test_remaining_time_count);
                     *remaining_time = temp;
-                }
-                LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);*/
+                }*/
+                //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
                 goto display;
             }
 
@@ -1998,8 +1994,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 test_remaining_time += 0.000001;
                 double temp = test_remaining_time / (++test_remaining_time_count);
                 *remaining_time = temp;
-            }
-            LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);*/
+            }*/
+            //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
 
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
@@ -2012,9 +2008,17 @@ static void video_refresh(void *opaque, double *remaining_time) {
             }
             pthread_mutex_unlock(&is->pictq.pmutex);
 
+            //LOGI("video_refresh()             size = %d\n", is->pictq.size);
+            //LOGI("video_refresh()     rindex_shown = %d\n", is->pictq.rindex_shown);
             if (frame_queue_nb_remaining(&is->pictq) > 1) {
                 Frame *nextvp = frame_queue_peek_next(&is->pictq);
                 duration = vp_duration(is, vp, nextvp);
+                /*if (is->useMediaCodec && duration == 0.0) {
+                    duration = 0.016667;
+                }*/
+                /*LOGI("video_refresh()            time = %lf\n", time);
+                LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+                LOGI("video_refresh()        duration = %lf\n", duration);*/
                 if (!is->step
                     && (framedrop > 0 ||
                         (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER))
@@ -2198,6 +2202,7 @@ static int get_video_frame(VideoState *is, AVFrame *frame) {
                     is->frame_drops_early++;
                     av_frame_unref(frame);
                     got_picture = 0;
+                    LOGE("get_video_frame() is->frame_drops_early: %d\n", is->frame_drops_early);
                 }
             }
         }
@@ -2875,11 +2880,6 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                 av_frame_unref(frame);
                 LOGE("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
                      is->frame_drops_early);
-                /***
-                 FrameQueue(video no data)
-                 is->pictq.size = 0
-                 如果在video_refresh函数中合理调用sleep(0),可能能做到同步.
-                 */
                 return 0;
             }
         }
@@ -3504,8 +3504,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            is->useMediaCodec = false;
-            //initVideoMediaCodec(is);
+            //is->useMediaCodec = false;
+            initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4551,6 +4551,8 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
+            //int64_t temp_remaining_time = (int64_t) (remaining_time * 1000000.0);
+            //LOGI("video_refresh()  remaining_time = %lld\n", temp_remaining_time);
             av_usleep((int64_t) (remaining_time * 1000000.0));
         }
         remaining_time = REFRESH_RATE;
