@@ -472,11 +472,10 @@ static int64_t endTime = 0;
 static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
 
-static double test_remaining_time = 0.0;
-static long long int test_remaining_time_count = 0;
+static long long int test_get_master_clock_count = 0;
 
 static bool read_thread_log = true;
-static bool video_decode_mc_log = true;
+static bool video_decode_mc_log = false;
 static bool video_refresh_log = false;
 static bool video_play_log = true;
 static bool audio_play_log = false;
@@ -1647,6 +1646,16 @@ static void video_display(VideoState *is) {
     }
 }
 
+/***
+ 软解时与硬解时的区别就在于(audio)
+ c->pts - c->last_updated + time
+ 其中c->pts在软解与硬解时的值是一样的.
+ 因此不同区别在于time - c->last_updated的值
+ 经过测试发现:
+ test_count   软解时(正常值)      硬解时(异常值)
+       2500   17.929695         26.934976(get_clock的结果)
+
+ */
 static double get_clock(Clock *c) {
     if (*c->queue_serial != c->serial) {
         return NAN;
@@ -1655,25 +1664,50 @@ static double get_clock(Clock *c) {
         return c->pts;
     } else {
         double time = av_gettime_relative() / 1000000.0;
-        /*if (c->stream_index == video_state->audio_stream) {
-            LOGD("get_clock()--------------------------------------------------------\n");
-            LOGI("get_clock()                                      time: %lf\n", time);
-            LOGI("get_clock()                              c->pts_drift: %lf\n", c->pts_drift);
-            LOGI("get_clock()                          get_master_clock: %lf\n",
-                 (c->pts_drift + time));
+        double master_clock = c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
+
+        /*if (c->stream_index == video_state->audio_stream
+            && video_state->useMediaCodec) {
+            ++test_get_master_clock_count;
+            if (test_get_master_clock_count == 100) {
+                master_clock = 0.804639;
+            } else if (test_get_master_clock_count == 200) {
+                master_clock = 1.480196;
+            } else if (test_get_master_clock_count == 300) {
+                master_clock = 2.179179;
+            } else if (test_get_master_clock_count == 400) {
+                master_clock = 2.945910;
+            } else if (test_get_master_clock_count == 500) {
+                master_clock = 3.673018;
+            }
+
+            if (test_get_master_clock_count % 500 == 0) {
+                if(master_clock)
+                master_clock += 3.333333;
+                LOGD("get_clock()--------------------------------------------------------\n");
+                LOGI("get_clock()               test_get_master_clock_count: %lld\n",
+                     (test_get_master_clock_count));
+                //LOGI("get_clock()                                      time: %lf\n", time);
+                // 绝对值变小
+                //LOGI("get_clock()                              c->pts_drift: %lf\n", c->pts_drift);
+                LOGI("get_clock()     c->pts_drift + time(get_master_clock): %lf\n",
+                     (master_clock));
+            }
         }*/
+
         // time与c->last_updated值差不多
         // c->pts_drift = -inf
         // c->speed = 1.000000
         // (time - c->last_updated) * (1.0 - c->speed) = 0
-        return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
+        // c->pts - c->last_updated + time
+        return master_clock;
     }
 }
 
 static void set_clock_at(Clock *c, double pts, int serial, double time) {
     c->pts = pts;
     c->last_updated = time;
-    c->pts_drift = c->pts - time;
+    c->pts_drift = pts - time;
     c->serial = serial;
 }
 
@@ -1983,25 +2017,9 @@ static void video_refresh(void *opaque, double *remaining_time) {
             }
             if (time < is->frame_timer + delay) {
                 *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-                /*if (is->useMediaCodec) {
-                    if (*remaining_time < REFRESH_RATE) {
-                        test_remaining_time += *remaining_time;
-                    } else {
-                        *remaining_time = 0.000001;
-                        test_remaining_time += *remaining_time;
-                    }
-                    double temp = test_remaining_time / (++test_remaining_time_count);
-                    *remaining_time = temp;
-                }*/
                 //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
                 goto display;
             }
-
-            /*if (is->useMediaCodec) {
-                test_remaining_time += 0.000001;
-                double temp = test_remaining_time / (++test_remaining_time_count);
-                *remaining_time = temp;
-            }*/
             //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
 
             is->frame_timer += delay;
@@ -2020,9 +2038,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
             if (frame_queue_nb_remaining(&is->pictq) > 1) {
                 Frame *nextvp = frame_queue_peek_next(&is->pictq);
                 duration = vp_duration(is, vp, nextvp);
-                /*if (is->useMediaCodec && duration == 0.0) {
-                    duration = 0.016667;
-                }*/
                 /*LOGI("video_refresh()            time = %lf\n", time);
                 LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
                 LOGI("video_refresh()        duration = %lf\n", duration);*/
@@ -2121,6 +2136,102 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
 static void initVideoMediaCodec(void *opaque) {
     VideoState *is = static_cast<VideoState *>(opaque);
+
+    // video硬解码参数设置
+    is->useMediaCodec = false;
+    is->need_to_do_for_av_bsf_packet = true;
+    is->avBitStreamFilter = nullptr;
+    is->avbsfContext = nullptr;
+    switch (codecid_video) {
+        ////// 2 mpeg2video ---> video/mpeg2(创建MediaCodec时需要的mime)
+        case AV_CODEC_ID_MPEG2VIDEO: {
+            LOGI("stream_component_open() mpeg2_mediacodec\n");
+            is->useMediaCodec = true;
+            is->avBitStreamFilter = av_bsf_get_by_name("mpeg2_metadata");
+            break;
+        }
+            // 12 mpeg4 ---> video/mp4v-es
+        case AV_CODEC_ID_MPEG4: {
+            LOGI("stream_component_open() mpeg4_mediacodec\n");
+            is->useMediaCodec = true;
+            is->avBitStreamFilter = av_bsf_get_by_name("mpeg4_unpack_bframes");
+            break;
+        }
+            // 27 h264 ---> video/avc
+        case AV_CODEC_ID_H264: {
+            LOGI("stream_component_open() h264_mediacodec\n");
+            is->useMediaCodec = true;
+            is->avBitStreamFilter = av_bsf_get_by_name("h264_mp4toannexb");
+            break;
+        }
+            // 173 hevc(h265) ---> video/hevc
+        case AV_CODEC_ID_HEVC: {
+            LOGI("stream_component_open() hevc_mediacodec\n");
+            is->useMediaCodec = true;
+            is->avBitStreamFilter = av_bsf_get_by_name("hevc_mp4toannexb");
+            break;
+        }
+            //////////////////////////////////////////////
+            // 1 mpeg1video ---> video/mpeg2
+        case AV_CODEC_ID_MPEG1VIDEO:
+            // 7 mjpeg ---> video/mjpeg
+        case AV_CODEC_ID_MJPEG:
+            // 69 rv40 --->
+        case AV_CODEC_ID_RV40:
+            // 70 vc1 ---> video/x-ms-wmv
+        case AV_CODEC_ID_VC1:
+            // 71 wmv3 ---> video/x-ms-wmv
+        case AV_CODEC_ID_WMV3:
+            // 91 vp6 --->
+        case AV_CODEC_ID_VP6:
+            // 92 vp6f ---> video/x-vp6
+        case AV_CODEC_ID_VP6F:
+            //////////////////////////////////////////////
+
+            // 4 h263 ---> video/3gpp(找不到视频测试)
+        case AV_CODEC_ID_H263:
+            // 139 vp8 ---> video/x-vnd.on2.vp8
+        case AV_CODEC_ID_VP8:
+            // 167 vp9 ---> video/x-vnd.on2.vp9
+        case AV_CODEC_ID_VP9:
+        default: {
+            is->useMediaCodec = true;
+            is->avBitStreamFilter = av_bsf_get_by_name("null");
+            break;
+        }
+    }
+    if (is->useMediaCodec) {
+        if (is->avBitStreamFilter == nullptr) {
+            LOGE("stream_component_open() video avBitStreamFilter is nullptr\n");
+            is->useMediaCodec = false;
+        } else {
+            // 过滤器分配内存
+            int ret = av_bsf_alloc(is->avBitStreamFilter, &is->avbsfContext);
+            if (ret < 0) {
+                LOGE("stream_component_open() video av_bsf_alloc failure\n");
+                is->useMediaCodec = false;
+            } else {
+                // 添加解码器属性
+                ret = avcodec_parameters_copy(
+                        is->avbsfContext->par_in,
+                        avFormatContext->streams[is->video_stream]->codecpar);
+                if (ret < 0) {
+                    LOGE("stream_component_open() video avcodec_parameters_copy failure\n");
+                    is->useMediaCodec = false;
+                } else {
+                    is->avbsfContext->time_base_in =
+                            avFormatContext->streams[is->video_stream]->time_base;
+                    // 初始化过滤器上下文
+                    ret = av_bsf_init(is->avbsfContext);
+                    if (ret < 0) {
+                        LOGE("stream_component_open() video av_bsf_init failure\n");
+                        is->useMediaCodec = false;
+                    }
+                }
+            }
+        }
+    }
+
     if (!is->useMediaCodec) {
         return;
     }
@@ -2185,9 +2296,14 @@ static int queue_picture(
 static int get_video_frame(VideoState *is, AVFrame *frame) {
     int got_picture;
 
+    //++test_get_master_clock_count;
+    //LOGD("get_video_frame()===============================\n");
+    //LOGI("get_video_frame()    master_clock_count: %lld\n", test_get_master_clock_count);
+    //LOGI("get_video_frame() is->audclk.pts(***) 1: %lf\n", is->audclk.pts);
     if ((got_picture = decoder_decode_frame(&is->viddec, frame, nullptr)) < 0) {
         return -1;
     }
+    //LOGI("get_video_frame() is->audclk.pts(***) 2: %lf\n", is->audclk.pts);
 
     if (got_picture) {
         double dpts = NAN;
@@ -2200,7 +2316,28 @@ static int get_video_frame(VideoState *is, AVFrame *frame) {
 
         if (framedrop > 0 || (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)) {
             if (frame->pts != AV_NOPTS_VALUE) {
-                double diff = dpts - get_master_clock(is);
+                //double diff = dpts - get_master_clock(is);
+
+                double time = av_gettime_relative() / 1000000.0;
+                //double master_clock = is->audclk.pts_drift + time;
+                double master_clock = is->audclk.pts + time - is->audclk.last_updated;
+                double diff = dpts - master_clock;
+                //++test_get_master_clock_count;
+
+                if (video_decode_mc_log) {
+                    LOGD("get_video_frame()===============================\n");
+                    LOGI("get_video_frame()    master_clock_count: %lld\n",
+                         test_get_master_clock_count);
+                    LOGI("get_video_frame()        is->audclk.pts: %lf\n", is->audclk.pts);
+                    LOGI("get_video_frame()   time - last_updated: %lf\n",
+                         (time - is->audclk.last_updated));
+                    LOGI("get_video_frame()                  dpts: %lf\n", dpts);
+                    LOGI("get_video_frame()          master_clock: %lf\n", master_clock);
+                    LOGI("get_video_frame()   diff(dpts - master): %lf\n", diff);
+                    LOGI("get_video_frame()            last_delay: %lf\n",
+                         is->frame_last_filter_delay);
+                }
+
                 if (!isnan(diff)
                     && fabs(diff) < AV_NOSYNC_THRESHOLD
                     && diff - is->frame_last_filter_delay < 0
@@ -2209,7 +2346,7 @@ static int get_video_frame(VideoState *is, AVFrame *frame) {
                     is->frame_drops_early++;
                     av_frame_unref(frame);
                     got_picture = 0;
-                    LOGE("get_video_frame() is->frame_drops_early: %d\n", is->frame_drops_early);
+                    //LOGE("get_video_frame() is->frame_drops_early: %d\n", is->frame_drops_early);
                 }
             }
         }
@@ -2809,6 +2946,14 @@ static void *video_thread_mc(void *arg) {
  * @param presentationTimeUs
  * @param data
  * @return
+
+ 软解能实现同步,硬解不能同步的原因:
+ 硬解比软解速度要快,所以解码完一帧后去取audio的pts是不一样的,
+ 而软解时取到audio的pts是正常的,因为这套架构就是基于软解实现的.
+ 但是硬解取到audio的pts后,在后续过程中就出现了值不正常的情况.
+ 如软解时解完第10帧时取到的pts是0.258917,
+ 而硬解时解完第10帧时取到的pts是0.706917.
+ 这样相关太大,导致视频播放极度缓慢.
  */
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
@@ -2865,21 +3010,34 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     if ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0) {
         if (frame->pts != AV_NOPTS_VALUE) {
             // dpts值是正常的
-            // master_clock值太大,导致各种问题
-            double master_clock = get_master_clock(is);
+            // master_clock值太大,导致下面一直return
+            //double master_clock = get_master_clock(is);
+            double time = av_gettime_relative() / 1000000.0;
+            //double master_clock = is->audclk.pts_drift + time;
+            double master_clock = is->audclk.pts + (time - is->audclk.last_updated);
             double diff = dpts - master_clock;
+            //++test_get_master_clock_count;
+
             if (video_decode_mc_log) {
                 // 刚开始时diff小于0是正常的,如果长时间小于0就有问题了
                 LOGD("decoder_decode_frame_by_mediacodec()===============================\n");
-                LOGI("decoder_decode_frame_by_mediacodec()             dpts: %lf\n", dpts);
-                LOGI("decoder_decode_frame_by_mediacodec()           master: %lf\n", master_clock);
-                LOGI("decoder_decode_frame_by_mediacodec()diff(dpts-master): %lf\n", diff);
+                LOGI("decoder_decode_frame_by_mediacodec()    master_clock_count: %lld\n",
+                     test_get_master_clock_count);
+                LOGI("decoder_decode_frame_by_mediacodec()   is->audclk.pts(***): %lf\n",
+                     is->audclk.pts);// ***
+                /*LOGI("decoder_decode_frame_by_mediacodec()   time - last_updated: %lf\n",
+                     (time - is->audclk.last_updated));
+                LOGI("decoder_decode_frame_by_mediacodec()                  dpts: %lf\n", dpts);
+                LOGI("decoder_decode_frame_by_mediacodec()          master_clock: %lf\n",
+                     master_clock);
+                LOGI("decoder_decode_frame_by_mediacodec()   diff(dpts - master): %lf\n", diff);
+                LOGI("decoder_decode_frame_by_mediacodec()            last_delay: %lf\n",
+                     is->frame_last_filter_delay);*/
                 /*LOGI("decoder_decode_frame_by_mediacodec()       fabs(diff): %lf\n", fabs(diff));
-                LOGI("decoder_decode_frame_by_mediacodec()       last_delay: %lf\n",
-                     is->frame_last_filter_delay);
                 LOGI("decoder_decode_frame_by_mediacodec()  diff-last_delay: %lf\n",
                      (diff - is->frame_last_filter_delay));*/
             }
+
             if (!isnan(diff)
                 && fabs(diff) < AV_NOSYNC_THRESHOLD
                 && diff - is->frame_last_filter_delay < 0
@@ -3247,6 +3405,11 @@ static int audio_decode_frame(VideoState *is) {
     }
     is->audio_clock_serial = af->serial;
 
+    /*++test_get_master_clock_count;
+    LOGD("audio_decode_frame()===============================\n");
+    LOGI("audio_decode_frame()    master_clock_count: %lld\n", test_get_master_clock_count);
+    LOGI("audio_decode_frame()       is->audio_clock: %lf\n", is->audio_clock);*/
+
 #ifdef DEBUG
                                                                                                                             {
 static double last_clock;
@@ -3416,105 +3579,11 @@ static int stream_component_open(VideoState *is, int stream_index) {
                                                  avctx->width,
                                                  avctx->height,
                                                  WINDOW_FORMAT_RGBA_8888);
-
-                // video硬解码参数设置
-                is->useMediaCodec = false;
-                is->need_to_do_for_av_bsf_packet = true;
-                is->avBitStreamFilter = nullptr;
-                is->avbsfContext = nullptr;
-                switch (codec->id) {
-                    ////// 2 mpeg2video ---> video/mpeg2(创建MediaCodec时需要的mime)
-                    case AV_CODEC_ID_MPEG2VIDEO: {
-                        LOGI("stream_component_open() mpeg2_mediacodec\n");
-                        is->useMediaCodec = true;
-                        is->avBitStreamFilter = av_bsf_get_by_name("mpeg2_metadata");
-                        break;
-                    }
-                        // 12 mpeg4 ---> video/mp4v-es
-                    case AV_CODEC_ID_MPEG4: {
-                        LOGI("stream_component_open() mpeg4_mediacodec\n");
-                        is->useMediaCodec = true;
-                        is->avBitStreamFilter = av_bsf_get_by_name("mpeg4_unpack_bframes");
-                        break;
-                    }
-                        // 27 h264 ---> video/avc
-                    case AV_CODEC_ID_H264: {
-                        LOGI("stream_component_open() h264_mediacodec\n");
-                        is->useMediaCodec = true;
-                        is->avBitStreamFilter = av_bsf_get_by_name("h264_mp4toannexb");
-                        break;
-                    }
-                        // 173 hevc(h265) ---> video/hevc
-                    case AV_CODEC_ID_HEVC: {
-                        LOGI("stream_component_open() hevc_mediacodec\n");
-                        is->useMediaCodec = true;
-                        is->avBitStreamFilter = av_bsf_get_by_name("hevc_mp4toannexb");
-                        break;
-                    }
-                        //////////////////////////////////////////////
-                        // 1 mpeg1video ---> video/mpeg2
-                    case AV_CODEC_ID_MPEG1VIDEO:
-                        // 7 mjpeg ---> video/mjpeg
-                    case AV_CODEC_ID_MJPEG:
-                        // 69 rv40 --->
-                    case AV_CODEC_ID_RV40:
-                        // 70 vc1 ---> video/x-ms-wmv
-                    case AV_CODEC_ID_VC1:
-                        // 71 wmv3 ---> video/x-ms-wmv
-                    case AV_CODEC_ID_WMV3:
-                        // 91 vp6 --->
-                    case AV_CODEC_ID_VP6:
-                        // 92 vp6f ---> video/x-vp6
-                    case AV_CODEC_ID_VP6F:
-                        //////////////////////////////////////////////
-
-                        // 4 h263 ---> video/3gpp(找不到视频测试)
-                    case AV_CODEC_ID_H263:
-                        // 139 vp8 ---> video/x-vnd.on2.vp8
-                    case AV_CODEC_ID_VP8:
-                        // 167 vp9 ---> video/x-vnd.on2.vp9
-                    case AV_CODEC_ID_VP9:
-                    default: {
-                        is->useMediaCodec = true;
-                        is->avBitStreamFilter = av_bsf_get_by_name("null");
-                        break;
-                    }
-                }
-                if (is->useMediaCodec) {
-                    if (is->avBitStreamFilter == nullptr) {
-                        LOGE("stream_component_open() video avBitStreamFilter is nullptr\n");
-                        is->useMediaCodec = false;
-                    } else {
-                        // 过滤器分配内存
-                        int ret = av_bsf_alloc(is->avBitStreamFilter, &is->avbsfContext);
-                        if (ret < 0) {
-                            LOGE("stream_component_open() video av_bsf_alloc failure\n");
-                            is->useMediaCodec = false;
-                        } else {
-                            // 添加解码器属性
-                            ret = avcodec_parameters_copy(
-                                    is->avbsfContext->par_in,
-                                    ic->streams[stream_index]->codecpar);
-                            if (ret < 0) {
-                                LOGE("stream_component_open() video avcodec_parameters_copy failure\n");
-                                is->useMediaCodec = false;
-                            } else {
-                                is->avbsfContext->time_base_in = ic->streams[stream_index]->time_base;
-                                // 初始化过滤器上下文
-                                ret = av_bsf_init(is->avbsfContext);
-                                if (ret < 0) {
-                                    LOGE("stream_component_open() video av_bsf_init failure\n");
-                                    is->useMediaCodec = false;
-                                }
-                            }
-                        }
-                    }
-                }
             };
 #endif
 
-            //is->useMediaCodec = false;
-            initVideoMediaCodec(is);
+            is->useMediaCodec = false;
+            //initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4510,6 +4579,11 @@ static void *audio_play(void *arg) {
                          (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
                          is->audio_tgt.bytes_per_sec;
 
+            /*++test_get_master_clock_count;
+            LOGD("audio_play()===============================\n");
+            LOGI("audio_play()    master_clock_count: %lld\n", test_get_master_clock_count);
+            LOGI("audio_play()                   pts: %lf\n", pts);*/
+
             if (!isLive) {
                 curProgress = (long long) pts;// 秒
                 if (curProgress > preProgress) {
@@ -4527,7 +4601,7 @@ static void *audio_play(void *arg) {
                 LOGI("audio_play()                          is->audio_clock: %lf\n",
                      is->audio_clock);
                 LOGI("audio_play()                                      pts: %lf\n",
-                     pts);
+                     pts);// ***
                 LOGI("audio_play()                   audio_clock->pts_drift: %lf\n",
                      (pts - audio_callback_time / 1000000.0));
                 LOGI("audio_play()                    is->audio_hw_buf_size: %d\n",
@@ -5156,8 +5230,7 @@ int initPlayer() {
     av_init_packet(&comparePkt[0]);
     av_init_packet(&comparePkt[1]);
     run_one_time_for_compare_two_avpacket = true;
-    test_remaining_time = 0.0;
-    test_remaining_time_count = 0;
+    test_get_master_clock_count = 0;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
