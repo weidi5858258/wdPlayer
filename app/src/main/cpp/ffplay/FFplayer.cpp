@@ -2293,6 +2293,8 @@ static int queue_picture(
     return 0;
 }
 
+static double test_diff_min = 0.0;
+static double test_diff_max = 0.0;
 static int get_video_frame(VideoState *is, AVFrame *frame) {
     int got_picture;
 
@@ -2322,21 +2324,43 @@ static int get_video_frame(VideoState *is, AVFrame *frame) {
                 //double master_clock = is->audclk.pts_drift + time;
                 double master_clock = is->audclk.pts + time - is->audclk.last_updated;
                 double diff = dpts - master_clock;
-                //++test_get_master_clock_count;
 
                 if (video_decode_mc_log) {
-                    LOGD("get_video_frame()===============================\n");
-                    LOGI("get_video_frame()    master_clock_count: %lld\n",
-                         test_get_master_clock_count);
+                    ++test_get_master_clock_count;
+                    LOGD("get_video_frame()====================================\n");
+                    LOGI("get_video_frame()    master_clock_count: %lld\n",test_get_master_clock_count);
                     LOGI("get_video_frame()        is->audclk.pts: %lf\n", is->audclk.pts);
-                    LOGI("get_video_frame()   time - last_updated: %lf\n",
-                         (time - is->audclk.last_updated));
+                    LOGI("get_video_frame()   time - last_updated: %lf\n",(time - is->audclk.last_updated));
                     LOGI("get_video_frame()                  dpts: %lf\n", dpts);
                     LOGI("get_video_frame()          master_clock: %lf\n", master_clock);
-                    LOGI("get_video_frame()   diff(dpts - master): %lf\n", diff);
-                    LOGI("get_video_frame()            last_delay: %lf\n",
-                         is->frame_last_filter_delay);
+                    LOGI("get_video_frame()  diff(dpts - master)*: %lf\n", diff);
+                    LOGI("get_video_frame()            last_delay: %lf\n",is->frame_last_filter_delay);
+                    if (test_diff_min > diff && diff < 0) {
+                        test_diff_min = diff;
+                        LOGE("get_video_frame()         test_diff_min: %lf\n", test_diff_min);
+                    }
+                    if (test_diff_max < diff && diff > 0) {
+                        test_diff_max = diff;
+                        LOGE("get_video_frame()         test_diff_max: %lf\n", test_diff_max);
+                    }
                 }
+
+                /***
+                 关键在于选择合适的is->audclk.pts
+                 test_diff_min: -0.250477
+                 test_diff_max:  0.216792
+                 */
+                //LOGI("get_video_frame()  diff(dpts - master)*: %lf\n", diff);
+                /*if (test_diff_min > diff && diff < 0) {
+                    test_diff_min = diff;
+                    LOGD("get_video_frame()====================================\n");
+                    LOGE("get_video_frame()         test_diff_min: %lf\n", test_diff_min);
+                }
+                if (test_diff_max < diff && diff > 0) {
+                    test_diff_max = diff;
+                    LOGD("get_video_frame()====================================\n");
+                    LOGE("get_video_frame()         test_diff_max: %lf\n", test_diff_max);
+                }*/
 
                 if (!isnan(diff)
                     && fabs(diff) < AV_NOSYNC_THRESHOLD
