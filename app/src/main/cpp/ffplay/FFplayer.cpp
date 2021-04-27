@@ -474,10 +474,10 @@ static bool run_one_time_for_compare_two_avpacket = true;
 
 static long long int test_get_master_clock_count = 0;
 
-static bool read_thread_log = true;
+static bool read_thread_log = false;
 static bool video_decode_mc_log = false;
 static bool video_refresh_log = false;
-static bool video_play_log = true;
+//static bool video_play_log = true;
 static bool audio_play_log = false;
 
 // 在decoder_decode_frame_by_mediacodec函数中使用
@@ -1220,19 +1220,14 @@ static ANativeWindow *pANativeWindow = nullptr;
 int rendering(VideoState *is, AVFrame *decodedAVFrame) {
     ANativeWindow_lock(pANativeWindow, &mANativeWindow_Buffer, nullptr);
 
-    if (is->useMediaCodec) {
-        is->rgbAVFrame->data[0] = decodedAVFrame->data[0];
-        is->rgbAVFrame->linesize[0] = decodedAVFrame->linesize[0];
-    } else {
-        // 把decodedAVFrame的数据经过格式转换后保存到rgbAVFrame中
-        sws_scale(is->swsContext,
-                  (uint8_t const *const *) decodedAVFrame->data,
-                  decodedAVFrame->linesize,
-                  0,
-                  is->height,
-                  is->rgbAVFrame->data,
-                  is->rgbAVFrame->linesize);
-    }
+    // 把decodedAVFrame的数据经过格式转换后保存到rgbAVFrame中
+    sws_scale(is->swsContext,
+              (uint8_t const *const *) decodedAVFrame->data,
+              decodedAVFrame->linesize,
+              0,
+              is->height,
+              is->rgbAVFrame->data,
+              is->rgbAVFrame->linesize);
     // 这段代码非常关键,还看不懂啥意思
     // 把rgbAVFrame里面的数据复制到outBuffer中就能渲染画面了
     uint8_t *src = is->rgbAVFrame->data[0];
@@ -1517,10 +1512,10 @@ static void stream_close(VideoState *is) {
     if (avFormatContext != nullptr) {
         LOGI("avformat_free_context() start\n");
         //ffmpeg 4.0版本不能调用
-        avformat_close_input(&avFormatContext);
+        //avformat_close_input(&avFormatContext);
         //avformat_free_context(avFormatContext);
         LOGI("avformat_free_context() end\n");
-        avFormatContext = nullptr;
+        //avFormatContext = nullptr;
     }
 
     LOGI("packet_queue_destroy()\n");
@@ -1612,12 +1607,14 @@ static void do_exit(VideoState *is) {
     if (is) {
         stream_close(is);
     }
+
     uninit_opts();
 #if CONFIG_AVFILTER
     av_freep(&vfilters_list);
 #endif
     avformat_network_deinit();
     LOGI("do_exit() end\n");
+
     onFinished();
 }
 
@@ -1761,15 +1758,16 @@ static double get_master_clock(VideoState *is) {
     switch (get_master_sync_type(is)) {
         case AV_SYNC_VIDEO_MASTER:
             val = get_clock(&is->vidclk);
-            LOGI("get_master_clock() video val = %lf\n", val);
+            //LOGI("get_master_clock() video val = %lf\n", val);
             break;
         case AV_SYNC_AUDIO_MASTER:
             val = get_clock(&is->audclk);
             //LOGI("get_master_clock() audio val = %lf\n", val);
             break;
         default:
+            // 没有音频,只有视频时
             val = get_clock(&is->extclk);
-            LOGI("get_master_clock() exter val = %lf\n", val);
+            //LOGI("get_master_clock() exter val = %lf\n", val);
             break;
     }
     return val;
@@ -2295,6 +2293,7 @@ static int queue_picture(
 
 static double test_diff_min = 0.0;
 static double test_diff_max = 0.0;
+
 static int get_video_frame(VideoState *is, AVFrame *frame) {
     int got_picture;
 
@@ -2328,13 +2327,16 @@ static int get_video_frame(VideoState *is, AVFrame *frame) {
                 if (video_decode_mc_log) {
                     ++test_get_master_clock_count;
                     LOGD("get_video_frame()====================================\n");
-                    LOGI("get_video_frame()    master_clock_count: %lld\n",test_get_master_clock_count);
+                    LOGI("get_video_frame()    master_clock_count: %lld\n",
+                         test_get_master_clock_count);
                     LOGI("get_video_frame()        is->audclk.pts: %lf\n", is->audclk.pts);
-                    LOGI("get_video_frame()   time - last_updated: %lf\n",(time - is->audclk.last_updated));
+                    LOGI("get_video_frame()   time - last_updated: %lf\n",
+                         (time - is->audclk.last_updated));
                     LOGI("get_video_frame()                  dpts: %lf\n", dpts);
                     LOGI("get_video_frame()          master_clock: %lf\n", master_clock);
                     LOGI("get_video_frame()  diff(dpts - master)*: %lf\n", diff);
-                    LOGI("get_video_frame()            last_delay: %lf\n",is->frame_last_filter_delay);
+                    LOGI("get_video_frame()            last_delay: %lf\n",
+                         is->frame_last_filter_delay);
                     if (test_diff_min > diff && diff < 0) {
                         test_diff_min = diff;
                         LOGE("get_video_frame()         test_diff_min: %lf\n", test_diff_min);
@@ -4244,6 +4246,7 @@ static int create_avformat_context(void *arg) {
     LOGI("create_avformat_context()    video_disable = %d\n", video_disable);// 0
     LOGI("create_avformat_context()    audio_disable = %d\n", audio_disable);// 0
     LOGI("create_avformat_context() subtitle_disable = %d\n", subtitle_disable);// 0
+    subtitle_disable = 1;
     if (!video_disable) {
         st_index[AVMEDIA_TYPE_VIDEO] =
                 av_find_best_stream(avFormatContext, AVMEDIA_TYPE_VIDEO,
