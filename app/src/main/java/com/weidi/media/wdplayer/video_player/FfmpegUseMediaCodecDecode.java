@@ -1435,7 +1435,7 @@ public class FfmpegUseMediaCodecDecode {
                 true);
     }
 
-    public void releaseOutputBuffer() {
+    public void releaseOutputBuffer(boolean render) {
         int roomIndex = -1;
         try {
             //Log.d(TAG, "releaseOutputBuffer() 1");
@@ -1455,7 +1455,7 @@ public class FfmpegUseMediaCodecDecode {
                 && mVideoWrapper.decoderMediaCodec != null
                 && mVideoWrapper.isHandling) {
             try {
-                mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, true);
+                mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
             } catch (IllegalStateException
                     | NullPointerException
                     | MediaCodec.CryptoException e) {

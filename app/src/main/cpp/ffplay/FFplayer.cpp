@@ -475,7 +475,6 @@ static long long int test_get_master_clock_count = 0;
 static bool read_thread_log = false;
 static bool video_decode_mc_log = false;
 static bool video_refresh_log = false;
-//static bool video_play_log = true;
 static bool audio_play_log = false;
 
 // 在decoder_decode_frame_by_mediacodec函数中使用
@@ -1114,6 +1113,12 @@ static void frame_queue_push(FrameQueue *f) {
     pthread_mutex_unlock(&f->pmutex);
 }
 
+/***
+ video:
+    rindex: 0 1 2
+ audio:
+    rindex: 0 1 2 3 4 5 6 7 8
+ */
 static void frame_queue_next(FrameQueue *f) {
     if (f->keep_last && !f->rindex_shown) {
         f->rindex_shown = 1;
@@ -1131,7 +1136,7 @@ static void frame_queue_next(FrameQueue *f) {
         LOGI("video_refresh()         f->size = %d\n", f->size);
     }*/
     frame_queue_unref_item(&f->queue[f->rindex]);
-    if (++f->rindex == f->max_size) {
+    if ((++f->rindex) == f->max_size) {
         f->rindex = 0;
     }
     pthread_mutex_lock(&f->pmutex);
@@ -1142,7 +1147,7 @@ static void frame_queue_next(FrameQueue *f) {
 
 /* return the number of undisplayed frames in the queue */
 static int frame_queue_nb_remaining(FrameQueue *f) {
-    return f->size - f->rindex_shown;
+    return f->size - f->rindex_shown;// f->size - 1;
 }
 
 /* return last shown position */
@@ -1160,7 +1165,7 @@ static void decoder_abort(Decoder *d, FrameQueue *fq) {
     packet_queue_flush(d->queue);
 }
 
-int rendering(VideoState *is, AVFrame *decodedAVFrame) {
+static int rendering(VideoState *is, AVFrame *decodedAVFrame) {
     ANativeWindow_lock(pANativeWindow, &mANativeWindow_Buffer, nullptr);
 
     // 把decodedAVFrame的数据经过格式转换后保存到rgbAVFrame中
@@ -1811,9 +1816,9 @@ static double compute_target_delay(double delay, VideoState *is) {
 static double vp_duration(VideoState *is, Frame *vp, Frame *nextvp) {
     if (vp->serial == nextvp->serial) {
         double duration = nextvp->pts - vp->pts;
-        if (video_refresh_log) {
+        /*if (video_refresh_log) {
             LOGI("vp_duration()nextvp->pts-vp->pts= %lf\n", duration);
-        }
+        }*/
         //LOGI("vp_duration()          duration = %lf\n", duration);
         //LOGI("vp_duration()   isnan(duration) = %d\n", isnan(duration));// 0
         if (duration <= 0 || isnan(duration) || duration > is->max_frame_duration) {
@@ -1835,8 +1840,8 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
 /* called to display each frame */
 static void video_refresh(void *opaque, double *remaining_time) {
     VideoState *is = static_cast<VideoState *>(opaque);
-    double time;
-    Frame *sp = nullptr, *sp2 = nullptr;
+    double time;// 当前时间点(是个时间点,不是时间段)
+    //Frame *sp = nullptr, *sp2 = nullptr;
 
     // region 第一个条件不满足
     if (is->realtime && !is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK) {
@@ -1855,145 +1860,283 @@ static void video_refresh(void *opaque, double *remaining_time) {
     }
     // endregion
 
-    if (is->video_st) {
-        retry:
-        if (frame_queue_nb_remaining(&is->pictq) == 0) {
-            // nothing to do, no picture to display in the queue
-            //LOGI("video_refresh() nothing to do, no picture to display in the queue\n");
+    if (!is->video_st) {
+        is->force_refresh = 0;
+        return;
+    }
+
+    if (is->useMediaCodec) {
+        retry2:
+        /*if (frame_queue_nb_remaining(&is->pictq) == 0) {
         } else {
-            double last_duration, duration, delay;
-            // lastvp: 正在显示的帧(也就是当前屏幕上看到的帧)
-            //     vp: 将要显示的帧
-            // nextvp: 下一次要显示的帧
-            Frame *lastvp = nullptr, *vp = nullptr;
+        }*/
+        int render = 0;
+        double last_duration, delay;
+        Frame *lastvp = nullptr, *vp = nullptr;
 
-            /* dequeue the picture */
-            lastvp = frame_queue_peek_last(&is->pictq);
-            vp = frame_queue_peek(&is->pictq);
+        lastvp = frame_queue_peek_last(&is->pictq);
+        vp = frame_queue_peek(&is->pictq);
 
-            if (vp->serial != is->videoq.serial) {
+        if (vp->serial != is->videoq.serial) {
+            frame_queue_next(&is->pictq);
+            goto retry2;
+        }
+
+        if (lastvp->serial != vp->serial) {
+            is->frame_timer = av_gettime_relative() / 1000000.0;
+        }
+
+        if (is->paused) {
+            goto display2;
+        }
+
+        if (is->audio_stream < 0) {
+            if (!isLive) {
+                curProgress = (long long) vp->pts;// 秒
+                if (curProgress > preProgress) {
+                    if (curProgress <= media_duration) {
+                        onProgressUpdated(curProgress);
+                    } else {
+                        onProgressUpdated(media_duration);
+                    }
+                }
+                preProgress = curProgress;
+            }
+        }
+
+        if (video_refresh_log) {
+            LOGD("video_refresh()-------------------------------\n");
+            LOGI("video_refresh()\n"
+                 " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
+                 "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
+                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
+                 vp->pts, vp->pos, vp->duration, vp->serial);
+        }
+
+        delay = last_duration = vp_duration(is, lastvp, vp);
+        if (video_refresh_log) {
+            LOGI("video_refresh()   last_duration = %lf\n", last_duration);
+        }
+        if (last_duration == 0.0) {
+            last_duration = 0.04;
+            if (video_refresh_log) {
+                LOGI("video_refresh()   last_duration = %lf\n", last_duration);
+            }
+        }
+        delay = compute_target_delay(last_duration, is);
+        time = av_gettime_relative() / 1000000.0;
+        if (delay == 0.0) {
+            if (video_refresh_log) {
+                LOGI("video_refresh()        delay(*) = %lf\n", delay);
+            }
+            delay = 0.04;
+        }
+        if (video_refresh_log) {
+            LOGI("video_refresh()        delay(*) = %lf\n", delay);
+            LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+            LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
+            LOGI("video_refresh()            time = %lf\n", time);
+        }
+        if (time < is->frame_timer + delay) {
+            *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+            //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
+            render = 1;
+            goto display2;
+        }
+        //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
+
+        is->frame_timer += delay;
+        if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
+            is->frame_timer = time;
+        }
+
+        pthread_mutex_lock(&is->pictq.pmutex);
+        if (!isnan(vp->pts)) {
+            update_video_pts(is, vp->pts, vp->pos, vp->serial);
+        }
+        pthread_mutex_unlock(&is->pictq.pmutex);
+
+        if (frame_queue_nb_remaining(&is->pictq) > 1) {
+            Frame *nextvp = frame_queue_peek_next(&is->pictq);
+            double duration = vp_duration(is, vp, nextvp);
+            /*LOGI("video_refresh()            time = %lf\n", time);
+            LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+            LOGI("video_refresh()        duration = %lf\n", duration);*/
+            if (!is->step
+                &&
+                ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) ||
+                 framedrop > 0)
+                &&
+                time > is->frame_timer + duration) {
+                is->frame_drops_late++;
                 frame_queue_next(&is->pictq);
+                //LOGI("video_refresh()  goto retry2\n");
+                goto retry2;
+            }
+        }
+
+        frame_queue_next(&is->pictq);
+        is->force_refresh = 1;
+
+        if (is->step && !is->paused) {
+            stream_toggle_pause(is);
+        }
+
+        display2:
+        //LOGI("video_refresh()  is->pictq.size = %d\n", is->pictq.size);
+        if (!is->paused/* && !is->force_refresh*/) {
+            frame_queue_next(&is->pictq);
+        }
+
+        if (runOneTime) {
+            runOneTime = false;
+            onPlayed();
+        }
+
+        sleep(render);
+
+        is->force_refresh = 0;
+
+        return;
+    }
+
+    // region 软解
+
+    retry:
+    if (frame_queue_nb_remaining(&is->pictq) == 0) {
+        // nothing to do, no picture to display in the queue
+        //LOGI("video_refresh() nothing to do, no picture to display in the queue\n");
+    } else {
+        double last_duration, delay;
+        // lastvp: 正在显示的帧(也就是当前屏幕上看到的帧)
+        //     vp: 将要显示的帧
+        // nextvp: 下一次要显示的帧
+        Frame *lastvp = nullptr, *vp = nullptr;
+
+        /* dequeue the picture */
+        lastvp = frame_queue_peek_last(&is->pictq);
+        vp = frame_queue_peek(&is->pictq);
+
+        if (vp->serial != is->videoq.serial) {
+            frame_queue_next(&is->pictq);
+            goto retry;
+        }
+
+        if (lastvp->serial != vp->serial) {
+            is->frame_timer = av_gettime_relative() / 1000000.0;
+        }
+
+        if (is->paused) {
+            goto display;
+        }
+
+        if (is->audio_stream < 0) {
+            if (!isLive) {
+                curProgress = (long long) vp->pts;// 秒
+                if (curProgress > preProgress) {
+                    if (curProgress <= media_duration) {
+                        onProgressUpdated(curProgress);
+                    } else {
+                        onProgressUpdated(media_duration);
+                    }
+                }
+                preProgress = curProgress;
+            }
+        }
+
+        if (video_refresh_log) {
+            LOGD("video_refresh()-------------------------------\n");
+            LOGI("video_refresh()\n"
+                 " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
+                 "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
+                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
+                 vp->pts, vp->pos, vp->duration, vp->serial);
+        }
+
+        /* compute nominal last_duration */
+        delay = last_duration = vp_duration(is, lastvp, vp);
+        delay = compute_target_delay(last_duration, is);
+        time = av_gettime_relative() / 1000000.0;
+        if (video_refresh_log) {
+            LOGI("video_refresh()   last_duration = %lf\n", last_duration);
+            LOGI("video_refresh()        delay(*) = %lf\n", delay);
+            LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+            LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
+            LOGI("video_refresh()            time = %lf\n", time);
+        }
+        if (time < is->frame_timer + delay) {
+            *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+            //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
+            goto display;
+        }
+        //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
+
+        is->frame_timer += delay;
+        if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
+            is->frame_timer = time;
+        }
+
+        pthread_mutex_lock(&is->pictq.pmutex);
+        if (!isnan(vp->pts)) {
+            update_video_pts(is, vp->pts, vp->pos, vp->serial);
+        }
+        pthread_mutex_unlock(&is->pictq.pmutex);
+
+        /***
+         is->pictq有3个数据时才满足条件,因为只有多于3个数据时,调用
+         frame_queue_peek_last(&is->pictq)
+         frame_queue_peek(&is->pictq)
+         frame_queue_peek_next(&is->pictq)
+         这三个函数时才能都有值.
+         */
+        if (frame_queue_nb_remaining(&is->pictq) > 1) {
+            Frame *nextvp = frame_queue_peek_next(&is->pictq);
+            double duration = vp_duration(is, vp, nextvp);
+            /*LOGI("video_refresh()            time = %lf\n", time);
+            LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
+            LOGI("video_refresh()        duration = %lf\n", duration);*/
+            /***
+             is->frame_timer + duration预测的时间点
+                假设为10:09 is->frame_timer:10:05 duration:4
+                假设为10:11 is->frame_timer:10:05 duration:6
+             time当前时间点
+                假设为10:10
+             一个要在10:09结束,但是当前时间已经是10:10了,所以把"你"给丢弃掉
+             一个要在10:11结束,但是当前时间已经是10:10了,所以还有1个单位时间可以播放
+             */
+            if (!is->step
+                &&
+                ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0)
+                &&
+                time > is->frame_timer + duration) {
+                is->frame_drops_late++;
+                frame_queue_next(&is->pictq);
+                //LOGI("video_refresh()  goto retry\n");
                 goto retry;
             }
-
-            if (lastvp->serial != vp->serial) {
-                is->frame_timer = av_gettime_relative() / 1000000.0;
-            }
-
-            if (is->paused) {
-                goto display;
-            }
-
-            if (is->audio_stream < 0) {
-                if (!isLive) {
-                    curProgress = (long long) vp->pts;// 秒
-                    if (curProgress > preProgress) {
-                        if (curProgress <= media_duration) {
-                            onProgressUpdated(curProgress);
-                        } else {
-                            onProgressUpdated(media_duration);
-                        }
-                    }
-                    preProgress = curProgress;
-                }
-            }
-
-            if (video_refresh_log) {
-                LOGD("video_refresh()-------------------------------\n");
-                LOGI("video_refresh()\n"
-                     " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
-                     "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
-                     lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
-                     vp->pts, vp->pos, vp->duration, vp->serial);
-            }
-
-            /* compute nominal last_duration */
-            delay = last_duration = vp_duration(is, lastvp, vp);
-            if (video_refresh_log) {
-                LOGI("video_refresh()   last_duration = %lf\n", last_duration);
-            }
-            if (is->useMediaCodec && last_duration == 0.0) {
-                last_duration = 0.04;
-            }
-            if (video_refresh_log) {
-                LOGI("video_refresh()   last_duration = %lf\n", last_duration);
-            }
-            delay = compute_target_delay(last_duration, is);
-            time = av_gettime_relative() / 1000000.0;
-            if (video_refresh_log) {
-                LOGI("video_refresh()        delay(*) = %lf\n", delay);
-            }
-            if (is->useMediaCodec && delay == 0.0) {
-                delay = 0.04;
-            }
-            if (video_refresh_log) {
-                LOGI("video_refresh()        delay(*) = %lf\n", delay);
-                LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
-                LOGI("video_refresh()                 = %lf\n", (is->frame_timer + delay));
-                LOGI("video_refresh()            time = %lf\n", time);
-            }
-            if (time < is->frame_timer + delay) {
-                *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-                //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
-                goto display;
-            }
-            //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
-
-            is->frame_timer += delay;
-            if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
-                is->frame_timer = time;
-            }
-
-            pthread_mutex_lock(&is->pictq.pmutex);
-            if (!isnan(vp->pts)) {
-                update_video_pts(is, vp->pts, vp->pos, vp->serial);
-            }
-            pthread_mutex_unlock(&is->pictq.pmutex);
-
-            //LOGI("video_refresh()             size = %d\n", is->pictq.size);
-            //LOGI("video_refresh()     rindex_shown = %d\n", is->pictq.rindex_shown);
-            if (frame_queue_nb_remaining(&is->pictq) > 1) {
-                Frame *nextvp = frame_queue_peek_next(&is->pictq);
-                duration = vp_duration(is, vp, nextvp);
-                /*LOGI("video_refresh()            time = %lf\n", time);
-                LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
-                LOGI("video_refresh()        duration = %lf\n", duration);*/
-                if (!is->step
-                    && (framedrop > 0 ||
-                        (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER))
-                    && time > is->frame_timer + duration) {
-                    is->frame_drops_late++;
-                    frame_queue_next(&is->pictq);
-                    //LOGI("video_refresh()  goto retry\n");
-                    goto retry;
-                }
-            }
-
-            frame_queue_next(&is->pictq);
-            is->force_refresh = 1;
-
-            if (is->step && !is->paused) {
-                stream_toggle_pause(is);
-            }
         }
 
-        display:
-        //LOGI("video_refresh()  is->pictq.size = %d\n", is->pictq.size);
-        if (!is->paused
-            && !is->force_refresh
-            && is->useMediaCodec) {
-            frame_queue_next(&is->pictq);
-        }
-        if (!display_disable
-            && is->force_refresh
-            && is->show_mode == VideoState::SHOW_MODE_VIDEO
-            && is->pictq.rindex_shown) {
-            //LOGI("video_refresh()  video_display\n");
-            video_display(is);
+        frame_queue_next(&is->pictq);
+        is->force_refresh = 1;
+
+        if (is->step && !is->paused) {
+            stream_toggle_pause(is);
         }
     }
 
+    display:
+    //LOGI("video_refresh()  is->pictq.size = %d\n", is->pictq.size);
+    if (!display_disable
+        && is->force_refresh
+        && is->show_mode == VideoState::SHOW_MODE_VIDEO
+        && is->pictq.rindex_shown) {
+        //LOGI("video_refresh()  video_display\n");
+        video_display(is);
+    }
+
     is->force_refresh = 0;
+
+    // endregion
 
     // 输出有关视频信息
     /*if (show_status) {
@@ -2204,8 +2347,8 @@ static int queue_picture(
     vp->duration = duration;
     vp->pos = pos;
     vp->serial = serial;
-
     av_frame_move_ref(vp->frame, src_frame);
+
     frame_queue_push(&is->pictq);
     return 0;
 }
@@ -2983,7 +3126,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                      (diff - is->frame_last_filter_delay));*/
             }
 
-            if (!isnan(diff)
+            /*if (!isnan(diff)
                 && fabs(diff) < AV_NOSYNC_THRESHOLD
                 && diff - is->frame_last_filter_delay < 0
                 && is->viddec.pkt_serial == is->vidclk.serial
@@ -2993,7 +3136,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                 LOGE("decoder_decode_frame_by_mediacodec() is->frame_drops_early: %d\n",
                      is->frame_drops_early);
                 return 0;
-            }
+            }*/
         }
     }
     // endregion
@@ -3356,12 +3499,11 @@ static int stream_component_open(VideoState *is, int stream_index) {
     }
     if (!codec) {
         if (forced_codec_name) {
-            av_log(nullptr, AV_LOG_WARNING,
-                   "No codec could be found with name '%s'\n", forced_codec_name);
+            LOGE("stream_component_open() No codec could be found with name '%s'\n",
+                 forced_codec_name);
         } else {
-            av_log(nullptr, AV_LOG_WARNING,
-                   "No decoder could be found for codec %s\n",
-                   avcodec_get_name(avctx->codec_id));
+            LOGE("stream_component_open() No decoder could be found for codec %s\n",
+                 avcodec_get_name(avctx->codec_id));
         }
         ret = AVERROR(EINVAL);
         goto fail;
@@ -3369,9 +3511,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
 
     avctx->codec_id = codec->id;
     if (stream_lowres > codec->max_lowres) {
-        av_log(avctx, AV_LOG_WARNING,
-               "The maximum value for lowres supported by the decoder is %d\n",
-               codec->max_lowres);
+        LOGI("stream_component_open() The maximum value for lowres supported by the decoder is %d\n",
+             codec->max_lowres);
         stream_lowres = codec->max_lowres;
     }
     avctx->lowres = stream_lowres;
@@ -3390,13 +3531,11 @@ static int stream_component_open(VideoState *is, int stream_index) {
     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO || avctx->codec_type == AVMEDIA_TYPE_AUDIO) {
         av_dict_set(&opts, "refcounted_frames", "1", 0);
     }
-    LOGI("stream_component_open() avcodec_open2 start\n");
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
-    LOGI("stream_component_open() avcodec_open2 end\n");
     if ((t = av_dict_get(opts, "", nullptr, AV_DICT_IGNORE_SUFFIX))) {
-        av_log(nullptr, AV_LOG_ERROR, "Option %s not found.\n", t->key);
+        LOGE("stream_component_open() Option %s not found.\n", t->key);
         ret = AVERROR_OPTION_NOT_FOUND;
         goto fail;
     }
@@ -3408,8 +3547,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
             is->video_stream = stream_index;
             is->video_st = ic->streams[stream_index];
             decoder_init(&is->viddec, avctx, &is->videoq, &is->pcontinue_read_thread);
-            /*if ((ret = decoder_start(&is->viddec, video_thread, "video_decoder", is)) < 0)
-                goto out;*/
             is->queue_attachments_req = 1;
 
             if (ic->streams[stream_index]->avg_frame_rate.den != 0) {
@@ -3493,11 +3630,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
             //#endif
 
-            /* prepare audio output */
-            /*if ((ret = audio_open(is, channel_layout, nb_channels, sample_rate, &is->audio_tgt)) < 0){
-                goto fail;
-            }*/
-
             is->audio_hw_buf_size = ret;
             is->audio_src = is->audio_tgt;
             is->audio_buf_size = 0;
@@ -3523,10 +3655,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
 
             bit_rate_audio = avctx->bit_rate / 1000;
             codecid_audio = codec->id;
-
-            /*if ((ret = decoder_start(&is->auddec, audio_thread, "audio_decoder", is)) < 0)
-                goto out;
-            SDL_PauseAudioDevice(audio_dev, 0);*/
 
 #ifdef OS_ANDROID
             {
@@ -3995,32 +4123,26 @@ static int create_avformat_context(void *arg) {
     LOGI("create_avformat_context() find_stream_info = %d\n", find_stream_info);// 1
     if (find_stream_info) {
         av_log_set_callback(log_callback);
-        if (codec_opts == nullptr) {
-            LOGE("create_avformat_context() codec_opts is nullptr\n");
-        }
         LOGI("create_avformat_context() setup_find_stream_info_opts\n");
         AVDictionary **opts = setup_find_stream_info_opts(avFormatContext, codec_opts);
         int orig_nb_streams = avFormatContext->nb_streams;
         LOGI("create_avformat_context() orig_nb_streams: %d\n", orig_nb_streams);
 
-        if (opts == nullptr) {
+        /*if (opts == nullptr) {
             LOGE("create_avformat_context() opts is nullptr\n");
         }
         if (*opts == nullptr) {
-            LOGE("create_avformat_context() *opts is nullptr\n");
-        }
+            LOGE("create_avformat_context() *opts is nullptr\n");// here
+        }*/
 
         LOGI("create_avformat_context() avformat_find_stream_info start\n");
         //ret = avformat_find_stream_info(avFormatContext, opts);
         ret = avformat_find_stream_info(avFormatContext, NULL);
         LOGI("create_avformat_context() avformat_find_stream_info end\n");
 
-        LOGI("create_avformat_context() orig_nb_streams: %d\n", orig_nb_streams);
         for (int i = 0; i < orig_nb_streams; i++) {
-            LOGI("create_avformat_context() av_dict_free\n");
             av_dict_free(&opts[i]);
         }
-        LOGI("create_avformat_context() av_freep\n");
         av_freep(&opts);
         av_log_set_callback(log_callback_null);
         if (ret < 0) {

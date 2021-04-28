@@ -358,7 +358,11 @@ public class FFMPEG implements WdPlayer {
     private void sleep(long ms) {
         //SystemClock.sleep(ms);
         if (mFfmpegUseMediaCodecDecode != null) {
-            mFfmpegUseMediaCodecDecode.releaseOutputBuffer();
+            if (ms == 0) {
+                mFfmpegUseMediaCodecDecode.releaseOutputBuffer(true);
+            } else {
+                mFfmpegUseMediaCodecDecode.releaseOutputBuffer(false);
+            }
         }
     }
 
