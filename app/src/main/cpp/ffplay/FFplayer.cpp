@@ -222,7 +222,7 @@ typedef struct FrameQueue {
 typedef struct Decoder {
     AVPacket pkt;
     PacketQueue *queue;
-    AVCodecContext *avctx;
+    AVCodecContext *avctx = nullptr;
     // decoder_init(-1)
     int pkt_serial;
     int finished;
@@ -341,7 +341,6 @@ typedef struct VideoState {
 
 #ifdef OS_ANDROID
     // video
-    AVCodecContext *video_codec_context = nullptr;
     SwsContext *swsContext = nullptr;
     unsigned char *videoOutBuffer = nullptr;
     size_t videoOutBufferSize = 0;
@@ -354,7 +353,6 @@ typedef struct VideoState {
     const AVBitStreamFilter *avBitStreamFilter = nullptr;
     AVBSFContext *avbsfContext = nullptr;
     // audio
-    AVCodecContext *audio_codec_context = nullptr;
     SwrContext *swrContext = nullptr;
     unsigned char *audioOutBuffer = nullptr;
     size_t audioOutBufferSize = 0;
@@ -493,6 +491,9 @@ int last_vfilter_idx = 0;
 //#endif
 AVRational frame_rate_avrational;
 
+static ANativeWindow_Buffer mANativeWindow_Buffer;
+static ANativeWindow *pANativeWindow = nullptr;
+
 /////////////////////////////////////////////////////////////////////////
 
 const char program_name[] = "ffplay";
@@ -623,16 +624,6 @@ static int opt_add_vfilter(void *optctx, const char *opt, const char *arg) {
 }
 
 #endif
-
-static inline
-int cmp_audio_fmts(enum AVSampleFormat fmt1, int64_t channel_count1,
-                   enum AVSampleFormat fmt2, int64_t channel_count2) {
-    /* If channel count == 1, planar and non-planar formats are the same */
-    if (channel_count1 == 1 && channel_count2 == 1)
-        return av_get_packed_sample_fmt(fmt1) != av_get_packed_sample_fmt(fmt2);
-    else
-        return channel_count1 != channel_count2 || fmt1 != fmt2;
-}
 
 static inline
 int64_t get_valid_channel_layout(int64_t channel_layout, int channels) {
@@ -880,6 +871,7 @@ static void decoder_init(Decoder *d, AVCodecContext *avctx, PacketQueue *queue,
 static void decoder_destroy(Decoder *d) {
     av_packet_unref(&d->pkt);
     avcodec_free_context(&d->avctx);
+    d->avctx = nullptr;
 }
 
 // 解码
@@ -1168,55 +1160,6 @@ static void decoder_abort(Decoder *d, FrameQueue *fq) {
     packet_queue_flush(d->queue);
 }
 
-
-static void calculate_display_rect(//SDL_Rect *rect,
-        int scr_xleft, int scr_ytop, int scr_width, int scr_height,
-        int pic_width, int pic_height, AVRational pic_sar) {
-    AVRational aspect_ratio = pic_sar;
-    int64_t width, height, x, y;
-
-    if (av_cmp_q(aspect_ratio, av_make_q(0, 1)) <= 0) {
-        aspect_ratio = av_make_q(1, 1);
-    }
-
-    aspect_ratio = av_mul_q(aspect_ratio, av_make_q(pic_width, pic_height));
-
-    /* XXX: we suppose the screen has a 1.0 pixel ratio */
-    height = scr_height;
-    width = av_rescale(height, aspect_ratio.num, aspect_ratio.den) & ~1;
-    if (width > scr_width) {
-        width = scr_width;
-        height = av_rescale(width, aspect_ratio.den, aspect_ratio.num) & ~1;
-    }
-    x = (scr_width - width) / 2;
-    y = (scr_height - height) / 2;
-
-    x = scr_xleft + x;
-    y = scr_ytop + y;
-    int w = FFMAX((int) width, 1);
-    int h = FFMAX((int) height, 1);
-}
-
-static void set_sdl_yuv_conversion_mode(AVFrame *frame) {
-/*#if SDL_VERSION_ATLEAST(2, 0, 8)
-        SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
-        if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 ||
-                      frame->format == AV_PIX_FMT_UYVY422)) {
-            if (frame->color_range == AVCOL_RANGE_JPEG)
-                mode = SDL_YUV_CONVERSION_JPEG;
-            else if (frame->colorspace == AVCOL_SPC_BT709)
-                mode = SDL_YUV_CONVERSION_BT709;
-            else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M ||
-                     frame->colorspace == AVCOL_SPC_SMPTE240M)
-                mode = SDL_YUV_CONVERSION_BT601;
-        }
-        SDL_SetYUVConversionMode(mode);
-#endif*/
-}
-
-static ANativeWindow_Buffer mANativeWindow_Buffer;
-static ANativeWindow *pANativeWindow = nullptr;
-
 int rendering(VideoState *is, AVFrame *decodedAVFrame) {
     ANativeWindow_lock(pANativeWindow, &mANativeWindow_Buffer, nullptr);
 
@@ -1255,8 +1198,6 @@ static void video_image_display(VideoState *is) {
     }
 
     Frame *vp = frame_queue_peek_last(&is->pictq);
-    /*calculate_display_rect(//&rect,
-            is->xleft, is->ytop, is->width, is->height, vp->width, vp->height, vp->sar);*/
     if (!vp->uploaded && !is->useMediaCodec) {
         // 渲染
         rendering(is, vp->frame);
@@ -1512,10 +1453,10 @@ static void stream_close(VideoState *is) {
     if (avFormatContext != nullptr) {
         LOGI("avformat_free_context() start\n");
         //ffmpeg 4.0版本不能调用
-        //avformat_close_input(&avFormatContext);
+        avformat_close_input(&avFormatContext);
         //avformat_free_context(avFormatContext);
         LOGI("avformat_free_context() end\n");
-        //avFormatContext = nullptr;
+        avFormatContext = nullptr;
     }
 
     LOGI("packet_queue_destroy()\n");
@@ -1532,18 +1473,6 @@ static void stream_close(VideoState *is) {
     sws_freeContext(is->img_convert_ctx);
     sws_freeContext(is->sub_convert_ctx);
     av_free(is->filename);
-    if (is->video_codec_context != nullptr) {
-        LOGI("avcodec_free_context() video\n");
-        avcodec_free_context(&is->video_codec_context);
-        //avcodec_close(is->video_codec_context);
-        //av_free(is->video_codec_context);
-        is->video_codec_context = nullptr;
-    }
-    if (is->audio_codec_context != nullptr) {
-        LOGI("avcodec_free_context() audio\n");
-        avcodec_free_context(&is->audio_codec_context);
-        is->audio_codec_context = nullptr;
-    }
     LOGI("av_frame_free()\n");
     if (is->rgbAVFrame) {
         av_frame_free(&is->rgbAVFrame);
@@ -1829,16 +1758,6 @@ static void toggle_pause(VideoState *is) {
 static void toggle_mute(VideoState *is) {
     is->muted = !is->muted;
 }
-
-/*static void update_volume(VideoState *is, int sign, double step) {
-    double volume_level = is->audio_volume ? (20 * log(is->audio_volume /
-                                                       (double) SDL_MIX_MAXVOLUME) / log(10))
-                                           : -1000.0;
-    int new_volume = lrint(SDL_MIX_MAXVOLUME * pow(10.0, (volume_level + sign * step) / 20.0));
-    is->audio_volume = av_clip(
-            is->audio_volume == new_volume ? (is->audio_volume + sign) : new_volume, 0,
-            SDL_MIX_MAXVOLUME);
-}*/
 
 static void step_to_next_frame(VideoState *is) {
     /* if the stream is paused unpause it, then step */
@@ -2251,8 +2170,8 @@ static void initVideoMediaCodec(void *opaque) {
     parameters[5] = is->videoOutBufferSize;
 
     // 传递到java层去处理比较方便
-    uint8_t *extradata = is->video_codec_context->extradata;
-    int extradata_size = is->video_codec_context->extradata_size;
+    uint8_t *extradata = is->viddec.avctx->extradata;
+    int extradata_size = is->viddec.avctx->extradata_size;
 
     bool initRet = initMediaCodec(0x0002, codecid_video,
                                   parameters, parameters_size,
@@ -3220,68 +3139,6 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     return 0;
 }
 
-/* copy samples for viewing in editor window */
-static void update_sample_display(VideoState *is, short *samples, int samples_size) {
-    int size, len;
-
-    size = samples_size / sizeof(short);
-    while (size > 0) {
-        len = SAMPLE_ARRAY_SIZE - is->sample_array_index;
-        if (len > size)
-            len = size;
-        memcpy(is->sample_array + is->sample_array_index, samples, len * sizeof(short));
-        samples += len;
-        is->sample_array_index += len;
-        if (is->sample_array_index >= SAMPLE_ARRAY_SIZE)
-            is->sample_array_index = 0;
-        size -= len;
-    }
-}
-
-/* return the wanted number of samples to get better sync if sync_type is video
- * or external master clock */
-static int synchronize_audio(VideoState *is, int nb_samples) {
-    int wanted_nb_samples = nb_samples;
-
-    /* if not master, then we try to remove or add samples to correct the clock */
-    if (get_master_sync_type(is) != AV_SYNC_AUDIO_MASTER) {
-        double diff, avg_diff;
-        int min_nb_samples, max_nb_samples;
-
-        diff = get_clock(&is->audclk) - get_master_clock(is);
-
-        if (!isnan(diff) && fabs(diff) < AV_NOSYNC_THRESHOLD) {
-            is->audio_diff_cum = diff + is->audio_diff_avg_coef * is->audio_diff_cum;
-            if (is->audio_diff_avg_count < AUDIO_DIFF_AVG_NB) {
-                /* not enough measures to have a correct estimate */
-                is->audio_diff_avg_count++;
-            } else {
-                /* estimate the A-V difference */
-                avg_diff = is->audio_diff_cum * (1.0 - is->audio_diff_avg_coef);
-
-                if (fabs(avg_diff) >= is->audio_diff_threshold) {
-                    wanted_nb_samples = nb_samples + (int) (diff * is->audio_src.freq);
-                    min_nb_samples = ((nb_samples * (100 - SAMPLE_CORRECTION_PERCENT_MAX) /
-                                       100));
-                    max_nb_samples = ((nb_samples * (100 + SAMPLE_CORRECTION_PERCENT_MAX) /
-                                       100));
-                    wanted_nb_samples = av_clip(
-                            wanted_nb_samples, min_nb_samples, max_nb_samples);
-                }
-                av_log(nullptr, AV_LOG_TRACE, "diff=%f adiff=%f sample_diff=%d apts=%0.3f %f\n",
-                       diff, avg_diff, wanted_nb_samples - nb_samples,
-                       is->audio_clock, is->audio_diff_threshold);
-            }
-        } else {
-            /* too big difference : may be initial PTS errors, so reset A-V filter */
-            is->audio_diff_avg_count = 0;
-            is->audio_diff_cum = 0;
-        }
-    }
-
-    return wanted_nb_samples;
-}
-
 /**
  * Decode one audio frame and return its uncompressed size.
  *
@@ -3533,9 +3390,11 @@ static int stream_component_open(VideoState *is, int stream_index) {
     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO || avctx->codec_type == AVMEDIA_TYPE_AUDIO) {
         av_dict_set(&opts, "refcounted_frames", "1", 0);
     }
+    LOGI("stream_component_open() avcodec_open2 start\n");
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
+    LOGI("stream_component_open() avcodec_open2 end\n");
     if ((t = av_dict_get(opts, "", nullptr, AV_DICT_IGNORE_SUFFIX))) {
         av_log(nullptr, AV_LOG_ERROR, "Option %s not found.\n", t->key);
         ret = AVERROR_OPTION_NOT_FOUND;
@@ -3562,7 +3421,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
             bit_rate = ic->bit_rate / 1000;
             bit_rate_video = avctx->bit_rate / 1000;
             codecid_video = codec->id;
-            is->video_codec_context = avctx;
 
 #ifdef OS_ANDROID
             {
@@ -3665,7 +3523,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
 
             bit_rate_audio = avctx->bit_rate / 1000;
             codecid_audio = codec->id;
-            is->audio_codec_context = avctx;
 
             /*if ((ret = decoder_start(&is->auddec, audio_thread, "audio_decoder", is)) < 0)
                 goto out;
@@ -3851,11 +3708,11 @@ static void *read_thread(void *arg) {
     LOGI("read_thread() video_stream = %d\n", is->video_stream);
     LOGI("read_thread() audio_stream = %d\n", is->audio_stream);
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
-    if (timeStamp >= 0) {
+    if (timeStamp >= 0 && !is->useMediaCodec) {
         stream_seek(
                 is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
-        timeStamp = -1;
     }
+    timeStamp = -1;
 
     struct timespec abstime;
     struct timeval now;
@@ -4542,12 +4399,6 @@ static void stream_cycle_channel(VideoState *is, int codec_type) {
 
     stream_component_close(is, old_index);
     stream_component_open(is, stream_index);
-}
-
-
-static void toggle_full_screen(VideoState *is) {
-    is_full_screen = !is_full_screen;
-    //SDL_SetWindowFullscreen(window, is_full_screen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
 }
 
 static void toggle_audio_display(VideoState *is) {
