@@ -474,7 +474,7 @@ static long long int test_get_master_clock_count = 0;
 
 static bool read_thread_log = false;
 static bool video_decode_mc_log = false;
-static bool video_refresh_log = false;
+static bool video_refresh_log = true;
 static bool audio_play_log = false;
 
 // 在decoder_decode_frame_by_mediacodec函数中使用
@@ -1837,6 +1837,9 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
     sync_clock_to_slave(&is->extclk, &is->vidclk);
 }
 
+static double test_delay = 0.0;
+static double test_last_duration = 0.0;
+
 /* called to display each frame */
 static void video_refresh(void *opaque, double *remaining_time) {
     VideoState *is = static_cast<VideoState *>(opaque);
@@ -1867,9 +1870,10 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
     if (is->useMediaCodec) {
         retry2:
-        /*if (frame_queue_nb_remaining(&is->pictq) == 0) {
-        } else {
-        }*/
+        if (is->pictq.size == 0 || is->pictq.size == 1) {
+            return;
+        }
+
         int render = 0;
         double last_duration, delay;
         Frame *lastvp = nullptr, *vp = nullptr;
@@ -1906,6 +1910,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
         if (video_refresh_log) {
             LOGD("video_refresh()-------------------------------\n");
+            LOGI("video_refresh()  is->pictq.size = %d\n", is->pictq.size);
             LOGI("video_refresh()\n"
                  " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
                  "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
@@ -1917,19 +1922,25 @@ static void video_refresh(void *opaque, double *remaining_time) {
         if (video_refresh_log) {
             LOGI("video_refresh()   last_duration = %lf\n", last_duration);
         }
-        if (last_duration == 0.0) {
-            last_duration = 0.04;
+        if (last_duration == 0.0 && test_last_duration > 0.0) {
+            last_duration = test_last_duration;
             if (video_refresh_log) {
                 LOGI("video_refresh()   last_duration = %lf\n", last_duration);
             }
         }
+        if (last_duration > 0.0) {
+            test_last_duration = last_duration;
+        }
         delay = compute_target_delay(last_duration, is);
         time = av_gettime_relative() / 1000000.0;
-        if (delay == 0.0) {
+        if (delay == 0.0 && test_delay > 0.0) {
             if (video_refresh_log) {
                 LOGI("video_refresh()        delay(*) = %lf\n", delay);
             }
-            delay = 0.04;
+            delay = test_delay;
+        }
+        if (delay > 0.0) {
+            test_delay = delay;
         }
         if (video_refresh_log) {
             LOGI("video_refresh()        delay(*) = %lf\n", delay);
@@ -1958,16 +1969,16 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
         if (frame_queue_nb_remaining(&is->pictq) > 1) {
             Frame *nextvp = frame_queue_peek_next(&is->pictq);
-            double duration = vp_duration(is, vp, nextvp);
+            double next_delay = vp_duration(is, vp, nextvp);
             /*LOGI("video_refresh()            time = %lf\n", time);
             LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
-            LOGI("video_refresh()        duration = %lf\n", duration);*/
+            LOGI("video_refresh()      next_delay = %lf\n", next_delay);*/
             if (!is->step
                 &&
                 ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) ||
                  framedrop > 0)
                 &&
-                time > is->frame_timer + duration) {
+                time > is->frame_timer + next_delay) {
                 is->frame_drops_late++;
                 frame_queue_next(&is->pictq);
                 //LOGI("video_refresh()  goto retry2\n");
@@ -1993,6 +2004,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
             onPlayed();
         }
 
+        // render = 0 codec.releaseOutputBuffer(roomIndex, true);
+        // render = 1 codec.releaseOutputBuffer(roomIndex, false);
         sleep(render);
 
         is->force_refresh = 0;
@@ -2065,11 +2078,26 @@ static void video_refresh(void *opaque, double *remaining_time) {
             LOGI("video_refresh()            time = %lf\n", time);
         }
         if (time < is->frame_timer + delay) {
+            /***
+             lastvp还可以延迟的时间(下一帧渲染的时间点还没有到)
+             怎么理解呢? 打比方
+             is->frame_timer: 10.05
+             delay          : 6(vp->pts - lastvp->pts)
+             time           : 10:10
+             当前帧是lastvp,下一帧是vp.
+             渲染下一帧的时间点是10:11,而当前时间点是10:10,
+             也就是说当前帧(lastvp)还可以播放1个单位时间.
+             因此在这里直接跳到display,但是因为is->force_refresh为0,
+             所以video_display是不调用的,就是说下一帧(vp)是不渲染的,
+             只是av_usleep了1个单位时间.
+             */
             *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
             //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
             goto display;
         }
         //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
+
+        // 下一帧渲染的时间点已经过了
 
         is->frame_timer += delay;
         if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
@@ -2091,14 +2119,14 @@ static void video_refresh(void *opaque, double *remaining_time) {
          */
         if (frame_queue_nb_remaining(&is->pictq) > 1) {
             Frame *nextvp = frame_queue_peek_next(&is->pictq);
-            double duration = vp_duration(is, vp, nextvp);
+            double next_delay = vp_duration(is, vp, nextvp);
             /*LOGI("video_refresh()            time = %lf\n", time);
             LOGI("video_refresh() is->frame_timer = %lf\n", is->frame_timer);
-            LOGI("video_refresh()        duration = %lf\n", duration);*/
+            LOGI("video_refresh()      next_delay = %lf\n", next_delay);*/
             /***
              is->frame_timer + duration预测的时间点
-                假设为10:09 is->frame_timer:10:05 duration:4
-                假设为10:11 is->frame_timer:10:05 duration:6
+                假设为10:09 is->frame_timer:10:05 next_delay:4
+                假设为10:11 is->frame_timer:10:05 next_delay:6
              time当前时间点
                 假设为10:10
              一个要在10:09结束,但是当前时间已经是10:10了,所以把"你"给丢弃掉
@@ -2108,7 +2136,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 &&
                 ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0)
                 &&
-                time > is->frame_timer + duration) {
+                time > is->frame_timer + next_delay) {
                 is->frame_drops_late++;
                 frame_queue_next(&is->pictq);
                 //LOGI("video_refresh()  goto retry\n");
