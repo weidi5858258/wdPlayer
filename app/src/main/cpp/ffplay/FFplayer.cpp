@@ -2127,10 +2127,12 @@ static void video_refresh(void *opaque, double *remaining_time) {
         if (frame_queue_nb_remaining(&is->pictq) > 1) {
             Frame *nextvp = frame_queue_peek_next(&is->pictq);
             double next_delay = vp_duration(is, vp, nextvp);
-            LOGI("video_refresh()                   next_delay = %lf\n", next_delay);
-            LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
-            LOGI("video_refresh() is->frame_timer + next_delay = %lf\n",
-                 (is->frame_timer + next_delay));
+            if (video_refresh_log) {
+                LOGI("video_refresh()                   next_delay = %lf\n", next_delay);
+                LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
+                LOGI("video_refresh() is->frame_timer + next_delay = %lf\n",
+                     (is->frame_timer + next_delay));
+            }
             /***
              is->frame_timer + duration预测的时间点
                 假设为10:09 is->frame_timer:10:05 next_delay:4
