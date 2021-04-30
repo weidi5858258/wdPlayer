@@ -1594,10 +1594,10 @@ public class PlayerWrapper {
                 buttonClickForNext();
                 break;
             case R.id.button_play:
-                buttonClickForPlay();
+                buttonClickForPause();
                 break;
             case R.id.button_pause:
-                buttonClickForPause();
+                buttonClickForPlay();
                 break;
             case R.id.surfaceView:
                 mIsScreenPress = true;
@@ -2479,7 +2479,7 @@ public class PlayerWrapper {
         onRelease();
     }
 
-    private void buttonClickForPlay() {
+    private void buttonClickForPause() {
         if (mWdPlayer != null && mWdPlayer.isRunning()) {
             mPlayIB.setVisibility(View.INVISIBLE);
             mPauseIB.setVisibility(View.VISIBLE);
@@ -2487,7 +2487,7 @@ public class PlayerWrapper {
         }
     }
 
-    private void buttonClickForPause() {
+    private void buttonClickForPlay() {
         if (mWdPlayer != null && mWdPlayer.isRunning()) {
             if (isFrameByFrameMode) {
                 isFrameByFrameMode = false;

@@ -1680,7 +1680,9 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     // 超出限制就会阻塞
                     if (mVideoDatasIndexQueue != null) {
+                        //Log.i(TAG, "handleVideoOutputBuffer() 1\n");
                         mVideoDatasIndexQueue.put(roomIndex);
+                        //Log.i(TAG, "handleVideoOutputBuffer() 2\n");
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
