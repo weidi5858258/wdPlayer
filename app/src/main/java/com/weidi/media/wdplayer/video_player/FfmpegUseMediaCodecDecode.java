@@ -1252,7 +1252,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
-        mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(5);
+        mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(20);
         mVideoInputDatasQueue.needToWait = true;
         mVideoDatasIndexQueue.needToWait = true;
 
