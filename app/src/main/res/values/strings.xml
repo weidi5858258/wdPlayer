@@ -10,6 +10,7 @@
     <string name="handle_info">
         \n
         播放器选择(在内容页的输入框中输入下面内容):\n
+        &#160;player_ff&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_ffplay\n
         &#160;player_fm&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_ffmpeg_mediacodec\n
         &#160;player_ijk&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;-> player_ijkplayer\n
         \n
@@ -36,6 +37,22 @@
         &#160;9次.关闭视频,播放音频(针对player_ffmpeg_mediacodec)\n
         10次.竖屏时不变,横屏时三种情况之间不断切换\n
         11次.退出播放\n
+        \n
+        // remaining_time 0.01\n
+        if (frame_rate >= 45) {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = 0.024;\n
+        } else if (frame_rate >= 23) {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = 0.03;\n
+        } else if (frame_rate >= 20) {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = 0.05;\n
+        } else if (frame_rate >= 15) {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = 0.08;\n
+        } else {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = 0.1;\n
+        }\n
+        if (REMAINING_TIME >= 0.0) {\n
+        &#160;&#160;&#160;&#160;temp_remaining_time = REMAINING_TIME;\n
+        }
         \n
     </string>
     <string name="test">

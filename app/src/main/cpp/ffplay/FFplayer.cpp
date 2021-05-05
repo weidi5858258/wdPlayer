@@ -469,6 +469,10 @@ static int64_t startTime = 0;
 static int64_t endTime = 0;
 static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
+static bool isPausedForCacheVideo = false;
+static bool isPausedForCacheAudio = false;
+double REMAINING_TIME = -0.01;
+static double test_remaining_time = 0.0;
 
 static long long int test_get_master_clock_count = 0;
 static double test_delay = 0.0;
@@ -508,6 +512,8 @@ double rdftspeed = 0.02;
 //static int64_t test_pos;
 //static int64_t test_duration;
 
+int play_pause();
+
 static bool startsWith(const char *str1, char *str2) {
     if (str1 == nullptr || str2 == nullptr) {
         return false;
@@ -533,26 +539,50 @@ static void showInfo() {
 
     char info[200];
     memset(info, '\0', sizeof(info));
-    sprintf(info,
-            "[%lld] [%lld] [%lld] [%d] [%s]"
-            "\n[%s] [%s] [%d] [%d]"
-            "\n[%s] [%s] [%d] [%d]",
-            (long long) bit_rate,
-            (long long) bit_rate_video,
-            (long long) bit_rate_audio,
-            frame_rate,
-            (video_state->useMediaCodec ? "V" : " "),
-            // video
-            avcodec_get_name(codecid_video),
-            av_get_pix_fmt_name(video_state->srcAVPixelFormat),
-            video_state->width,
-            video_state->height,
-            // audio
-            avcodec_get_name(codecid_audio),
-            av_get_sample_fmt_name(video_state->srcAVSampleFormat),
-            video_state->srcSampleRate,
-            video_state->srcNbChannels
-    );
+    if (video_state->useMediaCodec) {
+        sprintf(info,
+                "[%lld] [%lld] [%lld] [%d] [%.3lf] [%s]"
+                "\n[%s] [%s] [%d] [%d]"
+                "\n[%s] [%s] [%d] [%d]",
+                (long long) bit_rate,
+                (long long) bit_rate_video,
+                (long long) bit_rate_audio,
+                frame_rate,
+                test_remaining_time,
+                (video_state->useMediaCodec ? "V" : " "),
+                // video
+                avcodec_get_name(codecid_video),
+                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
+                video_state->width,
+                video_state->height,
+                // audio
+                avcodec_get_name(codecid_audio),
+                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
+                video_state->srcSampleRate,
+                video_state->srcNbChannels
+        );
+    } else {
+        sprintf(info,
+                "[%lld] [%lld] [%lld] [%d] [%s]"
+                "\n[%s] [%s] [%d] [%d]"
+                "\n[%s] [%s] [%d] [%d]",
+                (long long) bit_rate,
+                (long long) bit_rate_video,
+                (long long) bit_rate_audio,
+                frame_rate,
+                (video_state->useMediaCodec ? "V" : " "),
+                // video
+                avcodec_get_name(codecid_video),
+                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
+                video_state->width,
+                video_state->height,
+                // audio
+                avcodec_get_name(codecid_audio),
+                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
+                video_state->srcSampleRate,
+                video_state->srcNbChannels
+        );
+    }
     onInfo(info);
 
     // endregion
@@ -653,6 +683,26 @@ static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt, MyAVPac
     q->nb_packets++;
     q->size += pkt1->pkt.size + sizeof(*pkt1);
     q->duration += pkt1->pkt.duration;
+
+    int consumer;
+    // 加载的数据
+    if (q->stream_index == video_state->audio_stream) {
+        /*if (isPausedForCacheAudio && audio_packets == 140) {
+            play_pause();
+            pthread_cond_signal(&q->pcond);
+        }*/
+        consumer = MSG_ON_TRANSACT_AUDIO_CONSUMER;
+    } else if (q->stream_index == video_state->video_stream) {
+        /*if (isPausedForCacheVideo && video_packets == 50) {
+            play_pause();
+            pthread_cond_signal(&q->pcond);
+        }*/
+        consumer = MSG_ON_TRANSACT_VIDEO_CONSUMER;
+    }
+    if (q->nb_packets % 5 == 0) {
+        onLoadProgressUpdated(consumer, q->nb_packets);
+    }
+
     /* XXX: should duplicate packet data in DV case */
     // 向队列中每增加一个AVPacket就发送信号
     pthread_cond_signal(&q->pcond);
@@ -720,18 +770,6 @@ static int packet_queue_put(PacketQueue *q, AVPacket *pkt) {
     pthread_mutex_lock(&q->pmutex);
     // 停止播放或者申请内存失败时返回-1,否则返回0
     ret = packet_queue_put_private(q, pkt);
-    // 加载的数据
-    if (pkt->stream_index == video_state->audio_stream) {
-        audio_packets = q->nb_packets;
-        if (audio_packets % 10 == 0) {
-            onLoadProgressUpdated(MSG_ON_TRANSACT_AUDIO_CONSUMER, audio_packets);
-        }
-    } else if (pkt->stream_index == video_state->video_stream) {
-        video_packets = q->nb_packets;
-        if (video_packets % 10 == 0) {
-            onLoadProgressUpdated(MSG_ON_TRANSACT_VIDEO_CONSUMER, video_packets);
-        }
-    }
     pthread_mutex_unlock(&q->pmutex);
 
     if (pkt != &flush_pkt && ret < 0) {
@@ -820,21 +858,6 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
                 q->last_pkt = nullptr;
             }
             q->nb_packets--;
-
-            // region alexander add
-            if (pkt->stream_index == video_state->audio_stream) {
-                audio_packets = q->nb_packets;
-                if (audio_packets % 10 == 0) {
-                    onLoadProgressUpdated(MSG_ON_TRANSACT_AUDIO_CONSUMER, audio_packets);
-                }
-            } else if (pkt->stream_index == video_state->video_stream) {
-                video_packets = q->nb_packets;
-                if (video_packets % 10 == 0) {
-                    onLoadProgressUpdated(MSG_ON_TRANSACT_VIDEO_CONSUMER, video_packets);
-                }
-            }
-            // endregion
-
             q->size -= pkt1->pkt.size + sizeof(*pkt1);
             q->duration -= pkt1->pkt.duration;
             *pkt = pkt1->pkt;
@@ -843,15 +866,41 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
             }
             av_free(pkt1);
             ret = 1;
+
+            // region alexander add
+            int consumer;
+            if (q->stream_index == video_state->audio_stream) {
+                consumer = MSG_ON_TRANSACT_AUDIO_CONSUMER;
+            } else if (q->stream_index == video_state->video_stream) {
+                consumer = MSG_ON_TRANSACT_VIDEO_CONSUMER;
+            }
+            if (q->nb_packets % 5 == 0) {
+                onLoadProgressUpdated(consumer, q->nb_packets);
+            }
+            // endregion
+
             break;
         } else if (!block) {
             ret = 0;
             break;
         } else {
+            /*play_pause();
+            if (pkt->stream_index == video_state->audio_stream) {
+                isPausedForCacheAudio = video_state->paused;
+            } else if (pkt->stream_index == video_state->video_stream) {
+                isPausedForCacheVideo = video_state->paused;
+            }*/
+
             // 在packet_queue_put_private函数中发送信号,表示有数据了,可以去取数据了
             //LOGI("packet_queue_get() pthread_cond_wait start\n");
             pthread_cond_wait(&q->pcond, &q->pmutex);
             //LOGI("packet_queue_get() pthread_cond_wait end\n");
+
+            /*if (pkt->stream_index == video_state->audio_stream) {
+                isPausedForCacheAudio = video_state->paused;
+            } else if (pkt->stream_index == video_state->video_stream) {
+                isPausedForCacheVideo = video_state->paused;
+            }*/
         }
     }
     pthread_mutex_unlock(&q->pmutex);
@@ -1336,7 +1385,7 @@ static void video_audio_display(VideoState *s) {
                 av_rdft_calc(s->rdft, data[ch]);
             }
             /* Least efficient way to do this, we should of course
-         * directly access it but it is more than fast enough. */
+             * directly access it but it is more than fast enough. */
             /*if (!SDL_LockTexture(s->vis_texture, &rect, (void **) &pixels, &pitch)) {
                 pitch >>= 2;
                 pixels += pitch * s->height;
@@ -3567,10 +3616,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
             decoder_init(&is->viddec, avctx, &is->videoq, &is->pcontinue_read_thread);
             is->queue_attachments_req = 1;
 
-            if (ic->streams[stream_index]->avg_frame_rate.den != 0) {
+            if (is->video_st->avg_frame_rate.den != 0) {
                 // 帧率
-                frame_rate = ic->streams[stream_index]->avg_frame_rate.num /
-                             ic->streams[stream_index]->avg_frame_rate.den;
+                frame_rate = is->video_st->avg_frame_rate.num / is->video_st->avg_frame_rate.den;
             }
             // 码率(视频)/比特率(音频)
             bit_rate = ic->bit_rate / 1000;
@@ -3580,7 +3628,12 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #ifdef OS_ANDROID
             {
                 // video
-                is->srcAVPixelFormat = avctx->pix_fmt;
+                ret = is->srcAVPixelFormat = avctx->pix_fmt;
+                if (ret < 0) {
+                    // 这里要调查一下,为什么有些视频会这样?
+                    LOGE("stream_component_open() pix_fmt is AV_PIX_FMT_NONE\n");
+                    goto fail;
+                }
                 is->dstAVPixelFormat = AV_PIX_FMT_RGBA;
                 is->rgbAVFrame = av_frame_alloc();
                 int image_get_buffer_size = av_image_get_buffer_size(
@@ -3595,7 +3648,7 @@ static int stream_component_open(VideoState *is, int stream_index) {
                                                              avctx->height,
                                                              1);
                 LOGI("stream_component_open()        avctx->pix_fmt = %s\n",
-                     av_get_pix_fmt_name(avctx->pix_fmt));
+                     av_get_pix_fmt_name(is->srcAVPixelFormat));
                 LOGI("stream_component_open()      dstAVPixelFormat = %s\n",
                      av_get_pix_fmt_name(is->dstAVPixelFormat));
                 LOGI("stream_component_open() image_get_buffer_size = %d\n",
@@ -3622,7 +3675,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             is->useMediaCodec = false;
-            //initVideoMediaCodec(is);
+            if (avctx->width >= 3840 && avctx->height >= 2160) {
+                initVideoMediaCodec(is);
+            }
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4322,7 +4377,10 @@ static int create_avformat_context(void *arg) {
         LOGI("create_avformat_context() width = %d height = %d\n",
              codecpar->width, codecpar->height);
         ret = stream_component_open(is, st_index[AVMEDIA_TYPE_VIDEO]);
-        LOGI("create_avformat_context() stream_component_open ret = %d\n", ret);
+        if (ret < 0) {
+            LOGE("create_avformat_context() video stream_component_open ret = %d\n", ret);
+            goto fail;
+        }
     } else {
         onChangeWindow(0, 0);
     }
@@ -4353,7 +4411,7 @@ static int create_avformat_context(void *arg) {
     }
     LOGI("create_avformat_context() infinite_buffer = %d\n", infinite_buffer);// -1
 
-    showInfo();
+    //showInfo();
 
     ret = 0;
     fail:
@@ -4644,22 +4702,41 @@ static void *audio_play(void *arg) {
 static void *video_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     double remaining_time = 0.0;
-    double temp_remaining_time = 0.0;
+    test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        if (frame_rate >= 45) {// 60
-            temp_remaining_time = 0.0;
-        } else if (frame_rate >= 23) {// 24 25 29 30
-            temp_remaining_time = 0.01;
-        } else if (frame_rate >= 20) {// 20
-            temp_remaining_time = 0.03;
-        } else if (frame_rate >= 15) {// 15
-            temp_remaining_time = 0.05;
-        } else {// 10
-            temp_remaining_time = 0.1;
+        if (isLocal) {
+            if (frame_rate >= 45) {// 60
+                test_remaining_time = 0.0;
+            } else if (frame_rate >= 23) {// 24 25 29 30
+                test_remaining_time = 0.01;
+            } else if (frame_rate >= 20) {// 20
+                test_remaining_time = 0.03;
+            } else if (frame_rate >= 15) {// 15
+                test_remaining_time = 0.05;
+            } else {// 10
+                test_remaining_time = 0.1;
+            }
+        } else {
+            if (frame_rate >= 45) {
+                test_remaining_time = 0.024;
+            } else if (frame_rate >= 23) {
+                test_remaining_time = 0.03;
+            } else if (frame_rate >= 20) {
+                test_remaining_time = 0.05;
+            } else if (frame_rate >= 15) {
+                test_remaining_time = 0.08;
+            } else {
+                test_remaining_time = 0.1;
+            }
+            if (REMAINING_TIME >= 0.0) {
+                test_remaining_time = REMAINING_TIME;
+            }
         }
-    } else {
-        temp_remaining_time = REFRESH_RATE;
+        //if (isLive/* && bit_rate >= 0 && bit_rate_video == 0*/) {
+        //}
     }
+
+    showInfo();
 
     LOGI("video_play() start\n");
     while (1) {
@@ -4669,11 +4746,11 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
-            //int64_t temp_remaining_time = (int64_t) (remaining_time * 1000000.0);
-            //LOGI("video_refresh()  remaining_time = %lld\n", temp_remaining_time);
             av_usleep((int64_t) (remaining_time * 1000000.0));
+        } else if (is->paused) {
+            av_usleep(10000);
         }
-        remaining_time = temp_remaining_time;
+        remaining_time = test_remaining_time;
         if ((is->show_mode != VideoState::SHOW_MODE_NONE) && (!is->paused || is->force_refresh)) {
             video_refresh(is, &remaining_time);
         }
@@ -5268,6 +5345,8 @@ int initPlayer() {
     test_get_master_clock_count = 0;
     test_delay = 0.0;
     test_last_duration = 0.0;
+    isPausedForCacheVideo = false;
+    isPausedForCacheAudio = false;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
@@ -5421,9 +5500,9 @@ bool isPlaying() {
     return false;
 }
 
-bool isPausedForUser() {
+/*bool isPausedForUser() {
 
-}
+}*/
 
 /***
  单位秒.比如seek到100秒,就传100

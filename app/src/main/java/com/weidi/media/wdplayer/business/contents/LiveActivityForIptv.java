@@ -37,9 +37,11 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
+import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setRemainingTime;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setTimeDifference;
 
 public class LiveActivityForIptv extends Activity {
@@ -424,7 +426,11 @@ public class LiveActivityForIptv extends Activity {
     }
 
     private void numberFormatException(String text) {
-        if (text.startsWith("player_fm")) {// player_ffmpeg_mediacodec
+        if (text.startsWith("player_ff")) {// player_ffplay
+            mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFPLAY).commit();
+            mAddressET.setText("");
+            MyToast.show(PLAYER_FFPLAY);
+        } else if (text.startsWith("player_fm")) {// player_ffmpeg_mediacodec
             mPreferences.edit().putString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC).commit();
             mAddressET.setText("");
             MyToast.show(PLAYER_FFMPEG_MEDIACODEC);
@@ -468,6 +474,21 @@ public class LiveActivityForIptv extends Activity {
                             JniObject.obtain().writeDouble(time_difference));
                     mAddressET.setText("");
                     MyToast.show(time_difference_str);
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+        } else if (text.startsWith("remaining_time ")) {// remaining_time
+            String temp[] = text.split(" ");
+            if (temp.length >= 2) {
+                try {
+                    String remaining_time_str = temp[1];
+                    double remaining_time = Double.valueOf(remaining_time_str);
+                    FFMPEG.getDefault().onTransact(
+                            DO_SOMETHING_CODE_setRemainingTime,
+                            JniObject.obtain().writeDouble(remaining_time));
+                    mAddressET.setText("");
+                    MyToast.show(remaining_time_str);
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }

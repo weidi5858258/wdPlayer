@@ -29,7 +29,7 @@ bool isRunning();
 
 bool isPlaying();
 
-bool isPausedForUser();
+//bool isPausedForUser();
 
 int seekTo(int64_t timestamp);
 
