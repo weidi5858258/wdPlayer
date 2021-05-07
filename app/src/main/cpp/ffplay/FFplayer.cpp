@@ -1926,7 +1926,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
 
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
-            //*remaining_time = 0.0;
+            *remaining_time = 0.0;
             sleep(0);
         } else {
             // region
@@ -4504,7 +4504,7 @@ static int stream_open(const char *filename, AVInputFormat *iformat) {
         is->viddec.queue->stream_index = is->video_stream;
         is->pictq.stream_index = is->video_stream;
         is->vidclk.stream_index = is->video_stream;
-        if (is->useMediaCodec) {
+        /*if (is->useMediaCodec) {
             for (int i = 0; i < is->pictq.max_size; i++) {
                 Frame *vp = &is->pictq.queue[i];
                 frame_queue_unref_item(vp);
@@ -4515,7 +4515,7 @@ static int stream_open(const char *filename, AVInputFormat *iformat) {
             for (int i = 0; i < is->pictq.max_size; i++) {
                 is->pictq.queue[i].frame = av_frame_alloc();
             }
-        }
+        }*/
     }
 
     if (is->audio_stream >= 0) {
@@ -4729,7 +4729,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        test_remaining_time = 0.000001;
+        //test_remaining_time = 0.000001;
         /*if (isLocal) {
             if (frame_rate >= 45) {// 60
                 test_remaining_time = 0.0;
