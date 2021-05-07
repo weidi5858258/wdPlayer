@@ -1440,13 +1440,14 @@ public class FfmpegUseMediaCodecDecode {
         try {
             //Log.d(TAG, "releaseOutputBuffer() 1");
             if (mVideoDatasIndexQueue != null) {
-                Object object = mVideoDatasIndexQueue.take();
+                //Object object = mVideoDatasIndexQueue.take();
+                Object object = mVideoDatasIndexQueue.poll();
                 if (object != null) {
                     roomIndex = (int) object;
                 }
             }
             //Log.d(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             Log.e(TAG, "releaseOutputBuffer()\n" + e.toString());
             e.printStackTrace();
         }

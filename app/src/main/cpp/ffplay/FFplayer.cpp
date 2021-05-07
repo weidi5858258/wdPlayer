@@ -539,7 +539,7 @@ static void showInfo() {
 
     char info[200];
     memset(info, '\0', sizeof(info));
-    if (video_state->useMediaCodec) {
+    /*if (video_state->useMediaCodec) {
         sprintf(info,
                 "[%lld] [%lld] [%lld] [%d] [%.3lf] [%s]"
                 "\n[%s] [%s] [%d] [%d]"
@@ -562,27 +562,29 @@ static void showInfo() {
                 video_state->srcNbChannels
         );
     } else {
-        sprintf(info,
-                "[%lld] [%lld] [%lld] [%d] [%s]"
-                "\n[%s] [%s] [%d] [%d]"
-                "\n[%s] [%s] [%d] [%d]",
-                (long long) bit_rate,
-                (long long) bit_rate_video,
-                (long long) bit_rate_audio,
-                frame_rate,
-                (video_state->useMediaCodec ? "V" : " "),
-                // video
-                avcodec_get_name(codecid_video),
-                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
-                video_state->width,
-                video_state->height,
-                // audio
-                avcodec_get_name(codecid_audio),
-                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
-                video_state->srcSampleRate,
-                video_state->srcNbChannels
-        );
-    }
+    }*/
+
+    sprintf(info,
+            "[%lld] [%lld] [%lld] [%d] [%s]"
+            "\n[%s] [%s] [%d] [%d]"
+            "\n[%s] [%s] [%d] [%d]",
+            (long long) bit_rate,
+            (long long) bit_rate_video,
+            (long long) bit_rate_audio,
+            frame_rate,
+            (video_state->useMediaCodec ? "V" : " "),
+            // video
+            avcodec_get_name(codecid_video),
+            av_get_pix_fmt_name(video_state->srcAVPixelFormat),
+            video_state->width,
+            video_state->height,
+            // audio
+            avcodec_get_name(codecid_audio),
+            av_get_sample_fmt_name(video_state->srcAVSampleFormat),
+            video_state->srcSampleRate,
+            video_state->srcNbChannels
+    );
+
     onInfo(info);
 
     // endregion
@@ -1892,7 +1894,6 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
 static void video_refresh(void *opaque, double *remaining_time) {
     VideoState *is = static_cast<VideoState *>(opaque);
     double time;// 当前时间点(是个时间点,不是时间段)
-    //Frame *sp = nullptr, *sp2 = nullptr;
 
     // region 第一个条件不满足
     if (is->realtime && !is->paused && get_master_sync_type(is) == AV_SYNC_EXTERNAL_CLOCK) {
@@ -1918,114 +1919,129 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
     if (is->useMediaCodec) {
         retry2:
-        if (is->abort_request || is->pictq.size == 0 || is->pictq.size == 1) {
-            *remaining_time = 0.0;
-            sleep(0);
+        if (is->abort_request/* || is->pictq.size == 0 || is->pictq.size == 1*/) {
+            //*remaining_time = 0.0;
+            //sleep(0);
             return;
         }
 
-        // 保证视频帧有2个或者3个
+        if (frame_queue_nb_remaining(&is->pictq) == 0) {
+            *remaining_time = 0.0;
+            sleep(0);
+        } else {
+            // region
 
-        double last_duration, delay;
-        Frame *lastvp = nullptr, *vp = nullptr;
+            double last_duration, delay;
+            Frame *lastvp = nullptr, *vp = nullptr;
 
-        lastvp = frame_queue_peek_last(&is->pictq);
-        vp = frame_queue_peek(&is->pictq);
+            lastvp = frame_queue_peek_last(&is->pictq);
+            vp = frame_queue_peek(&is->pictq);
 
-        if (vp->serial != is->videoq.serial) {
-            frame_queue_next(&is->pictq);
-            goto retry2;
-        }
-
-        if (lastvp->serial != vp->serial) {
-            is->frame_timer = av_gettime_relative() / 1000000.0;
-        }
-
-        if (is->paused) {
-            goto display2;
-        }
-
-        if (is->audio_stream < 0) {
-            if (!isLive) {
-                curProgress = (long long) vp->pts;// 秒
-                if (curProgress > preProgress) {
-                    if (curProgress <= media_duration) {
-                        onProgressUpdated(curProgress);
-                    } else {
-                        onProgressUpdated(media_duration);
-                    }
-                }
-                preProgress = curProgress;
-            }
-        }
-
-        if (video_refresh_log) {
-            LOGD("video_refresh()----------------------------------------------\n");
-            /*LOGI("video_refresh()\n"
-                 " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
-                 "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
-                 lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
-                 vp->pts, vp->pos, vp->duration, vp->serial);*/
-        }
-
-        delay = last_duration = vp_duration(is, lastvp, vp);
-        if (last_duration == 0.0 && test_last_duration > 0.0) {
-            last_duration = test_last_duration;
-        }
-        if (last_duration > 0.0) {
-            test_last_duration = last_duration;
-        }
-        delay = compute_target_delay(last_duration, is);
-        time = av_gettime_relative() / 1000000.0;
-        if (video_refresh_log) {
-            LOGI("video_refresh()               is->pictq.size = %d\n", is->pictq.size);
-            LOGI("video_refresh()                last_duration = %lf\n", last_duration);
-            LOGI("video_refresh()                     delay(*) = %lf\n", delay);
-            LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
-            LOGI("video_refresh()      is->frame_timer + delay = %lf\n", (is->frame_timer + delay));
-            LOGI("video_refresh()                         time = %lf\n", time);
-        }
-        if (time < is->frame_timer + delay) {
-            *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-            goto display2;
-        }
-
-        is->frame_timer += delay;
-        if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
-            is->frame_timer = time;
-        }
-
-        pthread_mutex_lock(&is->pictq.pmutex);
-        if (!isnan(vp->pts)) {
-            update_video_pts(is, vp->pts, vp->pos, vp->serial);
-        }
-        pthread_mutex_unlock(&is->pictq.pmutex);
-
-        if (is->pictq.size >= 3) {
-            Frame *nextvp = frame_queue_peek_next(&is->pictq);
-            double next_delay = vp_duration(is, vp, nextvp);
-            if (video_refresh_log) {
-                LOGI("video_refresh()                   next_delay = %lf\n", next_delay);
-                LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
-                LOGI("video_refresh() is->frame_timer + next_delay = %lf\n",
-                     (is->frame_timer + next_delay));
-            }
-            if (!is->step
-                &&
-                ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) || framedrop > 0)
-                &&
-                time > is->frame_timer + next_delay) {
-                is->frame_drops_late++;
+            if (vp->serial != is->videoq.serial) {
                 frame_queue_next(&is->pictq);
                 goto retry2;
             }
-        }
 
-        frame_queue_next(&is->pictq);
-        is->force_refresh = 1;
+            if (lastvp->serial != vp->serial) {
+                is->frame_timer = av_gettime_relative() / 1000000.0;
+            }
 
-        if (is->step && !is->paused) {
-            stream_toggle_pause(is);
+            if (is->paused) {
+                goto display2;
+            }
+
+            if (is->audio_stream < 0) {
+                if (!isLive) {
+                    curProgress = (long long) vp->pts;// 秒
+                    if (curProgress > preProgress) {
+                        if (curProgress <= media_duration) {
+                            onProgressUpdated(curProgress);
+                        } else {
+                            onProgressUpdated(media_duration);
+                        }
+                    }
+                    preProgress = curProgress;
+                }
+            }
+
+            if (video_refresh_log) {
+                LOGD("video_refresh()----------------------------------------------\n");
+                /*LOGI("video_refresh()\n"
+                     " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
+                     "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
+                     lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
+                     vp->pts, vp->pos, vp->duration, vp->serial);*/
+            }
+
+            delay = last_duration = vp_duration(is, lastvp, vp);
+            if (last_duration == 0.0 && test_last_duration > 0.0) {
+                last_duration = test_last_duration;
+            }
+            if (last_duration > 0.0) {
+                test_last_duration = last_duration;
+            }
+            delay = compute_target_delay(last_duration, is);
+            if (delay == 0.0 && last_duration > 0.0) {
+                delay = last_duration;
+            }
+            time = av_gettime_relative() / 1000000.0;
+            if (video_refresh_log) {
+                //LOGI("video_refresh()               is->pictq.size = %d\n", is->pictq.size);
+                //LOGI("video_refresh()             last_duration(&) = %lf\n", last_duration);
+                //LOGI("video_refresh()                     delay(*) = %lf\n", delay);
+                //LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
+                LOGI("video_refresh()      is->frame_timer + delay = %lf\n",
+                     (is->frame_timer + delay));
+                LOGI("video_refresh()                         time = %lf\n", time);
+            }
+
+            if (time < is->frame_timer + delay) {
+                *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+                goto display2;
+            }
+
+            is->frame_timer += delay;
+            if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
+                is->frame_timer = time;
+            }
+
+            pthread_mutex_lock(&is->pictq.pmutex);
+            if (!isnan(vp->pts)) {
+                update_video_pts(is, vp->pts, vp->pos, vp->serial);
+            }
+            pthread_mutex_unlock(&is->pictq.pmutex);
+
+            if (frame_queue_nb_remaining(&is->pictq) > 1) {
+                Frame *nextvp = frame_queue_peek_next(&is->pictq);
+                double next_delay = vp_duration(is, vp, nextvp);
+                if (video_refresh_log) {
+                    //LOGI("video_refresh()                next_delay(&) = %lf\n", next_delay);
+                    //LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
+                    LOGI("video_refresh() is->frame_timer + next_delay = %lf\n",
+                         (is->frame_timer + next_delay));
+                }
+                if (!is->step
+                    &&
+                    ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) ||
+                     framedrop > 0)
+                    &&
+                    time > is->frame_timer + next_delay) {
+                    is->frame_drops_late++;
+                    frame_queue_next(&is->pictq);
+                    *remaining_time = 0.0;
+                    sleep(0);
+                    goto retry2;
+                }
+            }
+
+            frame_queue_next(&is->pictq);
+            is->force_refresh = 1;
+
+            if (is->step && !is->paused) {
+                stream_toggle_pause(is);
+            }
+
+            // endregion
         }
 
         display2:
@@ -2040,7 +2056,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
 
         if (!is->paused && !is->force_refresh) {
-            frame_queue_next(&is->pictq);
+            //frame_queue_next(&is->pictq);
             sleep(0);
         }
 
@@ -2049,7 +2065,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         return;
     }
 
-    // region 软解
+    // region 软解的处理
 
     retry:
     if (is->abort_request) {
@@ -2201,9 +2217,11 @@ static void video_refresh(void *opaque, double *remaining_time) {
     }
 
     display:
+
     if (video_refresh_log) {
         LOGI("video_refresh()              *remaining_time = %lf\n", *remaining_time);
     }
+
     if (!display_disable
         && is->force_refresh
         && is->show_mode == VideoState::SHOW_MODE_VIDEO
@@ -3148,12 +3166,12 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     double duration;
     int ret = 0;
 
-    frame->data[0] = const_cast<uint8_t *>(data);
+    /*frame->data[0] = const_cast<uint8_t *>(data);
     frame->data[1] = const_cast<uint8_t *>(data);
     frame->data[2] = const_cast<uint8_t *>(data);
     frame->linesize[0] = is->width;
     frame->linesize[1] = is->height;
-    frame->linesize[2] = is->height;
+    frame->linesize[2] = is->height;*/
     frame->flags = flags;
     frame->pts = pts_;
     frame->pkt_pts = pts_;
@@ -3675,9 +3693,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             is->useMediaCodec = false;
-            if (avctx->width >= 3840 && avctx->height >= 2160) {
-                initVideoMediaCodec(is);
-            }
+            /*if (avctx->width >= 3840 && avctx->height >= 2160) {
+            }*/
+            initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4491,6 +4509,18 @@ static int stream_open(const char *filename, AVInputFormat *iformat) {
         is->viddec.queue->stream_index = is->video_stream;
         is->pictq.stream_index = is->video_stream;
         is->vidclk.stream_index = is->video_stream;
+        if (is->useMediaCodec) {
+            for (int i = 0; i < is->pictq.max_size; i++) {
+                Frame *vp = &is->pictq.queue[i];
+                frame_queue_unref_item(vp);
+                av_frame_free(&vp->frame);
+            }
+
+            is->pictq.max_size = 9;
+            for (int i = 0; i < is->pictq.max_size; i++) {
+                is->pictq.queue[i].frame = av_frame_alloc();
+            }
+        }
     }
 
     if (is->audio_stream >= 0) {
@@ -4704,7 +4734,8 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        if (isLocal) {
+        test_remaining_time = 0.003;
+        /*if (isLocal) {
             if (frame_rate >= 45) {// 60
                 test_remaining_time = 0.0;
             } else if (frame_rate >= 23) {// 24 25 29 30
@@ -4731,11 +4762,8 @@ static void *video_play(void *arg) {
             if (REMAINING_TIME >= 0.0) {
                 test_remaining_time = REMAINING_TIME;
             }
-        }
-        //if (isLive/* && bit_rate >= 0 && bit_rate_video == 0*/) {
-        //}
+        }*/
     }
-
     showInfo();
 
     LOGI("video_play() start\n");
@@ -4751,7 +4779,8 @@ static void *video_play(void *arg) {
             av_usleep(10000);
         }
         remaining_time = test_remaining_time;
-        if ((is->show_mode != VideoState::SHOW_MODE_NONE) && (!is->paused || is->force_refresh)) {
+        //if((is->show_mode!=VideoState::SHOW_MODE_NONE)&&(!is->paused||is->force_refresh)){
+        if (!is->paused || is->force_refresh) {
             video_refresh(is, &remaining_time);
         }
     }
