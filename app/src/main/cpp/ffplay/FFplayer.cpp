@@ -2074,7 +2074,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
     if (frame_queue_nb_remaining(&is->pictq) == 0) {
         // nothing to do, no picture to display in the queue
-        //LOGI("video_refresh() nothing to do, no picture to display in the queue\n");
     } else {
         // region
         double last_duration, delay;
@@ -2152,10 +2151,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
              只是av_usleep了1个单位时间.
              */
             *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
-            //LOGD("video_refresh()  remaining_time = %lf\n", *remaining_time);
             goto display;
         }
-        //LOGW("video_refresh()  remaining_time = %lf\n", *remaining_time);
 
         // 下一帧渲染的时间点已经过了
 
@@ -2202,7 +2199,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 time > is->frame_timer + next_delay) {
                 is->frame_drops_late++;
                 frame_queue_next(&is->pictq);
-                //LOGI("video_refresh()  goto retry\n");
                 goto retry;
             }
         }
@@ -2226,7 +2222,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
         && is->force_refresh
         && is->show_mode == VideoState::SHOW_MODE_VIDEO
         && is->pictq.rindex_shown) {
-        //LOGI("video_refresh()  video_display\n");
         video_display(is);
     }
 
