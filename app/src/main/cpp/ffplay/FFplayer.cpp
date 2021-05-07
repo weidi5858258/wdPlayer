@@ -1926,7 +1926,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
 
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
-            *remaining_time = 0.0;
+            //*remaining_time = 0.0;
             sleep(0);
         } else {
             // region
@@ -4734,7 +4734,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        test_remaining_time = 0.003;
+        test_remaining_time = 0.00001;
         /*if (isLocal) {
             if (frame_rate >= 45) {// 60
                 test_remaining_time = 0.0;
