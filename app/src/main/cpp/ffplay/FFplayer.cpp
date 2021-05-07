@@ -3693,9 +3693,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             is->useMediaCodec = false;
-            /*if (avctx->width >= 3840 && avctx->height >= 2160) {
-            }*/
-            initVideoMediaCodec(is);
+            if (avctx->width >= 3840 && avctx->height >= 2160) {
+                initVideoMediaCodec(is);
+            }
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4734,7 +4734,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        test_remaining_time = 0.00001;
+        test_remaining_time = 0.000001;
         /*if (isLocal) {
             if (frame_rate >= 45) {// 60
                 test_remaining_time = 0.0;
