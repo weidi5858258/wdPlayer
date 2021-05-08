@@ -539,9 +539,9 @@ static void showInfo() {
 
     char info[200];
     memset(info, '\0', sizeof(info));
-    /*if (video_state->useMediaCodec) {
+    if (video_state->useMediaCodec) {
         sprintf(info,
-                "[%lld] [%lld] [%lld] [%d] [%.3lf] [%s]"
+                "[%lld] [%lld] [%lld] [%d] [%lf] [%s]"
                 "\n[%s] [%s] [%d] [%d]"
                 "\n[%s] [%s] [%d] [%d]",
                 (long long) bit_rate,
@@ -562,28 +562,27 @@ static void showInfo() {
                 video_state->srcNbChannels
         );
     } else {
-    }*/
-
-    sprintf(info,
-            "[%lld] [%lld] [%lld] [%d] [%s]"
-            "\n[%s] [%s] [%d] [%d]"
-            "\n[%s] [%s] [%d] [%d]",
-            (long long) bit_rate,
-            (long long) bit_rate_video,
-            (long long) bit_rate_audio,
-            frame_rate,
-            (video_state->useMediaCodec ? "V" : " "),
-            // video
-            avcodec_get_name(codecid_video),
-            av_get_pix_fmt_name(video_state->srcAVPixelFormat),
-            video_state->width,
-            video_state->height,
-            // audio
-            avcodec_get_name(codecid_audio),
-            av_get_sample_fmt_name(video_state->srcAVSampleFormat),
-            video_state->srcSampleRate,
-            video_state->srcNbChannels
-    );
+        sprintf(info,
+                "[%lld] [%lld] [%lld] [%d] [%s]"
+                "\n[%s] [%s] [%d] [%d]"
+                "\n[%s] [%s] [%d] [%d]",
+                (long long) bit_rate,
+                (long long) bit_rate_video,
+                (long long) bit_rate_audio,
+                frame_rate,
+                (video_state->useMediaCodec ? "V" : " "),
+                // video
+                avcodec_get_name(codecid_video),
+                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
+                video_state->width,
+                video_state->height,
+                // audio
+                avcodec_get_name(codecid_audio),
+                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
+                video_state->srcSampleRate,
+                video_state->srcNbChannels
+        );
+    }
 
     onInfo(info);
 
@@ -1135,17 +1134,17 @@ static Frame *frame_queue_peek_readable(FrameQueue *f) {
     /* wait until we have a readable a new frame */
     pthread_mutex_lock(&f->pmutex);
     while (f->size - f->rindex_shown <= 0 && !f->pktq->abort_request) {
-        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() video pthread_cond_wait start\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() audio pthread_cond_wait start\n");
-        }
+        }*/
         pthread_cond_wait(&f->pcond, &f->pmutex);
-        if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
+        /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() video pthread_cond_wait end\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_readable() audio pthread_cond_wait end\n");
-        }
+        }*/
     }
     pthread_mutex_unlock(&f->pmutex);
 
@@ -1919,13 +1918,9 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
     if (is->useMediaCodec) {
         retry2:
-        if (is->abort_request/* || is->pictq.size == 0 || is->pictq.size == 1*/) {
-            //*remaining_time = 0.0;
-            //sleep(0);
-            return;
-        }
 
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
+            // alexander add
             *remaining_time = 0.0;
             sleep(0);
         } else {
@@ -2028,6 +2023,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     time > is->frame_timer + next_delay) {
                     is->frame_drops_late++;
                     frame_queue_next(&is->pictq);
+                    // alexander add
                     *remaining_time = 0.0;
                     sleep(0);
                     goto retry2;
@@ -2068,9 +2064,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
     // region 软解的处理
 
     retry:
-    if (is->abort_request) {
-        return;
-    }
 
     if (frame_queue_nb_remaining(&is->pictq) == 0) {
         // nothing to do, no picture to display in the queue
@@ -3688,9 +3681,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             is->useMediaCodec = false;
-            if (avctx->width >= 3840 && avctx->height >= 2160) {
-                initVideoMediaCodec(is);
+            if (isLive || (avctx->width >= 3840 && avctx->height >= 2160)) {
             }
+            initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4729,7 +4722,10 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        //test_remaining_time = 0.000001;
+        test_remaining_time = 0.0005;
+        if (REMAINING_TIME >= 0.0) {
+            test_remaining_time = REMAINING_TIME;
+        }
         /*if (isLocal) {
             if (frame_rate >= 45) {// 60
                 test_remaining_time = 0.0;
