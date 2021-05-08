@@ -4723,6 +4723,9 @@ static void *video_play(void *arg) {
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
         test_remaining_time = 0.0005;
+        /*if (is->width >= 3840 && is->height >= 2160) {
+            test_remaining_time = 0.000001;
+        }*/
         if (REMAINING_TIME >= 0.0) {
             test_remaining_time = REMAINING_TIME;
         }
@@ -5535,9 +5538,11 @@ int seekTo(int64_t timestamp) {
         return -1;
     }
 
-    stream_seek(video_state,
-                (int64_t) (timestamp * AV_TIME_BASE),
-                (int64_t) (10.000000 * AV_TIME_BASE), 0);
+    if (!video_state->useMediaCodec) {
+        stream_seek(video_state,
+                    (int64_t) (timestamp * AV_TIME_BASE),
+                    (int64_t) (10.000000 * AV_TIME_BASE), 0);
+    }
     return 0;
 }
 
