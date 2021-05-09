@@ -1269,7 +1269,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
-        mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(5);
+        mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
         mVideoDatasIndexQueue.needToWait = true;
 
@@ -1457,28 +1457,22 @@ public class FfmpegUseMediaCodecDecode {
         try {
             //Log.d(TAG, "releaseOutputBuffer() 1");
             if (mVideoDatasIndexQueue != null) {
-                //Object object = mVideoDatasIndexQueue.take();
-                Object object = mVideoDatasIndexQueue.poll();
-                if (object != null) {
+                //Object object = mVideoDatasIndexQueue.take();// 阻塞
+                Object object = mVideoDatasIndexQueue.poll();// 非阻塞
+                if (object != null
+                        && object instanceof Integer
+                        && mVideoWrapper != null
+                        && mVideoWrapper.decoderMediaCodec != null) {
                     roomIndex = (int) object;
+                    mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
                 }
             }
-            //Log.d(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
+            /*if (roomIndex != -1) {
+                Log.d(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
+            }*/
         } catch (Exception e) {
             Log.e(TAG, "releaseOutputBuffer()\n" + e.toString());
             e.printStackTrace();
-        }
-        if (roomIndex >= 0
-                && mVideoWrapper != null
-                && mVideoWrapper.decoderMediaCodec != null
-                && mVideoWrapper.isHandling) {
-            try {
-                mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
-            } catch (IllegalStateException
-                    | NullPointerException
-                    | MediaCodec.CryptoException e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -1825,11 +1819,11 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     // avPacket = mInputDatasQueue.poll();
                     // 没有元素就会阻塞
-                    //Log.i(TAG, "onInputBufferAvailable() 1");
+                    //Log.d(TAG, "onInputBufferAvailable() 1");
                     if (mVideoInputDatasQueue != null) {
                         avPacket = mVideoInputDatasQueue.take();
                     }
-                    //Log.i(TAG, "onInputBufferAvailable() 2");
+                    //Log.d(TAG, "onInputBufferAvailable() 2");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

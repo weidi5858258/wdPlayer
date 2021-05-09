@@ -1797,6 +1797,9 @@ static void stream_toggle_pause(VideoState *is) {
     LOGI("stream_toggle_pause() before is->paused = %d\n", is->paused);
     if (is->paused) {
         is->frame_timer += av_gettime_relative() / 1000000.0 - is->vidclk.last_updated;
+        if (is->useMediaCodec) {
+            is->frame_timer = av_gettime_relative() / 1000000.0 - test_delay;
+        }
         if (is->read_pause_return != AVERROR(ENOSYS)) {
             is->vidclk.paused = 0;
         }
@@ -1922,7 +1925,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         if (frame_queue_nb_remaining(&is->pictq) == 0) {
             // alexander add
             *remaining_time = 0.0;
-            sleep(0);
+            //sleep(0);
         } else {
             // region
 
@@ -1961,23 +1964,23 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
             if (video_refresh_log) {
                 LOGD("video_refresh()----------------------------------------------\n");
-                /*LOGI("video_refresh()\n"
+                LOGI("video_refresh()\n"
                      " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
                      "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
                      lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
-                     vp->pts, vp->pos, vp->duration, vp->serial);*/
+                     vp->pts, vp->pos, vp->duration, vp->serial);
             }
 
-            delay = last_duration = vp_duration(is, lastvp, vp);
+            last_duration = vp_duration(is, lastvp, vp);
             if (last_duration == 0.0 && test_last_duration > 0.0) {
                 last_duration = test_last_duration;
             }
             if (last_duration > 0.0) {
                 test_last_duration = last_duration;
             }
-            delay = compute_target_delay(last_duration, is);
+            test_delay = delay = compute_target_delay(last_duration, is);
             if (delay == 0.0 && last_duration > 0.0) {
-                delay = last_duration;
+                test_delay = delay = last_duration;
             }
             time = av_gettime_relative() / 1000000.0;
             if (video_refresh_log) {
@@ -2025,7 +2028,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     frame_queue_next(&is->pictq);
                     // alexander add
                     *remaining_time = 0.0;
-                    sleep(0);
+                    //sleep(0);
                     goto retry2;
                 }
             }
@@ -2116,7 +2119,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
         }
 
         /* compute nominal last_duration */
-        delay = last_duration = vp_duration(is, lastvp, vp);
+        last_duration = vp_duration(is, lastvp, vp);
         delay = compute_target_delay(last_duration, is);
         time = av_gettime_relative() / 1000000.0;
         if (video_refresh_log) {
@@ -3042,6 +3045,7 @@ static void *video_thread_mc(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     Decoder *d = &is->viddec;
     AVPacket pkt;
+
     LOGI("video_thread_mc() start\n");
     while (1) {
         // alexander add
@@ -3933,8 +3937,8 @@ static void *read_thread(void *arg) {
 
         //
         if (is->paused != is->last_paused) {
-            LOGI("read_thread() is->paused = %d is->last_paused = %d\n", is->paused,
-                 is->last_paused);
+            LOGI("read_thread() is->paused = %d is->last_paused = %d\n",
+                 is->paused, is->last_paused);
             is->last_paused = is->paused;
             if (is->paused) {
                 LOGI("read_thread() av_read_pause\n");
