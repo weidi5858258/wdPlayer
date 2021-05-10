@@ -1816,8 +1816,8 @@ public class PlayerWrapper {
         if (resourceId > 0) {
             height = resources.getDimensionPixelSize(resourceId);
         }
-        // getStatusBarHeight() height: 48 95
-        Log.d(TAG, "getStatusBarHeight() height: " + height);
+        // getStatusBarHeight() height: 48 63 95
+        //Log.d(TAG, "getStatusBarHeight() height: " + height);
         return height;
     }
 

@@ -26,6 +26,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import com.weidi.eventbus.EventBusUtils;
@@ -65,6 +66,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DU
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
+import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -73,6 +75,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 
 public class MainActivity extends AppCompatActivity {
@@ -368,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.playback_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.use_local_player_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.use_remote_player_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.mc_switch).setOnClickListener(mOnClickListener);
 
         if (IS_TV) {
             setTvView();
@@ -459,6 +463,16 @@ public class MainActivity extends AppCompatActivity {
             if (!TextUtils.isEmpty(path)) {
                 mAddressET.setText(path);
             }
+        }
+
+        SharedPreferences sp = getSharedPreferences(
+                PREFERENCES_NAME, Context.MODE_PRIVATE);
+        int softSolution = sp.getInt(HARD_SOLUTION, 1);
+        Switch mc_switch = findViewById(R.id.mc_switch);
+        if (softSolution == 0) {
+            mc_switch.setChecked(false);
+        } else {
+            mc_switch.setChecked(true);
         }
     }
 
@@ -677,6 +691,16 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.use_remote_player_btn:
                 PlayerService.mUseLocalPlayer = false;
+                break;
+            case R.id.mc_switch:
+                SharedPreferences sp = getSharedPreferences(
+                        PREFERENCES_NAME, Context.MODE_PRIVATE);
+                boolean isChecked = ((Switch) v).isChecked();
+                if (isChecked) {
+                    sp.edit().putInt(HARD_SOLUTION, 1).commit();
+                } else {
+                    sp.edit().putInt(HARD_SOLUTION, 0).commit();
+                }
                 break;
             default:
                 break;

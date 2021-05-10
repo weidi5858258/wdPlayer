@@ -38,6 +38,18 @@
             android:textColor="@color/white"
             android:textSize="18sp" />
 
+        <Switch
+            android:id="@+id/mc_switch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="是否允许MediaCodec进行视频硬解码"
+            android:textSize="10sp"
+            android:textOn="OK"
+            android:textOff="NO" />
+
         <Button
             android:id="@+id/playback_btn"
             android:layout_width="match_parent"

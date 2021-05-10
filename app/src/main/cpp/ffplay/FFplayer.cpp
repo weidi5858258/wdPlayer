@@ -130,6 +130,7 @@ enum {
 typedef struct MyAVPacketList {
     AVPacket pkt;
     struct MyAVPacketList *next;
+    // packet_queue_put_private_impl
     int serial;
 } MyAVPacketList;
 
@@ -146,7 +147,7 @@ typedef struct PacketQueue {
     int64_t duration;
     // packet_queue_init(1) packet_queue_start(0)
     int abort_request;
-    // init(0) packet_queue_put_private(++)
+    // init(0) packet_queue_put_private_impl(++)
     int serial;
     // packet_queue_init
     pthread_mutex_t pmutex;
@@ -186,6 +187,7 @@ typedef struct Clock {
 typedef struct Frame {
     AVFrame *frame;
     AVSubtitle sub;
+    // queue_picture
     int serial;
     double pts;           /* presentation timestamp for the frame */
     double duration;      /* estimated duration of the frame */
@@ -193,9 +195,9 @@ typedef struct Frame {
     int width;
     int height;
     int format;
-    AVRational sar;
     int uploaded;
     int flip_v;
+    AVRational sar;
 } Frame;
 
 // 存放解码帧
@@ -223,7 +225,7 @@ typedef struct Decoder {
     AVPacket pkt;
     PacketQueue *queue;
     AVCodecContext *avctx = nullptr;
-    // decoder_init(-1)
+    // decoder_init(-1) packet_queue_get
     int pkt_serial;
     int finished;
     int packet_pending;
@@ -669,8 +671,14 @@ static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt, MyAVPac
     pkt1->pkt = *pkt;
     pkt1->next = nullptr;
     if (pkt == &flush_pkt) {
+        // packet_queue_start
+        // is->seek_req(seekTo)
         q->serial++;
-        LOGI("packet_queue_put_private() q->serial = %d\n", q->serial);
+        if (q->stream_index == video_state->video_stream) {
+            LOGD("packet_queue_put_private_impl() video PacketQueue:serial = %d\n", q->serial);
+        } else if (q->stream_index == video_state->audio_stream) {
+            LOGD("packet_queue_put_private_impl() audio PacketQueue:serial = %d\n", q->serial);
+        }
     }
     pkt1->serial = q->serial;
 
@@ -722,7 +730,8 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
 
     if (q->stream_index == video_state->video_stream
         && video_state->useMediaCodec
-        && video_state->need_to_do_for_av_bsf_packet) {
+        && video_state->need_to_do_for_av_bsf_packet
+        && pkt != &flush_pkt) {
         // pkt数据通过av_bsf_send_packet和av_bsf_receive_packet函数加工后,数据大小不变
         if (run_one_time_for_compare_two_avpacket) {
             av_packet_ref(&comparePkt[0], pkt);
@@ -752,6 +761,9 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
                 video_state->need_to_do_for_av_bsf_packet = false;
                 LOGI("packet_queue_put_private()"
                      " 好消息!不需要再调用av_bsf_send_packet(...)和av_bsf_receive_packet(...)了");
+            } else {
+                LOGI("packet_queue_put_private()"
+                     " 坏消息!需要不断调用av_bsf_send_packet(...)和av_bsf_receive_packet(...)");
             }
             av_packet_unref(&comparePkt[0]);
             av_packet_unref(&comparePkt[1]);
@@ -2054,7 +2066,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
             onPlayed();
         }
 
-        if (!is->paused && !is->force_refresh) {
+        if (!is->paused/* && !is->force_refresh*/) {
             //frame_queue_next(&is->pictq);
             sleep(0);
         }
@@ -3091,6 +3103,7 @@ static void *video_thread_mc(void *arg) {
             d->finished = 0;
             d->next_pts = d->start_pts;
             d->next_pts_tb = d->start_pts_tb;
+            LOGD("video_thread_mc() pkt.data == flush_pkt.data continue\n");
             continue;
         }
 
@@ -3684,9 +3697,6 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            is->useMediaCodec = false;
-            if (isLive || (avctx->width >= 3840 && avctx->height >= 2160)) {
-            }
             initVideoMediaCodec(is);
             break;
         case AVMEDIA_TYPE_AUDIO:
@@ -4497,10 +4507,10 @@ static int stream_open(const char *filename, AVInputFormat *iformat) {
     }
 
     if (is->video_stream >= 0) {
-        packet_queue_start(is->viddec.queue);
         is->viddec.queue->stream_index = is->video_stream;
         is->pictq.stream_index = is->video_stream;
         is->vidclk.stream_index = is->video_stream;
+        packet_queue_start(is->viddec.queue);
         /*if (is->useMediaCodec) {
             for (int i = 0; i < is->pictq.max_size; i++) {
                 Frame *vp = &is->pictq.queue[i];
@@ -4516,10 +4526,10 @@ static int stream_open(const char *filename, AVInputFormat *iformat) {
     }
 
     if (is->audio_stream >= 0) {
-        packet_queue_start(is->auddec.queue);
         is->auddec.queue->stream_index = is->audio_stream;
         is->sampq.stream_index = is->audio_stream;
         is->audclk.stream_index = is->audio_stream;
+        packet_queue_start(is->auddec.queue);
     }
 
     if (is->subtitle_stream >= 0) {
@@ -4726,10 +4736,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        test_remaining_time = 0.0005;
-        /*if (is->width >= 3840 && is->height >= 2160) {
-            test_remaining_time = 0.000001;
-        }*/
+        test_remaining_time = 0.000001;// 0.0005
         if (REMAINING_TIME >= 0.0) {
             test_remaining_time = REMAINING_TIME;
         }
