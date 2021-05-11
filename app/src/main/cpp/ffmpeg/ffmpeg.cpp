@@ -1074,7 +1074,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         int roomIndex = intArray[0];
         int offset = intArray[1];
         int size = intArray[2];
-        int flags = intArray[3];
+        int flags = intArray[3];// 被改为了serial
 
         long long int pts = longArray[0];
         long long int dts = longArray[1];

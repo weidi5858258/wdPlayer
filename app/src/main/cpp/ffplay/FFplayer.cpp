@@ -541,7 +541,7 @@ static void showInfo() {
 
     char info[200];
     memset(info, '\0', sizeof(info));
-    if (video_state->useMediaCodec) {
+    /*if (video_state->useMediaCodec) {
         sprintf(info,
                 "[%lld] [%lld] [%lld] [%d] [%lf] [%s]"
                 "\n[%s] [%s] [%d] [%d]"
@@ -564,27 +564,27 @@ static void showInfo() {
                 video_state->srcNbChannels
         );
     } else {
-        sprintf(info,
-                "[%lld] [%lld] [%lld] [%d] [%s]"
-                "\n[%s] [%s] [%d] [%d]"
-                "\n[%s] [%s] [%d] [%d]",
-                (long long) bit_rate,
-                (long long) bit_rate_video,
-                (long long) bit_rate_audio,
-                frame_rate,
-                (video_state->useMediaCodec ? "V" : " "),
-                // video
-                avcodec_get_name(codecid_video),
-                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
-                video_state->width,
-                video_state->height,
-                // audio
-                avcodec_get_name(codecid_audio),
-                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
-                video_state->srcSampleRate,
-                video_state->srcNbChannels
-        );
-    }
+    }*/
+    sprintf(info,
+            "[%lld] [%lld] [%lld] [%d] [%s]"
+            "\n[%s] [%s] [%d] [%d]"
+            "\n[%s] [%s] [%d] [%d]",
+            (long long) bit_rate,
+            (long long) bit_rate_video,
+            (long long) bit_rate_audio,
+            frame_rate,
+            (video_state->useMediaCodec ? "V" : " "),
+            // video
+            avcodec_get_name(codecid_video),
+            av_get_pix_fmt_name(video_state->srcAVPixelFormat),
+            video_state->width,
+            video_state->height,
+            // audio
+            avcodec_get_name(codecid_audio),
+            av_get_sample_fmt_name(video_state->srcAVSampleFormat),
+            video_state->srcSampleRate,
+            video_state->srcNbChannels
+    );
 
     onInfo(info);
 
@@ -3132,7 +3132,7 @@ static void *video_thread_mc(void *arg) {
  * @param roomIndex
  * @param offset
  * @param size
- * @param flags
+ * @param serial
  * @param presentationTimeUs
  * @param data
  * @return
@@ -3148,7 +3148,7 @@ static void *video_thread_mc(void *arg) {
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,
-                                       int flags,
+                                       int serial,// 原来是flags
                                        long long int presentationTimeUs,
                                        long long int pts_,
                                        long long int dts_,
@@ -3178,7 +3178,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     frame->linesize[0] = is->width;
     frame->linesize[1] = is->height;
     frame->linesize[2] = is->height;*/
-    frame->flags = flags;
+    frame->flags = 0;
     frame->pts = pts_;
     frame->pkt_pts = pts_;
     frame->pkt_dts = dts_;//
@@ -3249,7 +3249,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     if (last_format != frame->format
         || last_w != frame->width
         || last_h != frame->height
-        || last_serial != is->viddec.pkt_serial
+        || last_serial != serial
         || last_vfilter_idx != is->vfilter_idx) {
         LOGI("decoder_decode_frame_by_mediacodec() Video frame changed from\n"
              " size:%d x %d format:%s serial:%d last_vfilter_idx:%d\n"
@@ -3953,9 +3953,7 @@ static void *read_thread(void *arg) {
             is->last_paused = is->paused;
             if (is->paused) {
                 LOGI("read_thread() av_read_pause\n");
-                is->read_pause_return = av_read_pause(ic);
-                LOGI("read_thread() av_read_pause read_pause_return = %d\n",
-                     is->read_pause_return);
+                is->read_pause_return = av_read_pause(ic);// -38
             } else {
                 LOGI("read_thread() av_read_play\n");
                 av_read_play(ic);
@@ -3981,7 +3979,7 @@ static void *read_thread(void *arg) {
         }
 #endif
 
-        // stream_seek
+        // region stream_seek
         if (is->seek_req) {
             LOGI("read_thread() is->seek_req\n");
             // INT64_MIN -9223372036854775808
@@ -4026,6 +4024,7 @@ static void *read_thread(void *arg) {
                 step_to_next_frame(is);
             }
         }
+        // endregion
 
         if (is->queue_attachments_req) {
             LOGI("read_thread() is->queue_attachments_req\n");
@@ -4122,10 +4121,10 @@ static void *read_thread(void *arg) {
                 (double) (start_time != AV_NOPTS_VALUE ? start_time : 0) / 1000000
                 <= ((double) duration / 1000000);
 
-        //LOGI("read_thread() pkt_ts: %ld\n", (long) pkt_ts);
         if (pkt->stream_index == is->audio_stream && pkt_in_play_range) {
             packet_queue_put(&is->audioq, pkt);
-        } else if (pkt->stream_index == is->video_stream && pkt_in_play_range
+        } else if (pkt->stream_index == is->video_stream
+                   && pkt_in_play_range
                    && !(is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
             packet_queue_put(&is->videoq, pkt);
         } /*else if (pkt->stream_index == is->subtitle_stream && pkt_in_play_range) {

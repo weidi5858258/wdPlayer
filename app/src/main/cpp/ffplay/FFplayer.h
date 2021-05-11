@@ -42,7 +42,7 @@ void stepSubtract(int64_t subtractStep);
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,
-                                       int flags,
+                                       int serial,
                                        long long int presentationTimeUs,
                                        long long int pts,
                                        long long int dts,

@@ -58,7 +58,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
     /**
      * Main lock guarding all access
      */
-    final ReentrantLock lock;
+    public final ReentrantLock lock;
 
     /**
      * Condition for waiting takes
