@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 public class AVPacket implements Parcelable {
 
+    public int serial;
     public byte[] data;
     public int size;
     public long presentationTimeUs;// pts

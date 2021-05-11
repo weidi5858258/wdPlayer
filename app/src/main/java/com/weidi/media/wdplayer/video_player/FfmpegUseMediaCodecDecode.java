@@ -83,6 +83,7 @@ public class FfmpegUseMediaCodecDecode {
         // 使用于while条件判断
         public boolean isHandling = false;
 
+        public int serial;
         // 用于标识音频还是视频
         public int type;
         // 总时长
@@ -307,6 +308,7 @@ public class FfmpegUseMediaCodecDecode {
                     AVPacket avPacket = mVideoInputDatasQueue.poll();
                     avPacket = null;
                 }
+                mVideoInputDatasQueue.clear();
             }
             if (mAudioInputDatasQueue != null) {
                 int size = mAudioInputDatasQueue.size();
@@ -314,26 +316,19 @@ public class FfmpegUseMediaCodecDecode {
                     AVPacket avPacket = mAudioInputDatasQueue.poll();
                     avPacket = null;
                 }
-            }
-            if (mVideoInputDatasQueue != null) {
-                mVideoInputDatasQueue.clear();
-            }
-            if (mAudioInputDatasQueue != null) {
                 mAudioInputDatasQueue.clear();
             }
-            if (mVideoDatasIndexQueue != null) {
+            if (mVideoDatasIndexQueue != null
+                    && mVideoWrapper != null
+                    && mVideoWrapper.decoderMediaCodec != null) {
                 int size = mVideoDatasIndexQueue.size();
                 for (int i = 0; i < size; i++) {
                     try {
                         Object object = mVideoDatasIndexQueue.poll();
                         int roomIndex = -1;
-                        if (object != null) {
+                        if (object != null && object instanceof Integer) {
                             roomIndex = (int) object;
-                        }
-                        if (roomIndex >= 0
-                                && mVideoWrapper != null
-                                && mVideoWrapper.decoderMediaCodec != null) {
-                            mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, true);
+                            mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, false);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -1268,6 +1263,7 @@ public class FfmpegUseMediaCodecDecode {
 
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
+        videoSerial = 0;
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
@@ -1406,6 +1402,7 @@ public class FfmpegUseMediaCodecDecode {
                 if (mVideoWrapper != null
                         && mVideoWrapper.isHandling) {
                     AVPacket avPacket = new AVPacket(wrapper.size);
+                    avPacket.serial = wrapper.serial;
                     avPacket.data = wrapper.data;
                     avPacket.presentationTimeUs = wrapper.sampleTime;
                     avPacket.dts = wrapper.dts;
@@ -1420,6 +1417,13 @@ public class FfmpegUseMediaCodecDecode {
                             " pkt_pos: " + avPacket.pos +
                             " pkt_duration: " + avPacket.duration +
                             " pkt_size: " + avPacket.size);*/
+
+                    if (videoSerial != avPacket.serial) {
+                        clearQueue();
+                        videoSerial = avPacket.serial;
+                        Log.d(TAG,
+                                "feedInputBufferAndDrainOutputBuffer() videoSerial: " + videoSerial);
+                    }
 
                     try {
                         // 超出限制就会阻塞
@@ -1791,6 +1795,7 @@ public class FfmpegUseMediaCodecDecode {
     public boolean useFFplay = true;
     final Lock mVideoLock = new ReentrantLock();
     private ArrayList<AVPacket> mVideoList = new ArrayList<AVPacket>();
+    private int videoSerial = 0;
 
     private AVPacket getAvPacket() {
         if (mVideoList.isEmpty()) {

@@ -70,6 +70,7 @@ bool feedInputBufferAndDrainOutputBuffer(int type,
                                          long long presentationTimeUs);
 
 bool feedInputBufferAndDrainOutputBuffer2(int type,
+                                          int serial,
                                           unsigned char *encodedData,
                                           int size,
                                           long long int pts,

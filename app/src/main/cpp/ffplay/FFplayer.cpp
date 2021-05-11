@@ -3109,6 +3109,7 @@ static void *video_thread_mc(void *arg) {
 
         feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
+                d->queue->serial,
                 pkt.data,
                 pkt.size,
                 (long long int) pkt.pts,
