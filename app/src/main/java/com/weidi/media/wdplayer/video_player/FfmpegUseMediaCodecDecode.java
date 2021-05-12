@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -25,7 +24,6 @@ import com.weidi.utils.MyToast;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -1291,6 +1289,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         videoSerial = 0;
+        videoHasUsedMC = false;
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
@@ -1446,17 +1445,18 @@ public class FfmpegUseMediaCodecDecode {
                             " pkt_size: " + avPacket.size);*/
 
                     if (videoSerial != avPacket.serial) {
-                        videoSerial = avPacket.serial;
                         Log.d(TAG,
-                                "feedInputBufferAndDrainOutputBuffer() videoSerial: " + videoSerial);
-                        //clearQueue();
-                        //signalQueue();
-                        /*if (videoSerial != 0
+                                "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
+                        /*if (videoHasUsedMC
+                                && videoSerial != 0
                                 && mVideoWrapper != null
                                 && mVideoWrapper.decoderMediaCodec != null) {
-                            //mVideoWrapper.decoderMediaCodec.flush();
-                            //SystemClock.sleep(3000);
+                            mVideoWrapper.decoderMediaCodec.flush();
+                            mVideoWrapper.decoderMediaCodec.start();
                         }*/
+                        //clearQueue();
+                        //signalQueue();
+                        videoSerial = avPacket.serial;
                     }
 
                     try {
@@ -1830,6 +1830,8 @@ public class FfmpegUseMediaCodecDecode {
     final Lock mVideoLock = new ReentrantLock();
     private ArrayList<AVPacket> mVideoList = new ArrayList<AVPacket>();
     private int videoSerial = 0;
+    // true表示已经使用过MC进行解码操作了
+    private boolean videoHasUsedMC = false;
 
     private AVPacket getAvPacket() {
         if (mVideoList.isEmpty()) {
@@ -1853,6 +1855,11 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public void onInputBufferAvailable(@NonNull MediaCodec codec, int roomIndex) {
+            if (roomIndex < 0) {
+                Log.e(TAG, "onInputBufferAvailable() return for roomIndex < 0");
+                return;
+            }
+
             AVPacket avPacket = null;
             if (mVideoWrapper != null && mVideoWrapper.isHandling) {
                 try {
@@ -1870,9 +1877,12 @@ public class FfmpegUseMediaCodecDecode {
             }
             if (avPacket == null
                     || mVideoWrapper == null
-                    || !mVideoWrapper.isHandling
-                    || roomIndex < 0) {
+                    || !mVideoWrapper.isHandling) {
                 Log.e(TAG, "onInputBufferAvailable() return");
+                try {
+                    codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
+                } catch (Exception e) {
+                }
                 return;
             }
 
@@ -1890,6 +1900,10 @@ public class FfmpegUseMediaCodecDecode {
             }
             if (room == null) {
                 avPacket = null;
+                try {
+                    codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
+                } catch (Exception e) {
+                }
                 return;
             }
 
@@ -1904,7 +1918,7 @@ public class FfmpegUseMediaCodecDecode {
             if (size <= 0) {
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
             }
-            // Log.w(TAG, "onInputBufferAvailable() data:\n" + Arrays.toString(data));
+            //Log.w(TAG, "onInputBufferAvailable() data:\n" + Arrays.toString(data));
             // 入住之前打扫一下房间
             room.clear();
             // 入住
@@ -1916,6 +1930,7 @@ public class FfmpegUseMediaCodecDecode {
                     | MediaCodec.CryptoException e) {
                 Log.e(TAG, "onInputBufferAvailable() queueInputBuffer " + e.toString());
             }
+            videoHasUsedMC = true;
             //avPacket.clear();
             //avPacket = null;
         }

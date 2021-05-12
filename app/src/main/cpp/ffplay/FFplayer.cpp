@@ -701,12 +701,14 @@ static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt, MyAVPac
             pthread_cond_signal(&q->pcond);
         }*/
         consumer = MSG_ON_TRANSACT_AUDIO_CONSUMER;
+        //LOGI("packet_queue_put_private_impl() audio q->nb_packets: %d\n", q->nb_packets);
     } else if (q->stream_index == video_state->video_stream) {
         /*if (isPausedForCacheVideo && video_packets == 50) {
             play_pause();
             pthread_cond_signal(&q->pcond);
         }*/
         consumer = MSG_ON_TRANSACT_VIDEO_CONSUMER;
+        //LOGI("packet_queue_put_private_impl() video q->nb_packets: %d\n", q->nb_packets);
     }
     if (q->nb_packets % 5 == 0) {
         onLoadProgressUpdated(consumer, q->nb_packets);
@@ -739,6 +741,7 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
         // 原函数名为: av_bsf_send_packet(...)
         int readFrame = av_bsf_send_packet_(video_state->avbsfContext, pkt);
         if (readFrame < 0) {
+            LOGE("packet_queue_put_private() av_bsf_send_packet_ failed\n");
             av_packet_unref(pkt);
             //stop();
         }
@@ -3092,12 +3095,14 @@ static void *video_thread_mc(void *arg) {
             break;
         }
 
-        if (d->queue->serial != d->pkt_serial) {
+        if (d->queue->serial != d->pkt_serial
+            /*|| pkt.data == nullptr
+            || pkt.size <= 0*/) {
             av_packet_unref(&pkt);
+            LOGD("video_thread_mc() d->queue->serial != d->pkt_serial continue\n");
             continue;
         }
 
-        // region
         if (pkt.data == flush_pkt.data) {
             avcodec_flush_buffers(d->avctx);
             d->finished = 0;
@@ -3107,6 +3112,7 @@ static void *video_thread_mc(void *arg) {
             continue;
         }
 
+        // region
         feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
                 d->queue->serial,
@@ -3249,7 +3255,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     if (last_format != frame->format
         || last_w != frame->width
         || last_h != frame->height
-        || last_serial != serial
+        //|| last_serial != serial
         || last_vfilter_idx != is->vfilter_idx) {
         LOGI("decoder_decode_frame_by_mediacodec() Video frame changed from\n"
              " size:%d x %d format:%s serial:%d last_vfilter_idx:%d\n"
@@ -3289,7 +3295,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         last_format = static_cast<AVPixelFormat>(frame->format);
         last_w = frame->width;
         last_h = frame->height;
-        last_serial = is->viddec.pkt_serial;
+        last_serial = serial;
         last_vfilter_idx = is->vfilter_idx;
         // {30000, 1001} {25, 1} {60, 1}
         frame_rate_avrational = av_guess_frame_rate(is->ic, is->video_st, nullptr);
@@ -4031,10 +4037,12 @@ static void *read_thread(void *arg) {
             if (is->video_st && is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC) {
                 AVPacket copy;
                 if ((ret = av_packet_ref(&copy, &is->video_st->attached_pic)) < 0) {
+                    LOGE("read_thread() av_packet_ref failed\n");
                     goto fail;
                 }
                 packet_queue_put(&is->videoq, &copy);
                 packet_queue_put_nullpacket(&is->videoq, is->video_stream);
+                LOGD("read_thread() packet_queue_put_nullpacket\n");
             }
             is->queue_attachments_req = 0;
         }
@@ -4044,6 +4052,7 @@ static void *read_thread(void *arg) {
             (//is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE ||
                     (stream_has_enough_packets(is->audio_st, is->audio_stream, &is->audioq) &&
                      stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq)))) {
+            //LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
             /* wait 10 ms */
             /*LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
             SDL_LockMutex(wait_mutex);
@@ -4063,11 +4072,13 @@ static void *read_thread(void *arg) {
         //
         if (!is->paused
             &&
-            (!is->audio_st || (is->auddec.finished == is->audioq.serial &&
-                               frame_queue_nb_remaining(&is->sampq) == 0))
+            (!is->audio_st ||
+             (is->auddec.finished == is->audioq.serial &&
+              frame_queue_nb_remaining(&is->sampq) == 0))
             &&
-            (!is->video_st || (is->viddec.finished == is->videoq.serial &&
-                               frame_queue_nb_remaining(&is->pictq) == 0))//
+            (!is->video_st ||
+             (is->viddec.finished == is->videoq.serial &&
+              frame_queue_nb_remaining(&is->pictq) == 0))//
                 ) {
             if (loop != 1 && (!loop || --loop)) {
                 stream_seek(is, start_time != AV_NOPTS_VALUE ? start_time : 0, 0, 0);
@@ -4080,6 +4091,7 @@ static void *read_thread(void *arg) {
         // 读数据
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
+            LOGE("read_thread() av_read_frame ret: %d\n", ret);
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
                 if (is->video_stream >= 0) {
                     packet_queue_put_nullpacket(&is->videoq, is->video_stream);
@@ -5549,11 +5561,11 @@ int seekTo(int64_t timestamp) {
         return -1;
     }
 
-    if (!video_state->useMediaCodec) {
-        stream_seek(video_state,
-                    (int64_t) (timestamp * AV_TIME_BASE),
-                    (int64_t) (10.000000 * AV_TIME_BASE), 0);
-    }
+    /*if (!video_state->useMediaCodec) {
+    }*/
+    stream_seek(video_state,
+                (int64_t) (timestamp * AV_TIME_BASE),
+                (int64_t) (10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 
