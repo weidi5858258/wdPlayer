@@ -1979,11 +1979,11 @@ static void video_refresh(void *opaque, double *remaining_time) {
 
             if (video_refresh_log) {
                 LOGD("video_refresh()----------------------------------------------\n");
-                LOGI("video_refresh()\n"
+                /*LOGI("video_refresh()\n"
                      " lastvp->pts: %lf lastvp->pos: %lld lastvp->duration: %lf lastvp->serial: %d\n"
                      "     vp->pts: %lf     vp->pos: %lld     vp->duration: %lf     vp->serial: %d\n",
                      lastvp->pts, lastvp->pos, lastvp->duration, lastvp->serial,
-                     vp->pts, vp->pos, vp->duration, vp->serial);
+                     vp->pts, vp->pos, vp->duration, vp->serial);*/
             }
 
             last_duration = vp_duration(is, lastvp, vp);
@@ -2006,6 +2006,10 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 LOGI("video_refresh()      is->frame_timer + delay = %lf\n",
                      (is->frame_timer + delay));
                 LOGI("video_refresh()                         time = %lf\n", time);
+            }
+
+            if (is->frame_timer + delay - time > AV_SYNC_THRESHOLD_MAX) {
+                is->frame_timer = time - 2 * delay;
             }
 
             if (time < is->frame_timer + delay) {
