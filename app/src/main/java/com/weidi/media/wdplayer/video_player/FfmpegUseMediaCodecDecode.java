@@ -1880,7 +1880,8 @@ public class FfmpegUseMediaCodecDecode {
                     || !mVideoWrapper.isHandling) {
                 Log.e(TAG, "onInputBufferAvailable() return");
                 try {
-                    codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
+                    codec.queueInputBuffer(roomIndex, 0, 0, 0,
+                            MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 } catch (Exception e) {
                 }
                 return;
@@ -1901,7 +1902,8 @@ public class FfmpegUseMediaCodecDecode {
             if (room == null) {
                 avPacket = null;
                 try {
-                    codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
+                    codec.queueInputBuffer(roomIndex, 0, 0, 0,
+                            MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 } catch (Exception e) {
                 }
                 return;
