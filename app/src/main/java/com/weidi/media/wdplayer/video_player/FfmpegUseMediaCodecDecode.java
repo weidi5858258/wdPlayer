@@ -1447,6 +1447,8 @@ public class FfmpegUseMediaCodecDecode {
                     if (videoSerial != avPacket.serial) {
                         Log.d(TAG,
                                 "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
+                        clearQueue();
+                        //signalQueue();
                         /*if (videoHasUsedMC
                                 && videoSerial != 0
                                 && mVideoWrapper != null
@@ -1454,8 +1456,6 @@ public class FfmpegUseMediaCodecDecode {
                             mVideoWrapper.decoderMediaCodec.flush();
                             mVideoWrapper.decoderMediaCodec.start();
                         }*/
-                        //clearQueue();
-                        //signalQueue();
                         videoSerial = avPacket.serial;
                     }
 
@@ -1719,8 +1719,7 @@ public class FfmpegUseMediaCodecDecode {
         @Override
         public int handleVideoOutputBuffer(int roomIndex, ByteBuffer room,
                                            MediaCodec.BufferInfo roomInfo) {
-            // roomIndex不会小于0
-            if (room == null || roomInfo == null || roomInfo.size <= 0) {
+            if (roomIndex < 0 || room == null || roomInfo == null || roomInfo.size <= 0) {
                 Log.e(TAG, "handleVideoOutputBuffer() return\n");
                 return -1;
             }
@@ -1918,6 +1917,7 @@ public class FfmpegUseMediaCodecDecode {
             long presentationTimeUs = avPacket.presentationTimeUs;
             int flags = avPacket.flags;
             if (size <= 0) {
+                Log.e(TAG, "onInputBufferAvailable() BUFFER_FLAG_END_OF_STREAM");
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
             }
             //Log.w(TAG, "onInputBufferAvailable() data:\n" + Arrays.toString(data));
@@ -1945,7 +1945,6 @@ public class FfmpegUseMediaCodecDecode {
                 return;
             }
 
-            boolean hasException = false;
             ByteBuffer room = null;
             // 根据房间号找到房间
             try {
@@ -1956,9 +1955,13 @@ public class FfmpegUseMediaCodecDecode {
                 }
             } catch (IllegalStateException e) {
                 Log.e(TAG, "onOutputBufferAvailable() " + e.toString());
-                room = null;
-                hasException = true;
+                try {
+                    codec.releaseOutputBuffer(roomIndex, true);
+                } catch (Exception e1) {
+                }
+                return;
             }
+
             // 房间大小
             int roomSize = roomInfo.size;
             // 不能根据room是否为null来判断是audio还是video(但我的三星Note2手机上是可以的)
@@ -1973,7 +1976,7 @@ public class FfmpegUseMediaCodecDecode {
                 mCallback.handleVideoOutputBuffer(roomIndex, null, null);
             }
 
-            if ((!useFFplay || hasException) && mVideoWrapper != null && mVideoWrapper.isHandling) {
+            if (!useFFplay && mVideoWrapper != null && mVideoWrapper.isHandling) {
                 try {
                     codec.releaseOutputBuffer(roomIndex, true);
                 } catch (IllegalStateException
@@ -1986,6 +1989,7 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public void onError(@NonNull MediaCodec mediaCodec, @NonNull MediaCodec.CodecException e) {
+            Log.e(TAG, "onError() video " + e.toString());
             if (mVideoWrapper == null || !mVideoWrapper.isHandling) {
                 return;
             }

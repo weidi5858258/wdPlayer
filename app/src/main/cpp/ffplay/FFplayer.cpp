@@ -1998,22 +1998,26 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 test_delay = delay = last_duration;
             }
             time = av_gettime_relative() / 1000000.0;
+            double frame_timer_delay = is->frame_timer + delay;
             if (video_refresh_log) {
                 //LOGI("video_refresh()               is->pictq.size = %d\n", is->pictq.size);
                 //LOGI("video_refresh()             last_duration(&) = %lf\n", last_duration);
                 //LOGI("video_refresh()                     delay(*) = %lf\n", delay);
                 //LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
-                LOGI("video_refresh()      is->frame_timer + delay = %lf\n",
-                     (is->frame_timer + delay));
+                LOGI("video_refresh()            frame_timer_delay = %lf\n", frame_timer_delay);
                 LOGI("video_refresh()                         time = %lf\n", time);
             }
 
-            if (is->frame_timer + delay - time > AV_SYNC_THRESHOLD_MAX) {
+            if (frame_timer_delay - time > AV_SYNC_THRESHOLD_MAX) {
+                LOGE("video_refresh()            frame_timer_delay = %lf\n", frame_timer_delay);
+                LOGE("video_refresh()                         time = %lf\n", time);
+                LOGE("video_refresh()     frame_timer_delay - time = %lf\n",
+                     (frame_timer_delay - time));
                 is->frame_timer = time - 2 * delay;
             }
 
-            if (time < is->frame_timer + delay) {
-                *remaining_time = FFMIN(is->frame_timer + delay - time, *remaining_time);
+            if (time < frame_timer_delay) {
+                *remaining_time = FFMIN(frame_timer_delay - time, *remaining_time);
                 goto display2;
             }
 
@@ -4056,10 +4060,9 @@ static void *read_thread(void *arg) {
             (//is->audioq.size + is->videoq.size + is->subtitleq.size > MAX_QUEUE_SIZE ||
                     (stream_has_enough_packets(is->audio_st, is->audio_stream, &is->audioq) &&
                      stream_has_enough_packets(is->video_st, is->video_stream, &is->videoq)))) {
-            //LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
             /* wait 10 ms */
-            /*LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
-            SDL_LockMutex(wait_mutex);
+            //LOGI("read_thread() SDL_CondWaitTimeout(10)\n");
+            /*SDL_LockMutex(wait_mutex);
             SDL_CondWaitTimeout(is->continue_read_thread, wait_mutex, 10);
             SDL_UnlockMutex(wait_mutex);*/
 
@@ -4095,7 +4098,7 @@ static void *read_thread(void *arg) {
         // 读数据
         ret = av_read_frame(ic, pkt);
         if (ret < 0) {
-            LOGE("read_thread() av_read_frame ret: %d\n", ret);
+            //LOGE("read_thread() av_read_frame ret: %d\n", ret);
             if ((ret == AVERROR_EOF || avio_feof(ic->pb)) && !is->eof) {
                 if (is->video_stream >= 0) {
                     packet_queue_put_nullpacket(&is->videoq, is->video_stream);
@@ -4752,7 +4755,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        test_remaining_time = 0.000001;// 0.0005
+        test_remaining_time = 0.0000001;// 0.0005
         if (REMAINING_TIME >= 0.0) {
             test_remaining_time = REMAINING_TIME;
         }
@@ -5565,11 +5568,11 @@ int seekTo(int64_t timestamp) {
         return -1;
     }
 
-    /*if (!video_state->useMediaCodec) {
-    }*/
-    stream_seek(video_state,
-                (int64_t) (timestamp * AV_TIME_BASE),
-                (int64_t) (10.000000 * AV_TIME_BASE), 0);
+    if (!video_state->useMediaCodec) {
+        stream_seek(video_state,
+                    (int64_t) (timestamp * AV_TIME_BASE),
+                    (int64_t) (10.000000 * AV_TIME_BASE), 0);
+    }
     return 0;
 }
 
