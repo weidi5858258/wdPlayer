@@ -4003,13 +4003,17 @@ static void *read_thread(void *arg) {
             int64_t seek_max = is->seek_rel < 0 ? seek_target - is->seek_rel - 2 : INT64_MAX;
             // FIXME the +-2 is due to rounding being not done in the correct direction in generation
             //      of the seek_pos/seek_rel variables
-            LOGI("read_thread()    seek_min = %ld\n", (long) seek_min);
-            LOGI("read_thread() seek_target = %ld\n", (long) seek_target);
-            LOGI("read_thread()    seek_max = %ld\n", (long) seek_max);
+            LOGI("read_thread()    seek_min = %lld\n", (long long int) seek_min);
+            LOGI("read_thread() seek_target = %lld\n", (long long int) seek_target);
+            LOGI("read_thread()    seek_max = %lld\n", (long long int) seek_max);
 
             ret = avformat_seek_file(
                     is->ic, -1, seek_min, seek_target, seek_max, is->seek_flags);
+            /*ret = av_seek_frame(avFormatContext, -1,
+                                seek_target,
+                                AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);*/
             LOGI("read_thread()         ret = %d\n", ret);
+
             if (ret < 0) {
                 av_log(nullptr, AV_LOG_ERROR, "%s: error while seeking\n", is->ic->url);
             } else {

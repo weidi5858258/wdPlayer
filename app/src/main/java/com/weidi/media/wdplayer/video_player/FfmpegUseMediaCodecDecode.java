@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -1456,6 +1457,7 @@ public class FfmpegUseMediaCodecDecode {
                             mVideoWrapper.decoderMediaCodec.flush();
                             mVideoWrapper.decoderMediaCodec.start();
                         }*/
+                        //SystemClock.sleep(5000);
                         videoSerial = avPacket.serial;
                     }
 
