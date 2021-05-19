@@ -346,6 +346,7 @@ public class FfmpegUseMediaCodecDecode {
                             int roomIndex = -1;
                             if (object != null && object instanceof Integer) {
                                 roomIndex = (int) object;
+                                Log.i(TAG, "clearQueue() roomIndex: " + roomIndex);
                                 mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(
                                         roomIndex, true);
                             }
@@ -374,6 +375,35 @@ public class FfmpegUseMediaCodecDecode {
             e.printStackTrace();
         }
         Log.i(TAG, "clearQueue() end");
+    }
+
+    private void clearIndexQueue() {
+        try {
+            if (mVideoDatasIndexQueue != null
+                    && mVideoWrapper != null
+                    && mVideoWrapper.decoderMediaCodec != null) {
+                final ReentrantLock lock = mVideoDatasIndexQueue.lock;
+                lock.lockInterruptibly();
+                try {
+                    int size = mVideoDatasIndexQueue.size();
+                    for (int i = 0; i < size; i++) {
+                        Object object = mVideoDatasIndexQueue.poll();
+                        int roomIndex = -1;
+                        if (object != null && object instanceof Integer) {
+                            roomIndex = (int) object;
+                            Log.i(TAG, "clearIndexQueue() roomIndex: " + roomIndex);
+                            mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(
+                                    roomIndex, true);
+                        }
+                    }
+                    mVideoDatasIndexQueue.clear();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void signalQueue() {
@@ -1448,7 +1478,8 @@ public class FfmpegUseMediaCodecDecode {
                     if (videoSerial != avPacket.serial) {
                         Log.d(TAG,
                                 "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
-                        clearQueue();
+                        clearIndexQueue();
+                        //clearQueue();
                         //signalQueue();
                         /*if (videoHasUsedMC
                                 && videoSerial != 0
@@ -1726,6 +1757,7 @@ public class FfmpegUseMediaCodecDecode {
                 return -1;
             }
 
+            AVPacket avPacket = null;
             if (useFFplay) {
                 try {
                     // 超出限制就会阻塞
@@ -1737,11 +1769,11 @@ public class FfmpegUseMediaCodecDecode {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }
 
-            mVideoLock.lock();
-            AVPacket avPacket = getAvPacket();
-            mVideoLock.unlock();
+                mVideoLock.lock();
+                avPacket = getAvPacket();
+                mVideoLock.unlock();
+            }
 
             videoValueIntArray[0] = roomIndex;
             videoValueIntArray[1] = roomInfo.offset;
@@ -1856,6 +1888,7 @@ public class FfmpegUseMediaCodecDecode {
 
         @Override
         public void onInputBufferAvailable(@NonNull MediaCodec codec, int roomIndex) {
+            //Log.i(TAG, "onInputBufferAvailable() roomIndex: " + roomIndex);
             if (roomIndex < 0) {
                 Log.e(TAG, "onInputBufferAvailable() return for roomIndex < 0");
                 return;
@@ -1869,15 +1902,26 @@ public class FfmpegUseMediaCodecDecode {
                     //Log.i(TAG, "onInputBufferAvailable() 1");
                     if (mVideoInputDatasQueue != null) {
                         avPacket = mVideoInputDatasQueue.take();
+                        if (useFFplay && avPacket != null) {
+                            mVideoLock.lock();
+                            mVideoList.add(avPacket);
+                            mVideoLock.unlock();
+                        }
                     }
                     //Log.i(TAG, "onInputBufferAvailable() 2");
                 } catch (InterruptedException e) {
-                    Log.e(TAG, "onInputBufferAvailable() " + e.toString());
                     avPacket = null;
                 }
             }
-            if (avPacket == null
-                    || mVideoWrapper == null
+            if (avPacket == null) {
+                Log.e(TAG, "onInputBufferAvailable() return for avPacket is null");
+                try {
+                    codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
+                } catch (Exception e) {
+                }
+                return;
+            }
+            if (mVideoWrapper == null
                     || !mVideoWrapper.isHandling) {
                 Log.e(TAG, "onInputBufferAvailable() return");
                 try {
@@ -1897,10 +1941,10 @@ public class FfmpegUseMediaCodecDecode {
                     room = codec.getInputBuffers()[roomIndex];
                 }
             } catch (IllegalStateException e) {
-                Log.e(TAG, "onInputBufferAvailable() " + e.toString());
                 room = null;
             }
             if (room == null) {
+                Log.e(TAG, "onInputBufferAvailable() return for room is null");
                 avPacket = null;
                 try {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0,
@@ -1909,10 +1953,6 @@ public class FfmpegUseMediaCodecDecode {
                 }
                 return;
             }
-
-            mVideoLock.lock();
-            mVideoList.add(avPacket);
-            mVideoLock.unlock();
 
             byte[] data = avPacket.data;
             int size = avPacket.size;
@@ -1943,7 +1983,12 @@ public class FfmpegUseMediaCodecDecode {
         public void onOutputBufferAvailable(@NonNull MediaCodec codec, int roomIndex,
                                             @NonNull MediaCodec.BufferInfo roomInfo) {
             //Log.i(TAG, "onOutputBufferAvailable() roomIndex: " + roomIndex);
-            if (mVideoWrapper == null || !mVideoWrapper.isHandling || roomIndex < 0) {
+            if (mVideoWrapper == null || !mVideoWrapper.isHandling/* || roomIndex < 0*/) {
+                Log.e(TAG, "onOutputBufferAvailable() return");
+                try {
+                    codec.releaseOutputBuffer(roomIndex, true);
+                } catch (Exception e1) {
+                }
                 return;
             }
 

@@ -3941,10 +3941,11 @@ static void *read_thread(void *arg) {
         // pos为需要seek到的那个时间点
         stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
     }*/
+
     LOGI("read_thread() video_stream = %d\n", is->video_stream);
     LOGI("read_thread() audio_stream = %d\n", is->audio_stream);
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
-    if (timeStamp >= 0 && !is->useMediaCodec) {
+    if (timeStamp >= 0/* && !is->useMediaCodec*/) {
         stream_seek(
                 is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
     }
