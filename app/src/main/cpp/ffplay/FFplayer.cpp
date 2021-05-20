@@ -5573,11 +5573,11 @@ int seekTo(int64_t timestamp) {
         return -1;
     }
 
-    if (!video_state->useMediaCodec) {
-        stream_seek(video_state,
-                    (int64_t) (timestamp * AV_TIME_BASE),
-                    (int64_t) (10.000000 * AV_TIME_BASE), 0);
-    }
+    /*if (!video_state->useMediaCodec) {
+    }*/
+    stream_seek(video_state,
+                (int64_t) (timestamp * AV_TIME_BASE),
+                (int64_t) (10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 

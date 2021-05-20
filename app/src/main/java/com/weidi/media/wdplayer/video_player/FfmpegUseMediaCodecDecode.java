@@ -1432,7 +1432,59 @@ public class FfmpegUseMediaCodecDecode {
     }
 
     public boolean feedInputBufferAndDrainOutputBuffer(SimpleWrapper wrapper) {
-        if (wrapper.type == TYPE_AUDIO) {
+        if (wrapper.type == TYPE_VIDEO) {
+            if (VIDEO_NEED_TO_ASYNC) {
+                if (mVideoWrapper != null
+                        && mVideoWrapper.isHandling) {
+                    AVPacket avPacket = new AVPacket(wrapper.size);
+                    avPacket.serial = wrapper.serial;
+                    avPacket.data = wrapper.data;
+                    avPacket.presentationTimeUs = wrapper.sampleTime;
+                    avPacket.dts = wrapper.dts;
+                    avPacket.pos = wrapper.pos;
+                    avPacket.duration = wrapper.duration;
+                    avPacket.flags = 0;
+
+                    if (videoSerial != avPacket.serial) {
+                        // 说明seek过了
+                        Log.d(TAG,
+                                "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
+                        clearQueue();
+                        //signalQueue();
+                        //clearIndexQueue();
+                        /*if (videoHasUsedMC
+                                && videoSerial != 0
+                                && mVideoWrapper != null
+                                && mVideoWrapper.decoderMediaCodec != null) {
+                            //mVideoWrapper.decoderMediaCodec.flush();
+                            //mVideoWrapper.decoderMediaCodec.start();
+                            //SystemClock.sleep(15000);
+                        }*/
+                        videoSerial = avPacket.serial;
+                    }
+
+                    /*Log.d(TAG, "feedInputBufferAndDrainOutputBuffer()" +
+                            " pts: " + avPacket.presentationTimeUs +
+                            " pkt_pts: " + avPacket.presentationTimeUs +
+                            " pkt_dts: " + avPacket.dts +
+                            " pkt_pos: " + avPacket.pos +
+                            " pkt_duration: " + avPacket.duration +
+                            " pkt_size: " + avPacket.size);*/
+
+                    try {
+                        // 超出限制就会阻塞
+                        //Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() 1");
+                        if (mVideoInputDatasQueue != null) {
+                            mVideoInputDatasQueue.put(avPacket);
+                        }
+                        //Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() 2");
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return true;
+            }
+        } else {
             if (AUDIO_NEED_TO_ASYNC) {
                 if (mAudioWrapper != null
                         && mAudioWrapper.isHandling) {
@@ -1448,57 +1500,6 @@ public class FfmpegUseMediaCodecDecode {
                         if (mAudioInputDatasQueue != null) {
                             mAudioInputDatasQueue.put(avPacket);
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return true;
-            }
-        } else {
-            if (VIDEO_NEED_TO_ASYNC) {
-                if (mVideoWrapper != null
-                        && mVideoWrapper.isHandling) {
-                    AVPacket avPacket = new AVPacket(wrapper.size);
-                    avPacket.serial = wrapper.serial;
-                    avPacket.data = wrapper.data;
-                    avPacket.presentationTimeUs = wrapper.sampleTime;
-                    avPacket.dts = wrapper.dts;
-                    avPacket.pos = wrapper.pos;
-                    avPacket.duration = wrapper.duration;
-                    avPacket.flags = 0;
-
-                    /*Log.d(TAG, "feedInputBufferAndDrainOutputBuffer()" +
-                            " pts: " + avPacket.presentationTimeUs +
-                            " pkt_pts: " + avPacket.presentationTimeUs +
-                            " pkt_dts: " + avPacket.dts +
-                            " pkt_pos: " + avPacket.pos +
-                            " pkt_duration: " + avPacket.duration +
-                            " pkt_size: " + avPacket.size);*/
-
-                    if (videoSerial != avPacket.serial) {
-                        Log.d(TAG,
-                                "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
-                        clearIndexQueue();
-                        //clearQueue();
-                        //signalQueue();
-                        /*if (videoHasUsedMC
-                                && videoSerial != 0
-                                && mVideoWrapper != null
-                                && mVideoWrapper.decoderMediaCodec != null) {
-                            mVideoWrapper.decoderMediaCodec.flush();
-                            mVideoWrapper.decoderMediaCodec.start();
-                        }*/
-                        //SystemClock.sleep(5000);
-                        videoSerial = avPacket.serial;
-                    }
-
-                    try {
-                        // 超出限制就会阻塞
-                        //Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() 1");
-                        if (mVideoInputDatasQueue != null) {
-                            mVideoInputDatasQueue.put(avPacket);
-                        }
-                        //Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() 2");
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
