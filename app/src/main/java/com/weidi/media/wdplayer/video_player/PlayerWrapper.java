@@ -104,6 +104,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
+import static com.weidi.media.wdplayer.Constants.NEED_SHOW_MEDIA_INFO;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
@@ -1017,7 +1018,11 @@ public class PlayerWrapper {
             sb.append("[");
             sb.append(mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY));
             sb.append("]");
-            textInfoTV.setText(sb.toString());
+            if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
+                textInfoTV.setText(sb.toString());
+            } else {
+                textInfoTV.setText("");
+            }
         }
         if (!IS_WATCH) {
             ObjectAnimator controllerPanelAnimator =
@@ -2946,7 +2951,11 @@ public class PlayerWrapper {
             //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
             if (toastInfo.contains("[") && toastInfo.contains("]")) {
                 textInfo = toastInfo;
-                textInfoTV.setText(toastInfo);
+                if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
+                    textInfoTV.setText(toastInfo);
+                } else {
+                    textInfoTV.setText("");
+                }
                 mUiHandler.removeMessages(MSG_CHANGE_COLOR);
                 mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
             } else if (toastInfo.contains("AVERROR_EOF")) {

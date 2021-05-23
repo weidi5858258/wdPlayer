@@ -67,6 +67,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.NEED_SHOW_MEDIA_INFO;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
@@ -344,9 +345,18 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case 10:
-                        //finish();
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        boolean needShowMediaInfo = sp.getBoolean(NEED_SHOW_MEDIA_INFO, false);
+                        if (needShowMediaInfo) {
+                            MyToast.show("隐藏媒体信息");
+                            sp.edit().putBoolean(NEED_SHOW_MEDIA_INFO, false).commit();
+                        } else {
+                            MyToast.show("显示媒体信息");
+                            sp.edit().putBoolean(NEED_SHOW_MEDIA_INFO, true).commit();
+                        }
                         break;
                     case 11:
+                        //finish();
                         break;
                     case 20:
                         if (IS_PHONE) {
