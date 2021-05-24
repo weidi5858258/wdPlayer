@@ -14,6 +14,8 @@ import com.weidi.eventbus.EventBusUtils;
 
 import androidx.annotation.NonNull;
 
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PAUSE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PLAY;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_pause;
@@ -193,10 +195,19 @@ public class FullScreenActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                     break;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
+                    EventBusUtils.post(
+                            PlayerWrapper.class,
+                            BUTTON_CLICK_FR,
+                            null);
                     break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
+                    EventBusUtils.post(
+                            PlayerWrapper.class,
+                            BUTTON_CLICK_FF,
+                            null);
                     break;
                 case KeyEvent.KEYCODE_DPAD_CENTER:
+                    // 暂停/播放
                     if (Boolean.parseBoolean(
                             FFMPEG.getDefault().onTransact(
                                     FFMPEG.DO_SOMETHING_CODE_isRunning, null))) {

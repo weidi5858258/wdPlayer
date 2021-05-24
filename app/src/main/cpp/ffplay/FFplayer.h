@@ -39,6 +39,8 @@ void stepAdd(int64_t addStep);
 
 void stepSubtract(int64_t subtractStep);
 
+void clearQueue();
+
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,

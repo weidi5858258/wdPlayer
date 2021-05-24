@@ -1764,6 +1764,10 @@ char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
             strncpy(info, "DO_SOMETHING_CODE_isWatchForCloseAudio",
                     strlen("DO_SOMETHING_CODE_isWatchForCloseAudio"));
             break;
+        case DO_SOMETHING_CODE_clearQueue:
+            strncpy(info, "DO_SOMETHING_CODE_clearQueue",
+                    strlen("DO_SOMETHING_CODE_clearQueue"));
+            break;
         default:
             strncpy(info, "DO_SOMETHING_CODE_nothing",
                     strlen("DO_SOMETHING_CODE_nothing"));
@@ -1921,6 +1925,10 @@ Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobje
         case DO_SOMETHING_CODE_setRemainingTime: {
             jdouble remaining_time = env->GetDoubleField(jniObject, valueDouble_jfieldID);
             REMAINING_TIME = remaining_time;
+            return env->NewStringUTF(ret);
+        }
+        case DO_SOMETHING_CODE_clearQueue: {
+            clearQueue();
             return env->NewStringUTF(ret);
         }
 

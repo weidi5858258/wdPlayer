@@ -1391,9 +1391,9 @@ public class PlayerWrapper {
                     if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
                         long count = 0;
                         if (mMediaDuration > 300) {
-                            count = addStep / 30;
+                            count = subtractStep / 30;
                         } else {
-                            count = addStep / 10;
+                            count = subtractStep / 10;
                         }
                         mWdPlayer.onTransact(
                                 DO_SOMETHING_CODE_stepSubtract,

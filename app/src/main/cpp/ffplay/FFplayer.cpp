@@ -4070,9 +4070,6 @@ static void *read_thread(void *arg) {
 
             ret = avformat_seek_file(
                     is->ic, -1, seek_min, seek_target, seek_max, is->seek_flags);
-            /*ret = av_seek_frame(avFormatContext, -1,
-                                seek_target,
-                                AVSEEK_FLAG_BACKWARD | AVSEEK_FLAG_FRAME);*/
             LOGI("read_thread()         ret = %d\n", ret);
 
             if (ret < 0) {
@@ -5593,6 +5590,10 @@ int start() {
 }
 
 int play_pause() {
+    if (!isRunning()) {
+        return -1;
+    }
+
     pthread_mutex_lock(&readLockMutex);
     toggle_pause(video_state);
     pthread_mutex_unlock(&readLockMutex);
@@ -5694,7 +5695,7 @@ static void do_seek(double incr) {
 
 // 快进10秒
 void stepAdd(int64_t addStep) {
-    if (video_state == nullptr) {
+    if (!isRunning()) {
         return;
     }
 
@@ -5705,7 +5706,7 @@ void stepAdd(int64_t addStep) {
 
 // 快退10秒
 void stepSubtract(int64_t subtractStep) {
-    if (video_state == nullptr) {
+    if (!isRunning()) {
         return;
     }
 
@@ -5714,5 +5715,33 @@ void stepSubtract(int64_t subtractStep) {
     do_seek(incr);
 }
 
+void clearQueue() {
+    if (!isRunning()) {
+        return;
+    }
+
+    // audio
+    pthread_mutex_lock(&video_state->sampq.pmutex);
+    for (int i = 0; i < video_state->sampq.max_size; i++) {
+        Frame *vp = &video_state->sampq.queue[i];
+        frame_queue_unref_item(vp);
+    }
+    video_state->sampq.size = 0;
+    video_state->sampq.rindex = 0;
+    video_state->sampq.windex = 0;
+    pthread_cond_signal(&video_state->sampq.pcond);
+    pthread_mutex_unlock(&video_state->sampq.pmutex);
+    // video
+    pthread_mutex_lock(&video_state->pictq.pmutex);
+    for (int i = 0; i < video_state->pictq.max_size; i++) {
+        Frame *vp = &video_state->pictq.queue[i];
+        frame_queue_unref_item(vp);
+    }
+    video_state->pictq.size = 0;
+    video_state->pictq.rindex = 0;
+    video_state->pictq.windex = 0;
+    pthread_cond_signal(&video_state->pictq.pcond);
+    pthread_mutex_unlock(&video_state->pictq.pmutex);
+}
 
 //}// namespace

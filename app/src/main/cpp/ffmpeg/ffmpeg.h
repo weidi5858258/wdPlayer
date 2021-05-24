@@ -49,6 +49,7 @@ enum DO_SOMETHING_CODE {
     DO_SOMETHING_CODE_isWatchForCloseAudio = 1128,
     DO_SOMETHING_CODE_setTimeDifference = 1129,
     DO_SOMETHING_CODE_setRemainingTime = 1130,
+    DO_SOMETHING_CODE_clearQueue = 1131,
 };
 
 enum {

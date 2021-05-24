@@ -38,6 +38,7 @@ import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_clearQueue;
 
 /***
  Created by weidi on 2020/07/11.
@@ -1320,7 +1321,6 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         videoSerial = 0;
-        videoHasUsedMC = false;
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
@@ -1449,17 +1449,12 @@ public class FfmpegUseMediaCodecDecode {
                         // 说明seek过了
                         Log.d(TAG,
                                 "feedInputBufferAndDrainOutputBuffer() serial: " + avPacket.serial);
-                        clearQueue();
-                        //signalQueue();
-                        //clearIndexQueue();
-                        /*if (videoHasUsedMC
-                                && videoSerial != 0
-                                && mVideoWrapper != null
-                                && mVideoWrapper.decoderMediaCodec != null) {
-                            //mVideoWrapper.decoderMediaCodec.flush();
-                            //mVideoWrapper.decoderMediaCodec.start();
-                            //SystemClock.sleep(15000);
-                        }*/
+                        if (videoSerial != 0) {
+                            clearQueue();
+                            //signalQueue();
+                            //clearIndexQueue();
+                            mFFMPEG.onTransact(DO_SOMETHING_CODE_clearQueue, null);
+                        }
                         videoSerial = avPacket.serial;
                     }
 
@@ -1864,8 +1859,6 @@ public class FfmpegUseMediaCodecDecode {
     final Lock mVideoLock = new ReentrantLock();
     private ArrayList<AVPacket> mVideoList = new ArrayList<AVPacket>();
     private int videoSerial = 0;
-    // true表示已经使用过MC进行解码操作了
-    private boolean videoHasUsedMC = false;
 
     private AVPacket getAvPacket() {
         if (mVideoList.isEmpty()) {
@@ -1975,7 +1968,6 @@ public class FfmpegUseMediaCodecDecode {
                     | MediaCodec.CryptoException e) {
                 Log.e(TAG, "onInputBufferAvailable() queueInputBuffer " + e.toString());
             }
-            videoHasUsedMC = true;
             //avPacket.clear();
             //avPacket = null;
         }
@@ -2016,9 +2008,7 @@ public class FfmpegUseMediaCodecDecode {
             if (room != null) {
                 room.position(roomInfo.offset);
                 room.limit(roomInfo.offset + roomSize);
-                //Log.i(TAG, "onOutputBufferAvailable() 1");
                 mCallback.handleVideoOutputBuffer(roomIndex, room, roomInfo);
-                //Log.i(TAG, "onOutputBufferAvailable() 2");
                 room.clear();
             } else {
                 mCallback.handleVideoOutputBuffer(roomIndex, null, null);
