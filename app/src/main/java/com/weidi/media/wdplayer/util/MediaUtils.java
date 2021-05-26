@@ -924,10 +924,25 @@ public class MediaUtils {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
         /***
+         码率控制模式有三种：
+         码率控制模式在 MediaCodecInfo.EncoderCapabilities类中定义了三种，
+         在 framework 层有另一套名字和它们的值一一对应：
+         CQ 对应于 OMX_Video_ControlRateDisable，它表示完全不控制码率，尽最大可能保证图像质量；
+         CBR 对应于 OMX_Video_ControlRateConstant，它表示编码器会尽量把输出码率控制为设定值，
+         即我们前面提到的“不为所动”；
+         VBR 对应于 OMX_Video_ControlRateVariable，它表示编码器会根据图像内容的复杂度（实际上是帧间变化量的大小）
+         来动态调整输出码率，图像复杂则码率高，图像简单则码率低；
+
          BITRATE_MODE_CQ:  表示完全不控制码率，尽最大可能保证图像质量
          BITRATE_MODE_CBR: 表示编码器会尽量把输出码率控制为设定值
          BITRATE_MODE_VBR: 表示编码器会根据图像内容的复杂度（实际上是帧间变化量的大小）来动态调整输出码率，
          图像复杂则码率高，图像简单则码率低
+
+         动态调整目标码率：
+         Bundle param = new Bundle();
+         param.putInt(MediaCodec.PARAMETER_KEY_VIDEO_BITRATE, bitrate);
+         mediaCodec.setParameters(param);
+
          */
         // 这个值不设置的话,录制的视频很模糊.电视机不支持
         format.setInteger(MediaFormat.KEY_BITRATE_MODE,
@@ -990,6 +1005,40 @@ public class MediaUtils {
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+
+        /*byte[] header_sps = null;
+        byte[] header_pps = null;
+        //横屏
+        header_sps =
+                new byte[]{0, 0, 0, 1, 103, 66, -128, 31, -38, 1, 64, 22, -24, 6, -48, -95, 53};
+        header_pps =
+                new byte[]{0, 0, 0, 1, 104, -50, 6, -30};
+        //竖屏
+        header_sps =
+                new byte[]{0, 0, 0, 1, 103, 66, -128, 31, -38, 2, -48, 40, 104, 6, -48, -95, 53};
+        header_pps =
+                new byte[]{0, 0, 0, 1, 104, -50, 6, -30};
+        format.setByteBuffer("csd-0", ByteBuffer.wrap(header_sps));
+        format.setByteBuffer("csd-1", ByteBuffer.wrap(header_pps));*/
+        /***
+         配置帧
+         cfgFrame:配置帧，解码器在收到该帧后，才能开始解码，否则的话，会出现绿屏等现象，格式如下：
+         byte [] cfgFrame1 = {0, 0, 0, 1, 103, 66, -128, 31, -38, 1, 64, 22, -23,
+         72, 40, 48, 48, 54, -123, 9, -88, 0, 0, 0, 1, 104, -50, 6, -30};
+         byte [] cfgFrame2 = {0, 0, 0, 1, 103, 66, -128, 31, -38, 1, 64, 61, -91,
+         32, -96, -64, -64, -38, 20, 38, -96, 0, 0, 0, 1, 104, -50, 6, -30};
+         //读取索引下的有效数据，进行转换后发送到指定端
+         private void onEncodedAvcFrame(ByteBuffer buffer, MediaCodec.BufferInfo info) {
+         // 判断当前是配置帧还是关键帧，使用方式如下：
+         if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+         // 特定格式信息等配置数据,不是媒体数据
+         } else if ((info.flags & MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0) {
+         // delimiter: 00 00 00 01
+         // I-frame:buf[5]==0x65; SPS:buf[5]==0x67; PPS:buf[5]==0x68;
+         }
+         }
+         //发送数据
+         */
         Log.d(TAG, "getVideoDecoderMediaFormat() created video format: " + format);
 
         return format;
