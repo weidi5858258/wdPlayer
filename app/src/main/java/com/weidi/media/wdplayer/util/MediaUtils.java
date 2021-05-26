@@ -138,7 +138,7 @@ public class MediaUtils {
     // audio/mp4a-latm(AAC)
     public static final String AUDIO_MIME = MediaFormat.MIMETYPE_AUDIO_AAC;
     private static final int VIDEO_BIT_RATE = 64000;// 1200000 8000000 800000
-    private static final int FRAME_RATE = 30;
+    private static final int FRAME_RATE = 25;// 30
     private static final int IFRAME_INTERVAL = 1;
     private static final int WIDTH = 1920;
     private static final int HEIGHT = 1080;
@@ -898,6 +898,10 @@ public class MediaUtils {
      这个方法是给录屏设置的参数
      width和height是视频的尺寸，这个尺寸不能超过视频采集时采集到的尺寸，否则会直接crash
      width和height不能大于手机的宽高,大一个像素也不行.
+     [0] [0] [0] [25] [V]
+     [h264] [yuv420p] [1920] [1080]
+     [aac] [fltp] [48000] [2]
+     [0] [0] [0]: 分别代表音视频总的码率,视频码率,音频比特率.
      * @param width
      * @param height
      * @return
@@ -906,9 +910,10 @@ public class MediaUtils {
         MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
         format.setInteger(MediaFormat.KEY_MAX_WIDTH, width);
         format.setInteger(MediaFormat.KEY_MAX_HEIGHT, height);
-        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
+        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height * 4);
         // 设置码率
-        format.setInteger(MediaFormat.KEY_BIT_RATE, width * height * 4);
+        // format.setInteger(MediaFormat.KEY_BIT_RATE, width * height * 4);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, 0);
         // 设置帧率
         format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
         // 设置抽取关键帧的间隔，以s为单位，负数或者0表示不抽取关键帧
@@ -933,8 +938,7 @@ public class MediaUtils {
          byte[] header_sps = {0, 0, 0, 1, 103, 66, -128, 31, -38, 1, 64, 22, -24, 6, -48, -95, 53};
          byte[] header_pps = {0, 0 ,0, 1, 104, -50, 6, -30};
          */
-        /*byte[] header_sps = {0, 0, 0, 1, 103, 66, -128, 31, -38, 2, -48, 40, 104, 6, -48, -95,
-        53};
+        /*byte[] header_sps = {0, 0, 0, 1, 103, 66, -128, 31, -38, 2, -48, 40, 104, 6, -48, -95,53};
         byte[] header_pps = {0, 0, 0, 1, 104, -50, 6, -30};
         format.setByteBuffer("csd-0", ByteBuffer.wrap(header_sps));
         format.setByteBuffer("csd-1", ByteBuffer.wrap(header_pps));*/
@@ -980,13 +984,9 @@ public class MediaUtils {
         MediaFormat format = MediaFormat.createVideoFormat(VIDEO_MIME, width, height);
         format.setInteger(MediaFormat.KEY_MAX_WIDTH, width);
         format.setInteger(MediaFormat.KEY_MAX_HEIGHT, height);
-        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height);
-        // 设置码率
-        format.setInteger(MediaFormat.KEY_BIT_RATE, width * height * 4);
-        // 设置帧率
+        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, width * height * 4);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, 0);
         format.setInteger(MediaFormat.KEY_FRAME_RATE, FRAME_RATE);
-        // 设置抽取关键帧的间隔，以s为单位，负数或者0表示不抽取关键帧
-        // i-frame iinterval
         format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, IFRAME_INTERVAL);
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
