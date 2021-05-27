@@ -3255,6 +3255,8 @@ public class PlayerWrapper {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             intent.setClass(mContext, FullScreenActivity.class);
             mContext.startActivity(intent);
+        } else {
+            clickTen();
         }
     }
 

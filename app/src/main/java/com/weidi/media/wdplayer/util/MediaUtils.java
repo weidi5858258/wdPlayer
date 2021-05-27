@@ -137,7 +137,7 @@ public class MediaUtils {
     public static final String VIDEO_MIME = MediaFormat.MIMETYPE_VIDEO_AVC;
     // audio/mp4a-latm(AAC)
     public static final String AUDIO_MIME = MediaFormat.MIMETYPE_AUDIO_AAC;
-    private static final int VIDEO_BIT_RATE = 64000;// 1200000 8000000 800000
+    private static final int VIDEO_BIT_RATE = 0;// 1200000 8000000 800000 64000*
     private static final int FRAME_RATE = 25;// 30
     private static final int IFRAME_INTERVAL = 1;
     private static final int WIDTH = 1920;
