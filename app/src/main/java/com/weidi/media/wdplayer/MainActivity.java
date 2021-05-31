@@ -67,6 +67,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
+import static com.weidi.media.wdplayer.Constants.NEED_SHOW_CACHE_PROGRESS;
 import static com.weidi.media.wdplayer.Constants.NEED_SHOW_MEDIA_INFO;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
@@ -356,6 +357,18 @@ public class MainActivity extends AppCompatActivity {
                         }
                         break;
                     case 11:
+                        sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+                        boolean needShowCacheProgress = sp.getBoolean(
+                                NEED_SHOW_CACHE_PROGRESS, false);
+                        if (needShowCacheProgress) {
+                            MyToast.show("隐藏顶部缓冲进度条");
+                            sp.edit().putBoolean(NEED_SHOW_CACHE_PROGRESS, false).commit();
+                        } else {
+                            MyToast.show("显示顶部缓冲进度条");
+                            sp.edit().putBoolean(NEED_SHOW_CACHE_PROGRESS, true).commit();
+                        }
+                        break;
+                    case 12:
                         //finish();
                         break;
                     case 20:

@@ -104,6 +104,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
+import static com.weidi.media.wdplayer.Constants.NEED_SHOW_CACHE_PROGRESS;
 import static com.weidi.media.wdplayer.Constants.NEED_SHOW_MEDIA_INFO;
 import static com.weidi.media.wdplayer.Constants.NEED_TWO_PLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
@@ -1974,19 +1975,23 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW mControllerPanelLayoutHeight: " +
                 mControllerPanelLayoutHeight);
 
-        // 生产,消耗进度条高度
-        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
-        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mDataCacheLayoutHeight);
-        if (mDataCacheLayoutHeight > 0) {
-            RelativeLayout.LayoutParams relativeParams =
-                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
-            relativeParams.setMargins(
-                    (mScreenWidth - mNeedVideoWidth) / 2, (mScreenHeight - mNeedVideoHeight) / 2,
-                    0, 0);
-            relativeParams.width = mNeedVideoWidth;
-            relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
+        boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
+        if (needShowCacheProgress) {
+            // 生产,消耗进度条高度
+            mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
+            Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
+                    mDataCacheLayoutHeight);
+            if (mDataCacheLayoutHeight > 0) {
+                RelativeLayout.LayoutParams relativeParams =
+                        (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
+                relativeParams.setMargins(
+                        (mScreenWidth - mNeedVideoWidth) / 2,
+                        (mScreenHeight - mNeedVideoHeight) / 2,
+                        0, 0);
+                relativeParams.width = mNeedVideoWidth;
+                relativeParams.height = mDataCacheLayoutHeight;
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            }
         }
 
         // 改变SurfaceView宽高度
@@ -2122,16 +2127,19 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        // 生产,消耗进度条高度
-        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
-        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mDataCacheLayoutHeight);
-        if (mDataCacheLayoutHeight > 0) {
-            relativeParams = (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
-            relativeParams.setMargins(0, 0, 0, 0);
-            relativeParams.width = mNeedVideoWidth;
-            relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
+        boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
+        if (needShowCacheProgress) {
+            // 生产,消耗进度条高度
+            mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
+            Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
+                    mDataCacheLayoutHeight);
+            if (mDataCacheLayoutHeight > 0) {
+                relativeParams = (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
+                relativeParams.setMargins(0, 0, 0, 0);
+                relativeParams.width = mNeedVideoWidth;
+                relativeParams.height = mDataCacheLayoutHeight;
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            }
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -2255,16 +2263,19 @@ public class PlayerWrapper {
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
 
-        mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
-        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
-                mDataCacheLayoutHeight);
-        if (mDataCacheLayoutHeight > 0) {
-            relativeParams =
-                    (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
-            relativeParams.setMargins(0, 0, 0, 0);
-            relativeParams.width = mNeedVideoWidth;
-            relativeParams.height = mDataCacheLayoutHeight;
-            mDataCacheLayout.setLayoutParams(relativeParams);
+        boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
+        if (needShowCacheProgress) {
+            mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
+            Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
+                    mDataCacheLayoutHeight);
+            if (mDataCacheLayoutHeight > 0) {
+                relativeParams =
+                        (RelativeLayout.LayoutParams) mDataCacheLayout.getLayoutParams();
+                relativeParams.setMargins(0, 0, 0, 0);
+                relativeParams.width = mNeedVideoWidth;
+                relativeParams.height = mDataCacheLayoutHeight;
+                mDataCacheLayout.setLayoutParams(relativeParams);
+            }
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -2787,7 +2798,11 @@ public class PlayerWrapper {
                     textInfoScrollView.setVisibility(View.GONE);
                 }
                 if (!mIsLocal/* && !TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)*/) {
-                    mDataCacheLayout.setVisibility(View.VISIBLE);
+                    boolean needShowCacheProgress = mSP.getBoolean(
+                            NEED_SHOW_CACHE_PROGRESS, true);
+                    if (needShowCacheProgress) {
+                        mDataCacheLayout.setVisibility(View.VISIBLE);
+                    }
                 }
                 if (!mCouldPlaybackPathList.contains(mCurPath)) {
                     mCouldPlaybackPathList.add(mCurPath);
