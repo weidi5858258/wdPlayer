@@ -812,6 +812,7 @@ public class PlayerWrapper {
     }
 
     public void onDestroy() {
+        Log.i(TAG, "onDestroy()");
         onRelease();
         unregisterReceiver();
         mFFMPEGPlayer = null;
@@ -3049,6 +3050,11 @@ public class PlayerWrapper {
     }
 
     private void onUpdated(Message msg) {
+        // 底层判断过了,如果是live节目,就不会回调到这里
+        /*if (mIsLive) {
+            return;
+        }*/
+
         // 秒
         mPresentationTime = (Long) msg.obj;
         if (!mIsH264) {
@@ -3057,30 +3063,32 @@ public class PlayerWrapper {
             mPositionTimeTV.setText(String.valueOf(mPresentationTime));
         }
 
-        if (!mIsLive) {
-            if (mNeedToSyncProgressBar) {
-                int currentPosition = (int) (mPresentationTime);
-                float pos = (float) currentPosition / mMediaDuration;
-                int target = Math.round(pos * mPositionSeekBar.getMax());
-                mPositionSeekBar.setProgress(target);
-                if (mPresentationTime >= (mMediaDuration - 2)
-                        && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
-                    mThreadHandler.removeMessages(MSG_RELEASE);
-                    mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 1100);
-                }
+        if (mNeedToSyncProgressBar) {
+            int currentPosition = (int) (mPresentationTime);
+            float pos = (float) currentPosition / mMediaDuration;
+            int target = Math.round(pos * mPositionSeekBar.getMax());
+            mPositionSeekBar.setProgress(target);
+        }
+
+        if (mPresentationTime <= (mMediaDuration - 5)) {
+            mPathTimeMap.put(md5Path, mPresentationTime);
+            if (mIsH264 && (mMediaDuration - mPresentationTime <= 1000000)) {
+                mPathTimeMap.remove(md5Path);
+            }
+        } else {
+            // 正常结束就不需要播放了
+            Log.i(TAG, "onUpdated() 正常结束");
+            mPrePath = null;
+            if (mPathTimeMap.containsKey(md5Path)) {
+                mPathTimeMap.remove(md5Path);
             }
 
-            if (mPresentationTime < (mMediaDuration - 5)) {
-                mPathTimeMap.put(md5Path, mPresentationTime);
-                if (mIsH264 && (mMediaDuration - mPresentationTime <= 1000000)) {
-                    mPathTimeMap.remove(md5Path);
-                }
-            } else {
-                // 正常结束就不需要播放了
-                mPrePath = null;
-                if (mPathTimeMap.containsKey(md5Path)) {
-                    mPathTimeMap.remove(md5Path);
-                }
+            //if (mPresentationTime >= (mMediaDuration - 2)
+            if (mPresentationTime == mMediaDuration
+                    && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                Log.i(TAG, "onUpdated() MSG_RELEASE");
+                mThreadHandler.removeMessages(MSG_RELEASE);
+                mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 1100);
             }
         }
     }

@@ -1326,6 +1326,12 @@ public class FfmpegUseMediaCodecDecode {
         mVideoInputDatasQueue.needToWait = true;
         mVideoDatasIndexQueue.needToWait = true;
 
+        /*if (PlayerWrapper.IS_TV) {
+            mediaFormat.setInteger("profile", 8);
+            mediaFormat.setFeatureEnabled(
+            MediaCodecInfo.CodecCapabilities.FEATURE_TunneledPlayback, false);
+        }*/
+
         mVideoWrapper = new VideoWrapper(TYPE_VIDEO);
         mVideoWrapper.isHandling = true;
         mVideoWrapper.render = true;
