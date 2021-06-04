@@ -36,6 +36,7 @@ import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.WearMainActivity;
+import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.utils.MyToast;
 
 import java.util.Map;
@@ -45,6 +46,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_setRemainingTime;
 
 /***
  Created by root on 19-8-5.
@@ -170,6 +172,7 @@ public class PlayerService extends Service {
     // 需要播放的媒体是视频("video/")还是音频("audio/")
     public static final String COMMAND_TYPE = "HandlePlayerServiceType";
     public static final String COMMAND_ON_EVENT_TYPE = "command_on_event_type";
+    public static final String COMMAND_SET_REMAINING_TIME_STR = "setRemainingTime";
 
     // 对COMMAND_NAME进行设置的值
     public static final int COMMAND_SHOW_WINDOW = 1;
@@ -184,6 +187,7 @@ public class PlayerService extends Service {
     // window a audio 0/1
     // window a media 0/1
     public static final int COMMAND_WHICH_WINDOW = 8;
+    public static final int COMMAND_SET_REMAINING_TIME = 9;
 
     // 测试时使用
     private void internalStartCommand(Intent intent, int flags, int startId) {
@@ -252,6 +256,22 @@ public class PlayerService extends Service {
                     mUseLocalPlayer = true;
                 }
                 break;
+            case COMMAND_SET_REMAINING_TIME: {
+                try {
+                    String remaining_time_str =
+                            intent.getStringExtra(COMMAND_SET_REMAINING_TIME_STR);
+                    if (TextUtils.isEmpty(remaining_time_str)) {
+                        remaining_time_str = "-0.01";
+                    }
+                    double remaining_time = Double.parseDouble(remaining_time_str);
+                    FFMPEG.getDefault().onTransact(
+                            DO_SOMETHING_CODE_setRemainingTime,
+                            JniObject.obtain().writeDouble(remaining_time));
+                } catch (Exception e) {
+
+                }
+                break;
+            }
             default:
                 break;
         }
