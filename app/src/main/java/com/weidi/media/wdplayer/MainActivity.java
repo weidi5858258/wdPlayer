@@ -79,6 +79,8 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
+import static com.weidi.media.wdplayer.video_player.PlayerService.COMMAND_START_SECOND_PLAYERSERVICE;
+import static com.weidi.media.wdplayer.video_player.PlayerService.COMMAND_STOP_SECOND_PLAYERSERVICE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -311,10 +313,7 @@ public class MainActivity extends AppCompatActivity {
                         intent.putExtra(JniPlayerActivity.COMMAND_NO_FINISH, true);
                         intent.setClass(MainActivity.this, JniPlayerActivity.class);
                         startActivity(intent);*/
-                        Intent intent = new Intent();
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        intent.setClass(MainActivity.this, FullScreenActivity.class);
-                        startActivity(intent);
+                        startActivity(new Intent(MainActivity.this, FullScreenActivity.class));
                         break;
                     case 5:
                         startActivity(new Intent(MainActivity.this, LocalAudioActivity.class));
@@ -340,9 +339,17 @@ public class MainActivity extends AppCompatActivity {
                         if (needTwoPlayer) {
                             MyToast.show("禁用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, false).commit();
+                            EventBusUtils.post(
+                                    PlayerService.class,
+                                    COMMAND_STOP_SECOND_PLAYERSERVICE,
+                                    null);
                         } else {
                             MyToast.show("启用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
+                            EventBusUtils.post(
+                                    PlayerService.class,
+                                    COMMAND_START_SECOND_PLAYERSERVICE,
+                                    null);
                         }
                         break;
                     case 10:
@@ -368,9 +375,20 @@ public class MainActivity extends AppCompatActivity {
                             sp.edit().putBoolean(NEED_SHOW_CACHE_PROGRESS, true).commit();
                         }
                         break;
-                    case 12:
+                    case 12: {
+                        FullScreenActivity.SCREEN_ORIENTATION_LANDSCAPE = true;
+                        MyToast.show("横屏向左");
+                        break;
+                    }
+                    case 13: {
+                        FullScreenActivity.SCREEN_ORIENTATION_LANDSCAPE = false;
+                        MyToast.show("横屏向右");
+                        break;
+                    }
+                    case 14: {
                         //finish();
                         break;
+                    }
                     case 20:
                         if (IS_PHONE) {
                             startActivity(

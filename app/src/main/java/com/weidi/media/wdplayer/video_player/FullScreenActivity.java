@@ -2,6 +2,7 @@ package com.weidi.media.wdplayer.video_player;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
@@ -237,9 +238,18 @@ public class FullScreenActivity extends Activity {
 
     private static final String TAG = "FullScreenActivity";
     private static final boolean DEBUG = true;
+    public static boolean SCREEN_ORIENTATION_LANDSCAPE = true;
 
     private void internalCreate() {
-
+        if (PlayerWrapper.IS_TV) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        } else {
+            if (SCREEN_ORIENTATION_LANDSCAPE) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            } else {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
+            }
+        }
     }
 
     private void internalStart() {

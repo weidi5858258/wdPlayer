@@ -189,6 +189,10 @@ public class PlayerService extends Service {
     public static final int COMMAND_WHICH_WINDOW = 8;
     public static final int COMMAND_SET_REMAINING_TIME = 9;
 
+    public static final int COMMAND_START_SECOND_PLAYERSERVICE = 10;
+    public static final int COMMAND_STOP_SECOND_PLAYERSERVICE = 11;
+    private static boolean sBindRemotePlayerService = false;
+
     // 测试时使用
     private void internalStartCommand(Intent intent, int flags, int startId) {
         if (intent == null) {
@@ -283,6 +287,7 @@ public class PlayerService extends Service {
         mWindowManager.removeView(mView);
         unRegisterHeadsetPlugReceiver();
         EventBusUtils.unregister(this);
+        unbindRemotePlayerService();
     }
 
     private void handleAppCrash() {
@@ -355,6 +360,26 @@ public class PlayerService extends Service {
                 break;
             case COMMAND_WHICH_WINDOW:
                 break;
+            case COMMAND_START_SECOND_PLAYERSERVICE: {
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        bindRemotePlayerService();
+                        return null;
+                    }
+                }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                break;
+            }
+            case COMMAND_STOP_SECOND_PLAYERSERVICE: {
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        unbindRemotePlayerService();
+                        return null;
+                    }
+                }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                break;
+            }
             case KeyEvent.KEYCODE_HEADSETHOOK:// 79
                 if (mPlayerWrapper != null)
                     mPlayerWrapper.onEvent(KeyEvent.KEYCODE_HEADSETHOOK, null);
@@ -495,17 +520,21 @@ public class PlayerService extends Service {
         }
         mPlayerWrapper.setService(this);
 
-        UiModeManager uiModeManager =
-                (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
-        int whatIsDevice = uiModeManager.getCurrentModeType();
-        if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... params) {
-                    bindRemotePlayerService();
-                    return null;
-                }
-            }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        SharedPreferences sp = getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        boolean needTwoPlayer = sp.getBoolean(NEED_TWO_PLAYER, false);
+        if (needTwoPlayer) {
+            UiModeManager uiModeManager =
+                    (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+            int whatIsDevice = uiModeManager.getCurrentModeType();
+            if (whatIsDevice != Configuration.UI_MODE_TYPE_WATCH) {
+                new AsyncTask<Void, Void, Void>() {
+                    @Override
+                    protected Void doInBackground(Void... params) {
+                        bindRemotePlayerService();
+                        return null;
+                    }
+                }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            }
         }
     }
 
@@ -775,17 +804,27 @@ public class PlayerService extends Service {
     };
 
     private void bindRemotePlayerService() {
-        Log.v(TAG, "######## bindService(RemotePlayerService) ########");
-        Intent intent = new Intent();
-        ComponentName cn = new ComponentName(
-                "com.weidi.media.wdplayer",
-                "com.weidi.media.wdplayer.video_player.RemotePlayerService");
-        intent.setComponent(cn);
-        bindService(intent, mRemoteVideoConnection, Context.BIND_AUTO_CREATE);
+        if (!sBindRemotePlayerService) {
+            Log.v(TAG, "######## bindService(RemotePlayerService) ########");
+            Intent intent = new Intent();
+            ComponentName cn = new ComponentName(
+                    "com.weidi.media.wdplayer",
+                    "com.weidi.media.wdplayer.video_player.RemotePlayerService");
+            intent.setComponent(cn);
+            bindService(intent, mRemoteVideoConnection, Context.BIND_AUTO_CREATE);
+            sBindRemotePlayerService = true;
+        }
+    }
+
+    private void unbindRemotePlayerService() {
+        if (sBindRemotePlayerService) {
+            Log.v(TAG, "######## unbindService(RemotePlayerService) ########");
+            unbindService(mRemoteVideoConnection);
+            sBindRemotePlayerService = false;
+        }
     }
 
     private ServiceConnection mRemoteVideoConnection = new ServiceConnection() {
-
         public void onServiceConnected(ComponentName className, IBinder service) {
             Log.i(TAG, "onServiceConnected() " + className.getClassName());
             mRemoteVideoPlayer = IDmrPlayerApp.Stub.asInterface(service);
@@ -796,7 +835,6 @@ public class PlayerService extends Service {
             Log.i(TAG, "onServiceDisconnected() " + className.getClassName());
             mRemoteVideoPlayer = null;
         }
-
     };
 
 }

@@ -4817,7 +4817,7 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        // [>0] [>0] [>0] [60]
+        // [>0] [>0] [>0] [60/30/25]
         // isLive [0] [0] [0] [25] 正常(4K 1080P 720P)
         // isLive [0] [0] [0] [50] 不正常(video快)
         // isLive [0] [0] [0] [0]  不正常(video快)
