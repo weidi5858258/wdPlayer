@@ -306,7 +306,12 @@ public class PlayerWrapper {
     public static LinkedHashMap<String, String> mLocalVideoContentsMap;
     public static LinkedHashMap<String, String> mLocalAudioContentsMap;
     // 当mShuffle = Shuffle.Shuffle_On;时,保存已经播放过的文件
-    private ArrayList<Integer> mLocalContentsHasPlayedList;
+    private ArrayList<Integer> mLocalContentsHasPlayedVideoIndexList = new ArrayList<>();
+    private ArrayList<Integer> mLocalContentsHasPlayedAudioIndexList = new ArrayList<>();
+    private ArrayList<String> mLocalContentsHasPlayedVideoPathList = new ArrayList<>();
+    private ArrayList<String> mLocalContentsHasPlayedAudioPathList = new ArrayList<>();
+    private String mLocalVideoPath;
+    private String mLocalAudioPath;
     private Random mRandom;
 
     public enum Repeat {
@@ -1051,6 +1056,15 @@ public class PlayerWrapper {
         String newPath = mCurPath.toLowerCase();
         if (newPath.startsWith("/storage/")) {
             mIsLocal = true;
+            if (mCurPath.startsWith(mLocalVideoPath)) {
+                if (!mLocalContentsHasPlayedVideoPathList.contains(mCurPath)) {
+                    mLocalContentsHasPlayedVideoPathList.add(mCurPath);
+                }
+            } else if (mCurPath.startsWith(mLocalAudioPath)) {
+                if (!mLocalContentsHasPlayedAudioPathList.contains(mCurPath)) {
+                    mLocalContentsHasPlayedAudioPathList.add(mCurPath);
+                }
+            }
         } else {
             mIsLocal = false;
         }
@@ -1146,10 +1160,16 @@ public class PlayerWrapper {
         }
 
         LinkedHashMap<String, String> map = null;
+        ArrayList<Integer> indexList = null;
+        ArrayList<String> pathList = null;
         if (mIsVideo) {
             map = mLocalVideoContentsMap;
+            indexList = mLocalContentsHasPlayedVideoIndexList;
+            pathList = mLocalContentsHasPlayedVideoPathList;
         } else if (mIsAudio) {
             map = mLocalAudioContentsMap;
+            indexList = mLocalContentsHasPlayedAudioIndexList;
+            pathList = mLocalContentsHasPlayedAudioPathList;
         }
         if (map == null) {
             return false;
@@ -1226,28 +1246,34 @@ public class PlayerWrapper {
         // endregion
 
         // region mShuffle == Shuffle.Shuffle_On (随机播放)
-        if (mLocalContentsHasPlayedList == null)
-            mLocalContentsHasPlayedList = new ArrayList<>();
         if (mRandom == null)
             mRandom = new Random();
         int size = map.size();
         for (; ; ) {
             int randomNumber = mRandom.nextInt(size);
-            if (!mLocalContentsHasPlayedList.contains(randomNumber)) {
-                mLocalContentsHasPlayedList.add(randomNumber);
+            if (!indexList.contains(randomNumber)) {
+                indexList.add(randomNumber);
                 int index = -1;
+                boolean needBreak = false;
                 for (Map.Entry<String, String> tempMap : map.entrySet()) {
                     if (++index == randomNumber) {
                         mPrePath = mCurPath;
                         mCurPath = tempMap.getKey();
-                        getMD5ForPath();
+                        if (!pathList.contains(mCurPath)) {
+                            pathList.add(mCurPath);
+                            getMD5ForPath();
+                            needBreak = true;
+                        }
                         break;
                     }
                 }
-                break;
+                if (needBreak) {
+                    break;
+                }
             } else {
-                if (mLocalContentsHasPlayedList.size() >= size) {
-                    mLocalContentsHasPlayedList.clear();
+                if (indexList.size() >= size) {
+                    indexList.clear();
+                    pathList.clear();
                 }
             }
         }
@@ -3070,25 +3096,24 @@ public class PlayerWrapper {
             mPositionSeekBar.setProgress(target);
         }
 
-        if (mPresentationTime <= (mMediaDuration - 5)) {
+        if (mPresentationTime < (mMediaDuration - 5)) {
             mPathTimeMap.put(md5Path, mPresentationTime);
             if (mIsH264 && (mMediaDuration - mPresentationTime <= 1000000)) {
                 mPathTimeMap.remove(md5Path);
             }
         } else {
             // 正常结束就不需要播放了
-            Log.i(TAG, "onUpdated() 正常结束");
+            // Log.i(TAG, "onUpdated() 正常结束");
             mPrePath = null;
             if (mPathTimeMap.containsKey(md5Path)) {
                 mPathTimeMap.remove(md5Path);
             }
 
-            //if (mPresentationTime >= (mMediaDuration - 2)
-            if (mPresentationTime == mMediaDuration
+            if (mPresentationTime == (mMediaDuration - 5)
                     && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
-                Log.i(TAG, "onUpdated() MSG_RELEASE");
+                Log.d(TAG, "onUpdated() MSG_RELEASE");
                 mThreadHandler.removeMessages(MSG_RELEASE);
-                mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 1100);
+                mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
             }
         }
     }
@@ -3494,6 +3519,7 @@ public class PlayerWrapper {
                 // /storage/emulated/0/Movies/
                 // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
                 file = new File(sb.toString());
+                mLocalVideoPath = file.getAbsolutePath();
                 Log.i(TAG, "loadContents()      file: " + file.getAbsolutePath());
                 saveLocalFile("video", file);
 
@@ -3503,6 +3529,7 @@ public class PlayerWrapper {
                 // /storage/emulated/0/Music/
                 // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC);
                 file = new File(sb.toString());
+                mLocalAudioPath = file.getAbsolutePath();
                 Log.i(TAG, "loadContents()      file: " + file.getAbsolutePath());
                 saveLocalFile("audio", file);
             }

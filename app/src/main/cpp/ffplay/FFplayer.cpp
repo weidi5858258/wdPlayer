@@ -1990,18 +1990,16 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 goto display2;
             }
 
-            if (is->audio_stream < 0) {
-                if (!isLive) {
-                    curProgress = (long long) vp->pts;// 秒
-                    if (curProgress > preProgress) {
-                        if (curProgress <= media_duration) {
-                            onProgressUpdated(curProgress);
-                        } else {
-                            onProgressUpdated(media_duration);
-                        }
+            if (is->audio_stream < 0 && !isLive) {
+                curProgress = (long long) vp->pts;// 秒
+                if (curProgress > preProgress) {
+                    if (curProgress <= media_duration) {
+                        onProgressUpdated(curProgress);
+                    } else {
+                        onProgressUpdated(media_duration);
                     }
-                    preProgress = curProgress;
                 }
+                preProgress = curProgress;
             }
 
             if (video_refresh_log) {
