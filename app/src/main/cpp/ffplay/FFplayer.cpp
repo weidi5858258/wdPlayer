@@ -4191,20 +4191,20 @@ static void *read_thread(void *arg) {
         }
 
         /* check if packet is in play range specified by user, then queue, otherwise discard */
-        stream_start_time = ic->streams[pkt->stream_index]->start_time;
+        /*stream_start_time = ic->streams[pkt->stream_index]->start_time;
         pkt_ts = pkt->pts == AV_NOPTS_VALUE ? pkt->dts : pkt->pts;
         pkt_in_play_range =
                 duration == AV_NOPTS_VALUE ||
                 (pkt_ts - (stream_start_time != AV_NOPTS_VALUE ? stream_start_time : 0)) *
                 av_q2d(ic->streams[pkt->stream_index]->time_base) -
                 (double) (start_time != AV_NOPTS_VALUE ? start_time : 0) / 1000000
-                <= ((double) duration / 1000000);
+                <= ((double) duration / 1000000);*/
 
-        if (pkt->stream_index == is->audio_stream && pkt_in_play_range) {
+        if (pkt->stream_index == is->audio_stream/* && pkt_in_play_range*/) {
             packet_queue_put(&is->audioq, pkt);
         } else if (pkt->stream_index == is->video_stream
-                   && pkt_in_play_range
-                   && !(is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
+            /*&& pkt_in_play_range
+            && !(is->video_st->disposition & AV_DISPOSITION_ATTACHED_PIC)*/) {
             packet_queue_put(&is->videoq, pkt);
         } /*else if (pkt->stream_index == is->subtitle_stream && pkt_in_play_range) {
             packet_queue_put(&is->subtitleq, pkt);
