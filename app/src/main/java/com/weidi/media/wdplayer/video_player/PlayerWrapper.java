@@ -312,7 +312,7 @@ public class PlayerWrapper {
     private ArrayList<String> mLocalContentsHasPlayedAudioPathList = new ArrayList<>();
     private String mLocalVideoPath;
     private String mLocalAudioPath;
-    private Random mRandom;
+    private Random mRandom = new Random();
 
     public enum Repeat {
         Repeat_Off, Repeat_All, Repeat_One
@@ -959,8 +959,6 @@ public class PlayerWrapper {
             return;
         }
 
-        if (mRandom == null)
-            mRandom = new Random();
         if (mColorsHasUsedList == null)
             mColorsHasUsedList = new ArrayList<>();
 
@@ -1246,8 +1244,6 @@ public class PlayerWrapper {
         // endregion
 
         // region mShuffle == Shuffle.Shuffle_On (随机播放)
-        if (mRandom == null)
-            mRandom = new Random();
         int size = map.size();
         for (; ; ) {
             int randomNumber = mRandom.nextInt(size);
