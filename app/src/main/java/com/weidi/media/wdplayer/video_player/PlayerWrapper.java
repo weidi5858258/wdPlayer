@@ -3423,6 +3423,12 @@ public class PlayerWrapper {
         mIptvContentsMap.clear();
         mMenFavoriteContentsMap.clear();
 
+        /***
+         mContext.getExternalFilesDirs(Environment.DIRECTORY_PICTURES);
+         /storage/emulated/0/Android/data/com.sony.dtv.smartmediaapp/files/Pictures
+         /storage/3670-C58C/Android/data/com.sony.dtv.smartmediaapp/files/Pictures
+         /storage/37C8-3904/Android/data/com.sony.dtv.smartmediaapp/files/Pictures
+         */
         File[] files = mContext.getExternalFilesDirs(Environment.MEDIA_SHARED);
         if (files == null) {
             Log.e(TAG, "loadContents() files is null");
