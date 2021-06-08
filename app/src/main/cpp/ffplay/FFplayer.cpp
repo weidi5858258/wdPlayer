@@ -1514,18 +1514,24 @@ static void stream_component_close(VideoState *is, int stream_index) {
 static void stream_close(VideoState *is) {
     LOGI("stream_close() start\n");
     /* XXX: use a special url_shutdown call to abort parse cleanly */
+    if (!is) {
+        return;
+    }
+
     is->abort_request = 1;
     is->videoq.abort_request = 1;
     is->audioq.abort_request = 1;
     is->subtitleq.abort_request = 1;
 
     if (is->video_stream >= 0) {
+        LOGI("stream_close() video decoder_abort 1\n");
         decoder_abort(&is->viddec, &is->pictq);
-        decoder_destroy(&is->viddec);
+        LOGI("stream_close() video decoder_abort 2\n");
     }
     if (is->audio_stream >= 0) {
+        LOGI("stream_close() audio decoder_abort 1\n");
         decoder_abort(&is->auddec, &is->sampq);
-        decoder_destroy(&is->auddec);
+        LOGI("stream_close() audio decoder_abort 2\n");
     }
 
     LOGI("stream_close() while start\n");
@@ -1536,14 +1542,20 @@ static void stream_close(VideoState *is) {
 
     /* close each stream */
     if (is->video_stream >= 0) {
-        LOGI("stream_component_close() video start\n");
+        LOGI("stream_close() video decoder_destroy 1\n");
+        decoder_destroy(&is->viddec);
+        LOGI("stream_close() video decoder_destroy 2\n");
+        LOGI("stream_close() video stream_component_close 1\n");
         stream_component_close(is, is->video_stream);
-        LOGI("stream_component_close() video end\n");
+        LOGI("stream_close() video stream_component_close 2\n");
     }
     if (is->audio_stream >= 0) {
-        LOGI("stream_component_close() audio start\n");
+        LOGI("stream_close() audio decoder_destroy 1\n");
+        decoder_destroy(&is->auddec);
+        LOGI("stream_close() audio decoder_destroy 2\n");
+        LOGI("stream_close() audio stream_component_close 1\n");
         stream_component_close(is, is->audio_stream);
-        LOGI("stream_component_close() audio end\n");
+        LOGI("stream_close() audio stream_component_close 2\n");
     }
     if (is->subtitle_stream >= 0) {
         stream_component_close(is, is->subtitle_stream);

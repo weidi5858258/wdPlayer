@@ -86,5 +86,29 @@
             android:textColor="@color/white"
             android:textSize="18sp" />
 
+        <Button
+            android:id="@+id/test_start_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="Test_Start"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/test_stop_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="Test_Stop"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
     </LinearLayout>
 </ScrollView>

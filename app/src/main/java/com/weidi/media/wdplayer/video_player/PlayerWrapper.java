@@ -24,6 +24,7 @@ import android.graphics.PixelFormat;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.AsyncTask;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
@@ -67,9 +68,11 @@ import com.weidi.media.wdplayer.util.NotificationUtil;
 import com.weidi.utils.MyToast;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -81,6 +84,9 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import androidx.core.content.ContextCompat;
 
@@ -96,6 +102,8 @@ import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_OFF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ONE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_OFF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_ON;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_TEST_START;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_TEST_STOP;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_MUTE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
@@ -160,6 +168,7 @@ public class PlayerWrapper {
     private static final int MSG_ADD_VIEW = 20;
     private static final int MSG_SCREEN_BRIGHT_WAKE_LOCK = 21;
     private static final int MSG_RELEASE = 22;
+    private static final int MSG_TEST_SIGNAL = 23;
 
     private HashMap<String, Long> mPathTimeMap = new HashMap<>();
     private ArrayList<String> mCouldPlaybackPathList = new ArrayList<>();
@@ -1603,6 +1612,14 @@ public class PlayerWrapper {
                     mWdPlayer.release();
                 }
                 break;
+            case MSG_TEST_SIGNAL: {
+                testSignal();
+                break;
+            }
+            case BUTTON_CLICK_TEST_STOP: {
+                stopTest();
+                break;
+            }
             default:
                 break;
         }
@@ -1717,6 +1734,7 @@ public class PlayerWrapper {
         mWdPlayer.setDataSource(mCurPath);
         mWdPlayer.setSurface(mSurfaceHolder.getSurface());
         if (!mWdPlayer.prepareSync()) {
+            Log.e(TAG, "startPlayback() prepareSync failed");
             return;
         }
 
@@ -1727,6 +1745,11 @@ public class PlayerWrapper {
         // startForeground();
 
         mWdPlayer.start();
+
+        if (mIsTesting) {
+            mThreadHandler.removeMessages(MSG_TEST_SIGNAL);
+            mThreadHandler.sendEmptyMessageDelayed(MSG_TEST_SIGNAL, 5000);
+        }
         Log.d(TAG, "startPlayback() end");
     }
 
@@ -2953,11 +2976,11 @@ public class PlayerWrapper {
         stopForeground();
 
         if (mHasError) {
-            Log.i(TAG, "onFinished() restart playback");
             switch (mErrorCode) {
                 case Callback.ERROR_TIME_OUT:
                 case Callback.ERROR_MEDIA_CODEC:
                 case Callback.ERROR_TIME_DIFFERENCE:
+                    Log.i(TAG, "onFinished() restart playback");
                     if (mErrorCode == Callback.ERROR_TIME_OUT) {
                         mHasError = false;
                     }
@@ -2966,6 +2989,11 @@ public class PlayerWrapper {
                     mUiHandler.sendEmptyMessage(MSG_ADD_VIEW);
                     break;
                 case Callback.ERROR_FFMPEG_INIT:
+                    if (mIsTesting) {
+                        mHasTestError = true;
+                        mThreadHandler.removeMessages(MSG_TEST_SIGNAL);
+                        mThreadHandler.sendEmptyMessageDelayed(MSG_TEST_SIGNAL, 5000);
+                    }
                     break;
                 default:
                     break;
@@ -3458,6 +3486,7 @@ public class PlayerWrapper {
 
         // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared
         Log.i(TAG, "Environment.MEDIA_SHARED: " + file.getAbsolutePath());
+        testTargetPath = file.getAbsolutePath();
 
         // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/contents.txt
         StringBuilder sb = new StringBuilder();
@@ -3479,6 +3508,7 @@ public class PlayerWrapper {
         sb.append("/");
         sb.append("iptv.url");
         contentsFile = new File(sb.toString());
+        testTargetPath2 = contentsFile.getAbsolutePath();
         if (contentsFile.exists()) {
             readContents(contentsFile, mIptvContentsMap);
         } else {
@@ -3486,6 +3516,12 @@ public class PlayerWrapper {
                 readContents(contentsFile, mIptvContentsMap);
             }
         }
+
+        sb.delete(0, sb.length());
+        sb.append(file.getAbsolutePath());
+        sb.append("/");
+        sb.append("test.url");
+        testTargetPath1 = sb.toString();
 
         if (IS_PHONE || IS_WATCH) {
             sb.delete(0, sb.length());
@@ -3799,6 +3835,24 @@ public class PlayerWrapper {
                 buttonClickForShuffleOn();
                 break;
 
+            case BUTTON_CLICK_TEST_START: {
+                if (!mIsTesting) {
+                    new AsyncTask<Void, Void, Void>() {
+                        @Override
+                        protected Void doInBackground(Void... params) {
+                            startTest();
+                            return null;
+                        }
+                    }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                }
+                break;
+            }
+            case BUTTON_CLICK_TEST_STOP: {
+                mThreadHandler.removeMessages(BUTTON_CLICK_TEST_STOP);
+                mThreadHandler.sendEmptyMessageDelayed(BUTTON_CLICK_TEST_STOP, 3000);
+                break;
+            }
+
             case DO_SOMETHING_EVENT_IS_RUNNING:
                 if (mWdPlayer != null && mWdPlayer.isRunning()) {
                     return true;
@@ -4093,6 +4147,166 @@ public class PlayerWrapper {
             sb.append(tmp);
         }
         return sb.toString();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////
+
+    // 目的: 把有用的地址挑出来
+    private final Lock testLock = new ReentrantLock();
+    private final Condition testCondition = testLock.newCondition();
+    private ArrayList<String> availablePathList = new ArrayList<>();
+    private boolean mIsTesting = false;
+    private boolean mHasTestError = false;
+    // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared
+    private String testTargetPath;
+    // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/test.url
+    private String testTargetPath1;
+    // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/iptv.url
+    private String testTargetPath2;
+
+    private void testAwait() {
+        testLock.lock();
+        try {
+            testCondition.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        testLock.unlock();
+    }
+
+    private void testSignal() {
+        testLock.lock();
+        testCondition.signal();
+        testLock.unlock();
+    }
+
+    private void startTest() {
+        if (mIsTesting
+                || TextUtils.isEmpty(testTargetPath1)
+                || TextUtils.isEmpty(testTargetPath2)) {
+            return;
+        }
+
+        Log.i(TAG, "startTest() start");
+        ArrayList<String> tempList = new ArrayList<>();
+        availablePathList.clear();
+        mIsTesting = true;
+        final String TAG1 = "@@@@@@@@@@";
+        final String TAG2 = "#EXTINF:-1 ,";
+
+        BufferedReader reader = null;
+        try {
+            reader = new BufferedReader(new FileReader(testTargetPath1));
+            String aLineContent = null;
+            String[] contents = null;
+            String key = null;// 视频地址
+            String value = null;
+            boolean toDoIt = false;
+            //一次读一行，读入null时文件结束
+            while (mIsTesting && ((aLineContent = reader.readLine()) != null)) {
+                toDoIt = false;
+                if (aLineContent.length() == 0) {
+                    continue;
+                }
+
+                aLineContent = aLineContent.trim();
+
+                if (aLineContent.contains(TAG1)
+                        && !aLineContent.startsWith("#")
+                        && !aLineContent.startsWith("//")) {
+                    contents = aLineContent.split(TAG1);
+                    key = contents[0];
+                    //value = contents[1];
+                    value = aLineContent;
+                    if (contents.length > 1) {
+                        toDoIt = true;
+                        tempList.add(value);
+                    }
+                } else {
+                    if (aLineContent.startsWith(TAG2)) {
+                        key = null;
+                        //value = aLineContent.substring(TAG2.length(), aLineContent.length());
+                        value = aLineContent;
+                    } else if (aLineContent.startsWith("http://")
+                            || aLineContent.startsWith("https://")
+                            || aLineContent.startsWith("rtmp://")
+                            || aLineContent.startsWith("rtsp://")) {
+                        key = aLineContent;
+                    } else {
+                        key = null;
+                        value = null;
+                    }
+                    if (!TextUtils.isEmpty(key) && !TextUtils.isEmpty(value)) {
+                        toDoIt = true;
+                        tempList.add(value);
+                        tempList.add(key);
+                    }
+                }
+
+                if (toDoIt) {
+                    setDataSource(key);
+
+                    testAwait();
+
+                    if (!mHasTestError) {
+                        for (String path : tempList) {
+                            availablePathList.add(path);
+                            Log.i(TAG, "startTest() : " + path);
+                        }
+                    }
+                    mHasTestError = false;
+                    tempList.clear();
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e1) {
+                }
+            }
+        }
+        Log.i(TAG, "startTest() end");
+    }
+
+    private void stopTest() {
+        mIsTesting = false;
+        mHasTestError = false;
+        testSignal();
+
+        if (availablePathList.isEmpty()) {
+            return;
+        }
+
+        BufferedWriter writer = null;
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(testTargetPath);
+            sb.append("/");
+            sb.append("temp_test.url");
+            writer = new BufferedWriter(new FileWriter(sb.toString(), true));
+            for (String path : availablePathList) {
+                writer.newLine();
+                writer.write(path);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (writer != null) {
+                try {
+                    writer.flush();
+                } catch (IOException e) {
+                }
+                try {
+                    writer.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+
+        availablePathList.clear();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////

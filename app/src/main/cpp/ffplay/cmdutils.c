@@ -2128,9 +2128,9 @@ AVDictionary *filter_codec_opts(AVDictionary *opts, enum AVCodecID codec_id,
 AVDictionary **setup_find_stream_info_opts(AVFormatContext *s,
                                            AVDictionary *codec_opts) {
     LOGI("cmdutils_setup_find_stream_info_opts()\n");
-    if (codec_opts == NULL) {
+    /*if (codec_opts == NULL) {
         LOGE("cmdutils_setup_find_stream_info_opts() codec_opts is NULL\n");
-    }
+    }*/
     int i;
     AVDictionary **opts;
 

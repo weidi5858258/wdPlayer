@@ -60,6 +60,8 @@ import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_OFF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_REPEAT_ONE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_OFF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_SHUFFLE_ON;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_TEST_START;
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_TEST_STOP;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_MUTE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_VOLUME_NORMAL;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DURATION;
@@ -413,6 +415,8 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.use_local_player_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.use_remote_player_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.mc_switch).setOnClickListener(mOnClickListener);
+        findViewById(R.id.test_start_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.test_stop_btn).setOnClickListener(mOnClickListener);
 
         if (IS_TV) {
             setTvView();
@@ -743,6 +747,20 @@ public class MainActivity extends AppCompatActivity {
                     sp.edit().putInt(HARD_SOLUTION, 0).commit();
                 }
                 break;
+            case R.id.test_start_btn: {
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_TEST_START,
+                        null);
+                break;
+            }
+            case R.id.test_stop_btn: {
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        BUTTON_CLICK_TEST_STOP,
+                        null);
+                break;
+            }
             default:
                 break;
         }
