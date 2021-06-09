@@ -3915,9 +3915,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 }
 
 static int decode_interrupt_cb(void *ctx) {
-    /*if (!isLocal && !isStarted && ((av_gettime_relative() - startTime) > MAX_RELATIVE_TIME)) {
+    if (!isStarted && ((av_gettime_relative() - startTime) > MAX_RELATIVE_TIME)) {
         return 1;
-    }*/
+    }
 
     VideoState *is = static_cast<VideoState *>(ctx);
     return is->abort_request;
@@ -4265,11 +4265,16 @@ static int create_avformat_context(void *arg) {
         av_dict_set(&format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
         scan_all_pmts_set = 1;
     }
+    // 设置udp,http超时,30秒
+    av_dict_set(&format_opts, "timeout", "30000000", 0);
+    // 设置rtsp超时,30秒
+    av_dict_set(&format_opts, "rtsp_transport", "tcp", 0); // 设置tcp
+    av_dict_set(&format_opts, "rtsp_transport", "udp", 0); // 设置udp
+    av_dict_set(&format_opts, "stimeout", "30000000", 0);
     LOGI("create_avformat_context() avformat_open_input\n");
     // 网络不好时,这个函数
     startTime = av_gettime_relative();
     ret = avformat_open_input(&avFormatContext, is->filename, is->iformat, &format_opts);
-    //ret = avformat_open_input(&avFormatContext, is->filename, nullptr, nullptr);
     endTime = av_gettime_relative();
     LOGD("create_avformat_context() avformat_open_input: %lld ms\n",
          (long long) ((endTime - startTime) / 1000));// 单位: ms

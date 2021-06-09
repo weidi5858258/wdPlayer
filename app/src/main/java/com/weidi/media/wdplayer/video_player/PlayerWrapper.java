@@ -871,6 +871,7 @@ public class PlayerWrapper {
 
     public void removeView(boolean needToRemoveCallback) {
         Log.i(TAG, "removeView() mIsAddedView: " + mIsAddedView);
+        Log.d(TAG, "removeView() mPrePath = null");
         mPrePath = null;
         if (mIsAddedView) {
             mIsAddedView = false;
@@ -1735,6 +1736,9 @@ public class PlayerWrapper {
         mWdPlayer.setSurface(mSurfaceHolder.getSurface());
         if (!mWdPlayer.prepareSync()) {
             Log.e(TAG, "startPlayback() prepareSync failed");
+            mHasTestError = true;
+            mThreadHandler.removeMessages(MSG_TEST_SIGNAL);
+            mThreadHandler.sendEmptyMessageDelayed(MSG_TEST_SIGNAL, 5000);
             return;
         }
 
@@ -3025,7 +3029,7 @@ public class PlayerWrapper {
                 mUiHandler.removeMessages(MSG_CHANGE_COLOR);
                 mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
             } else if (toastInfo.contains("AVERROR_EOF")) {
-                Log.i(TAG, "inInfo() mPrePath = null");
+                Log.d(TAG, "inInfo() mPrePath = null");
                 mPrePath = null;
             } else {
                 MyToast.show(toastInfo);
@@ -3128,6 +3132,7 @@ public class PlayerWrapper {
         } else {
             // 正常结束就不需要播放了
             // Log.i(TAG, "onUpdated() 正常结束");
+            Log.d(TAG, "onUpdated() mPrePath = null");
             mPrePath = null;
             if (mPathTimeMap.containsKey(md5Path)) {
                 mPathTimeMap.remove(md5Path);
@@ -4184,6 +4189,7 @@ public class PlayerWrapper {
         if (mIsTesting
                 || TextUtils.isEmpty(testTargetPath1)
                 || TextUtils.isEmpty(testTargetPath2)) {
+            Log.i(TAG, "startTest() return");
             return;
         }
 
@@ -4269,6 +4275,8 @@ public class PlayerWrapper {
             }
         }
         Log.i(TAG, "startTest() end");
+
+        stopTest();
     }
 
     private void stopTest() {

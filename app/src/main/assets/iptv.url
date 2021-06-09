@@ -919,8 +919,6 @@ http://file.xsbnrtv.cn/vms/videos/nmip-media/channellive/channel3/playlist.m3u8
 http://stream01.dqtv123.com:1935/live/xinwenzonghe.stream/playlist.m3u8
 #EXTINF:-1 ,云南普洱综合台
 http://hwzbout.yunshicloud.com/701aec/orx377.m3u8
-#EXTINF:-1 ,云南马关电视台
-http://m3u8.channel.wsrtv.com.cn/cms/videos/nmip-media/channellive/channel12/playlist.m3u8
 #EXTINF:-1 ,云南麻栗坡电视
 http://m3u8.channel.wsrtv.com.cn/cms/videos/nmip-media/channellive/channel18/playlist.m3u8
 #EXTINF:-1 ,云南国际
@@ -1069,8 +1067,6 @@ http://live.aikan.miguvideo.com/PLTV/88888888/224/3221229316/index.m3u8
 http://112.17.40.145/PLTV/88888888/224/3221226181/index.m3u8
 #EXTINF:-1 ,杭州影视FHD
 http://hms24nc1972679559.live.aikan.miguvideo.com/wh7f454c46tw4264175370_127639391/PLTV/88888888/224/3221229377/index.m3u8?icpid=88888888&RTS=1598530962&from=2&hms_devid=24&online=1598530962
-#EXTINF:-1 ,九寨沟新闻综合
-http://111.231.194.231:85/live/xwzh_500k.m3u8
 #EXTINF:-1 ,壤塘综合频道
 http://118.122.239.157:1236/hls/hd-live.m3u8
 #EXTINF:-1 ,西青新闻综合
@@ -1179,8 +1175,6 @@ http://stream2.liveyun.hoge.cn/YATV1/sd/live.m3u8
 http://stream2.liveyun.hoge.cn/YATV2/sd/live.m3u8
 #EXTINF:-1 ,阿坝综合
 http://118.122.239.157:1234/hls/hd-live.m3u8
-#EXTINF:-1 ,九寨沟旅游资讯
-http://111.231.194.231:85/live/lyzx_500k.m3u8
 #EXTINF:-1 ,昭化综合
 http://60.255.230.66:3100/hls/vxsqwmob/index.m3u8
 #EXTINF:-1 ,滨海新闻
@@ -1255,8 +1249,6 @@ http://hbxx.chinashadt.com:3299/live/stream%3Adi8.stream_360p/chunklist.m3u8
 http://223.110.245.153/ott.js.chinamobile.com/PLTV/3/224/3221226939/index.m3u8
 #EXTINF:-1 ,萍乡教育频道
 http://www.pxitv.com:8099/hls-live/livepkgr/_definst_/pxitvevent/pxtv2stream.m3u8
-#EXTINF:-1 ,赤峰综合频道
-http://vfile.cfrtv.cn/2017/1484/6248/0267/148462480267.ssm/148462480267.m3u8
 #EXTINF:-1 ,重庆影视
 http://219.153.252.50/PLTV/88888888/224/3221225633/chunklist.m3u8
 #EXTINF:-1 ,重庆都市
@@ -1625,8 +1617,6 @@ http://video.blivenyc.com/broadcast/prod/2061/22/file-3192k.m3u8
 http://liveproduseast.akamaized.net/us/Channel-USTV-AWS-virginia-1/Source-USTV-1000-1_live.m3u8
 #EXTINF:-1 ,美国Cheddar电视
 https://live.chdrstatic.com/cheddar/primary/4.m3u8
-#EXTINF:-1 ,美国CSBN
-https://cbsnhls-i.akamaihd.net/hls/live/264710/cbsn_hlsprod_2/master_360.m3u8
 #EXTINF:-1 ,美国购物QVC TV HD UK
 http://live.qvcuk.simplestreamcdn.com/live/qvcuk_main_clean/bitrate1.isml/3/prog_index.m3u8
 #EXTINF:-1 ,美国购物QVC Beauty TV HD UK
@@ -1653,12 +1643,6 @@ http://dmisvthvll.cdn.mangomolo.com/events/smil:events.smil/chunklist_b1600000.m
 http://dmieigthvll.cdn.mangomolo.com/samadubai/smil:samadubai.stream.smil/chunklist_b1600000.m3u8
 #EXTINF:-1 ,越南越南
 http://antvlive.ab5c6921.cdnviet.com/antv/chunklist.m3u8
-#EXTINF:-1 ,以色列1
-https://kanlivep2event-i.akamaihd.net/hls/live/747600/747600/master.m3u8
-#EXTINF:-1 ,以色列2
-https://dvr.ch20-cdnwiz.com/mobilehls/dvr.m3u8
-#EXTINF:-1 ,以色列4
-http://rtb-channel.glue.live/smil:rtb1/playlist_sleng.m3u8
 #EXTINF:-1 ,澳大利亚赛马网
 https://racingvic-i.akamaized.net/hls/live/598695/racingvic/268.m3u8
 #EXTINF:-1 ,全美電視
@@ -1707,8 +1691,6 @@ http://cdn1.live-tv.od.ua:8081/bbb/bbbtv-abr/bbb/bbbtv-720p/playlist.m3u8
 https://liveprodeuwest.akamaized.net/eu1/Channel-EUTVqvs-AWS-ireland-1/Source-EUTVqvs-700-1_live.m3u8
 #EXTINF:-1 ,California Music Channel
 https://cmctv.ios.internapcdn.net/cmctv_vitalstream_com/live_1/CMC-TV/master.m3u8
-#EXTINF:-1 ,CBSN HD
-https://cbsnhls-i.akamaihd.net/hls/live/264710/cbsn_hlsprod_2/master_700.m3u8
 #EXTINF:-1 ,Classique TV
 http://stmv3.srvstm.com/classique/classique/playlist.m3u8
 #EXTINF:-1 ,CMC TV
@@ -1717,8 +1699,6 @@ http://cmctv.ios.internapcdn.net/cmctv_vitalstream_com/live_1/CMC-TV/CMC-TV.m3u8
 http://w4.mostvideo.tv/heltv/ch2.m3u8
 #EXTINF:-1 ,Music Box (SK)
 http://80.94.54.42/tvnasa/stream/playlist.m3u8
-#EXTINF:-1 ,MUSIC JAPAN
-http://122.155.180.8:5021/live/495
 #EXTINF:-1 ,Music Top
 http://live-edge01.telecentro.net.ar/live/smil:musictop.smil/chunklist_w538311571_b364000_sleng.m3u8
 #EXTINF:-1 ,Music Top | HD
