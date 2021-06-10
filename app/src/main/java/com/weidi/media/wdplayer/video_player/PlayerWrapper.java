@@ -1736,9 +1736,11 @@ public class PlayerWrapper {
         mWdPlayer.setSurface(mSurfaceHolder.getSurface());
         if (!mWdPlayer.prepareSync()) {
             Log.e(TAG, "startPlayback() prepareSync failed");
-            mHasTestError = true;
-            mThreadHandler.removeMessages(MSG_TEST_SIGNAL);
-            mThreadHandler.sendEmptyMessageDelayed(MSG_TEST_SIGNAL, 5000);
+            if (mIsTesting) {
+                mHasTestError = true;
+                mThreadHandler.removeMessages(MSG_TEST_SIGNAL);
+                mThreadHandler.sendEmptyMessageDelayed(MSG_TEST_SIGNAL, 5000);
+            }
             return;
         }
 
@@ -3131,18 +3133,18 @@ public class PlayerWrapper {
             }
         } else {
             // 正常结束就不需要播放了
-            // Log.i(TAG, "onUpdated() 正常结束");
-            Log.d(TAG, "onUpdated() mPrePath = null");
-            mPrePath = null;
-            if (mPathTimeMap.containsKey(md5Path)) {
-                mPathTimeMap.remove(md5Path);
-            }
-
-            if (mPresentationTime == (mMediaDuration - 5)
-                    && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
-                Log.d(TAG, "onUpdated() MSG_RELEASE");
-                mThreadHandler.removeMessages(MSG_RELEASE);
-                mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
+            if (!mIsTesting) {
+                Log.d(TAG, "onUpdated() mPrePath = null");
+                mPrePath = null;
+                if (mPresentationTime == (mMediaDuration - 5)
+                        && TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                    Log.d(TAG, "onUpdated() MSG_RELEASE");
+                    if (mPathTimeMap.containsKey(md5Path)) {
+                        mPathTimeMap.remove(md5Path);
+                    }
+                    mThreadHandler.removeMessages(MSG_RELEASE);
+                    mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
+                }
             }
         }
     }
@@ -4162,10 +4164,13 @@ public class PlayerWrapper {
     private ArrayList<String> availablePathList = new ArrayList<>();
     private boolean mIsTesting = false;
     private boolean mHasTestError = false;
+
     // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared
     private String testTargetPath;
+
     // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/test.url
     private String testTargetPath1;
+
     // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/iptv.url
     private String testTargetPath2;
 
@@ -4185,6 +4190,13 @@ public class PlayerWrapper {
         testLock.unlock();
     }
 
+    /***
+     /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/test.url
+     --->
+     availablePathList
+     --->
+     /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/temp_test.url
+     */
     private void startTest() {
         if (mIsTesting
                 || TextUtils.isEmpty(testTargetPath1)
@@ -4194,11 +4206,11 @@ public class PlayerWrapper {
         }
 
         Log.i(TAG, "startTest() start");
-        ArrayList<String> tempList = new ArrayList<>();
         availablePathList.clear();
         mIsTesting = true;
         final String TAG1 = "@@@@@@@@@@";
         final String TAG2 = "#EXTINF:-1 ,";
+        ArrayList<String> tempList = new ArrayList<>();
 
         BufferedReader reader = null;
         try {
@@ -4264,6 +4276,10 @@ public class PlayerWrapper {
                     tempList.clear();
                 }
             }
+            aLineContent = null;
+            contents = null;
+            key = null;
+            value = null;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -4273,18 +4289,25 @@ public class PlayerWrapper {
                 } catch (IOException e1) {
                 }
             }
+            reader = null;
         }
+        tempList = null;
         Log.i(TAG, "startTest() end");
 
         stopTest();
+
+        mThreadHandler.removeMessages(MSG_RELEASE);
+        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 60000);
     }
 
     private void stopTest() {
+        Log.i(TAG, "stopTest() start");
         mIsTesting = false;
         mHasTestError = false;
         testSignal();
 
         if (availablePathList.isEmpty()) {
+            Log.i(TAG, "stopTest() return");
             return;
         }
 
@@ -4296,9 +4319,10 @@ public class PlayerWrapper {
             sb.append("temp_test.url");
             writer = new BufferedWriter(new FileWriter(sb.toString(), true));
             for (String path : availablePathList) {
-                writer.newLine();
                 writer.write(path);
+                writer.newLine();
             }
+            sb = null;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -4312,9 +4336,11 @@ public class PlayerWrapper {
                 } catch (IOException e) {
                 }
             }
+            writer = null;
         }
 
         availablePathList.clear();
+        Log.i(TAG, "stopTest() end");
     }
 
     ////////////////////////////////////////////////////////////////////////////////////
