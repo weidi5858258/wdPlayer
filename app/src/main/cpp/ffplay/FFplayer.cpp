@@ -4837,8 +4837,10 @@ static void *video_play(void *arg) {
         // isLive [0] [0] [0] [50] 不正常(video快)
         // isLive [0] [0] [0] [0]  不正常(video快)
         test_remaining_time = 0.0000001;
-        if (bit_rate > 0 && bit_rate_video >= 0 && frame_rate >= 45) {
-            test_remaining_time = 0.0;
+        if (bit_rate > 0 && bit_rate_video >= 0) {
+            if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
+                test_remaining_time = 0.0;
+            }
         } else if (isLive && bit_rate == 0 && bit_rate_video == 0) {
             if (frame_rate >= 45) {
                 test_remaining_time = 0.0811144358;// ?
