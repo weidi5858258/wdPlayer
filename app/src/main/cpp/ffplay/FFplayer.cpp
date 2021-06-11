@@ -4843,7 +4843,8 @@ static void *video_play(void *arg) {
             }
         } else if (isLive && bit_rate == 0 && bit_rate_video == 0) {
             if (frame_rate >= 45) {
-                test_remaining_time = 0.0811144358;// ?
+                test_remaining_time = 0.081114435833333;// 快
+                test_remaining_time = 0.081114435844444;// 慢
             } else if (frame_rate == 0) {
                 test_remaining_time = 0.052335999899;// ?
             }
