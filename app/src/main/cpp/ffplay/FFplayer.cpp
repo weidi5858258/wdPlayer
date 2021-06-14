@@ -450,6 +450,11 @@ static int audio_packets = 0;
 static int subtitle_packets = 0;
 static bool isStarted = false;
 static bool isFinished = false;
+//static bool read_thread_finish = false;
+//static bool audio_thread_finish = false;
+//static bool video_thread_finish = false;
+//static bool audio_play_finish = false;
+//static bool video_play_finish = false;
 extern pthread_mutex_t readLockMutex;
 extern pthread_cond_t readLockCondition;
 extern bool runOneTime;
@@ -4832,10 +4837,11 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        // [>0] [>0] [>0] [60/30/25]
-        // isLive [0] [0] [0] [25] 正常(4K 1080P 720P)
-        // isLive [0] [0] [0] [50] 不正常(video快)
-        // isLive [0] [0] [0] [0]  不正常(video快)
+        //        [>0] [>=0] [] [60/30/29/25/24/23/15/10]
+        // isLive [0] [0] [] [30] 正常(640*360)
+        // isLive [0] [0] [] [25] 正常(4K 1080P 720P 1024*576 960*540 720*576 640*480)
+        // isLive [0] [0] [] [50] 不正常(video快)
+        // isLive [0] [0] [] [0]  不正常(浙江绍兴公共台 江苏连云港综合 江苏连云港公共)
         test_remaining_time = 0.0000001;
         if (bit_rate > 0 && bit_rate_video >= 0) {
             if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
