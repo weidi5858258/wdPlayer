@@ -3192,6 +3192,10 @@ static void *video_thread_mc(void *arg) {
         }
 
         // region
+        if (pkt.size <= 0) {
+            av_packet_unref(&pkt);
+            continue;
+        }
         feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
                 d->queue->serial,
@@ -4837,10 +4841,10 @@ static void *video_play(void *arg) {
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
-        //        [>0] [>=0] [] [60/30/29/25/24/23/15/10]
-        // isLive [0] [0] [] [30] 正常(640*360)
-        // isLive [0] [0] [] [25] 正常(4K 1080P 720P 1024*576 960*540 720*576 640*480)
-        //        [0] [0] [] [23] 正常(1920*816)
+        // 4K 1080P 720P 1920*816 1280*536 1024*576 960*540 720*576 640*480
+        //        [>0] [>=0] [] [60/30/29/25/24/23/15/10] 正常
+        //        [0] [0] [] [25/24/23] 正常
+        // isLive [0] [0] [] [30/25] 正常
         // isLive [0] [0] [] [50] 不正常(video快)
         // isLive [0] [0] [] [0]  不正常(浙江绍兴公共台 江苏连云港综合 江苏连云港公共)
         test_remaining_time = 0.0000001;

@@ -12,6 +12,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/dimen_16_dp"
         android:orientation="vertical">
 
         <FrameLayout
@@ -59,6 +60,42 @@
             android:layout_marginEnd="@dimen/dimen_16_dp"
             android:layout_marginTop="@dimen/dimen_16_dp"
             android:text="GO"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/full_screen_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="Full Screen"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/width_screen_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="Width Screen"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/min_screen_btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/click_selector"
+            android:layout_marginStart="@dimen/dimen_16_dp"
+            android:layout_marginEnd="@dimen/dimen_16_dp"
+            android:layout_marginTop="@dimen/dimen_16_dp"
+            android:text="Min Screen"
             android:textColor="@color/white"
             android:textSize="18sp" />
 

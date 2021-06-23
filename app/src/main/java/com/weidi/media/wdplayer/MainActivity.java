@@ -68,6 +68,8 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DU
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_MIN_SCREEN;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_WIDTH_SCREEN;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.NEED_SHOW_CACHE_PROGRESS;
 import static com.weidi.media.wdplayer.Constants.NEED_SHOW_MEDIA_INFO;
@@ -298,9 +300,6 @@ public class MainActivity extends AppCompatActivity {
                 //super.handleMessage(msg);
 
                 SharedPreferences sp = null;
-                /*if (clickCounts > 5) {
-                    clickCounts = 5;
-                }*/
                 switch (clickCounts) {
                     case 1:
                         break;
@@ -391,13 +390,14 @@ public class MainActivity extends AppCompatActivity {
                         //finish();
                         break;
                     }
-                    case 20:
+                    case 20: {
                         if (IS_PHONE) {
                             startActivity(
                                     new Intent(MainActivity.this,
                                             LiveActivityForMenFavorite.class));
                         }
                         break;
+                    }
                     default:
                         break;
                 }
@@ -412,6 +412,9 @@ public class MainActivity extends AppCompatActivity {
         view.requestFocus();
         view.setOnClickListener(mOnClickListener);
         findViewById(R.id.playback_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.full_screen_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.width_screen_btn).setOnClickListener(mOnClickListener);
+        findViewById(R.id.min_screen_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.use_local_player_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.use_remote_player_btn).setOnClickListener(mOnClickListener);
         findViewById(R.id.mc_switch).setOnClickListener(mOnClickListener);
@@ -699,7 +702,7 @@ public class MainActivity extends AppCompatActivity {
                 mUiHandler.removeMessages(1);
                 mUiHandler.sendEmptyMessageDelayed(1, 1000);
                 break;
-            case R.id.playback_btn:
+            case R.id.playback_btn: {
                 String mediaPath = null;
                 String mediaType = null;
                 if (mAddressET != null && mAddressET.getVisibility() == View.VISIBLE) {
@@ -731,6 +734,27 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 break;
+            }
+            case R.id.full_screen_btn: {
+                clickCounts = 4;
+                mUiHandler.removeMessages(1);
+                mUiHandler.sendEmptyMessageDelayed(1, 1000);
+                break;
+            }
+            case R.id.width_screen_btn: {
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        DO_SOMETHING_EVENT_WIDTH_SCREEN,
+                        null);
+                break;
+            }
+            case R.id.min_screen_btn: {
+                EventBusUtils.post(
+                        PlayerWrapper.class,
+                        DO_SOMETHING_EVENT_MIN_SCREEN,
+                        null);
+                break;
+            }
             case R.id.use_local_player_btn:
                 PlayerService.mUseLocalPlayer = true;
                 break;

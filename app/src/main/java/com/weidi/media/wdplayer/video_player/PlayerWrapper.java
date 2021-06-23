@@ -110,6 +110,8 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_MEDIA_DU
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_REPEAT;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_MIN_SCREEN;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_WIDTH_SCREEN;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.NEED_SHOW_CACHE_PROGRESS;
@@ -574,6 +576,7 @@ public class PlayerWrapper {
 
         mUiHandler.removeMessages(MSG_ADD_VIEW);
         mUiHandler.sendEmptyMessageDelayed(MSG_ADD_VIEW, 888);
+        mThreadHandler.removeMessages(MSG_RELEASE);
     }
 
     public void setType(String type) {
@@ -2093,6 +2096,9 @@ public class PlayerWrapper {
                 updateRootViewLayout(mScreenWidth, mScreenHeight);
             }
         }
+
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
     }
 
     // 处理竖屏
@@ -2228,6 +2234,9 @@ public class PlayerWrapper {
                 }
             }
         }
+
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
     }
 
     // 电视机专用
@@ -2348,6 +2357,9 @@ public class PlayerWrapper {
                 updateRootViewLayout(mNeedVideoWidth, mControllerPanelLayoutHeight + 1, x, y);
             }
         }
+
+        mUiHandler.removeMessages(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
     }
 
     // Hikey970开发板专用
@@ -3143,7 +3155,11 @@ public class PlayerWrapper {
                         mPathTimeMap.remove(md5Path);
                     }
                     mThreadHandler.removeMessages(MSG_RELEASE);
-                    mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
+                    if (mVideoWidth >= 3840 && mVideoHeight >= 2160) {
+                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 10000);
+                    } else {
+                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
+                    }
                 }
             }
         }
@@ -3872,6 +3888,14 @@ public class PlayerWrapper {
                 return mRepeat;
             case DO_SOMETHING_EVENT_GET_SHUFFLE:
                 return mShuffle;
+            case DO_SOMETHING_EVENT_WIDTH_SCREEN: {
+                handlePortraitScreen();
+                break;
+            }
+            case DO_SOMETHING_EVENT_MIN_SCREEN: {
+                handlePortraitScreenWithTV();
+                break;
+            }
 
             default:
                 break;
