@@ -5466,6 +5466,10 @@ int initPlayer() {
 
     int ret = stream_open(input_filename, file_iformat);
 
+    if (!video_state->useMediaCodec) {
+        need_first_key_frame = false;
+    }
+
     LOGI("initPlayer() ret = %d\n", ret);
     LOGI("initPlayer() end\n");
     return ret;
