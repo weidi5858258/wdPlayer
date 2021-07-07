@@ -548,30 +548,6 @@ static void showInfo() {
 
     char info[200];
     memset(info, '\0', sizeof(info));
-    /*if (video_state->useMediaCodec) {
-        sprintf(info,
-                "[%lld] [%lld] [%lld] [%d] [%lf] [%s]"
-                "\n[%s] [%s] [%d] [%d]"
-                "\n[%s] [%s] [%d] [%d]",
-                (long long) bit_rate,
-                (long long) bit_rate_video,
-                (long long) bit_rate_audio,
-                frame_rate,
-                test_remaining_time,
-                (video_state->useMediaCodec ? "V" : " "),
-                // video
-                avcodec_get_name(codecid_video),
-                av_get_pix_fmt_name(video_state->srcAVPixelFormat),
-                video_state->width,
-                video_state->height,
-                // audio
-                avcodec_get_name(codecid_audio),
-                av_get_sample_fmt_name(video_state->srcAVSampleFormat),
-                video_state->srcSampleRate,
-                video_state->srcNbChannels
-        );
-    } else {
-    }*/
     sprintf(info,
             "[%lld] [%lld] [%lld] [%d] [%s]"
             "\n[%s] [%s] [%d] [%d]"
@@ -592,7 +568,6 @@ static void showInfo() {
             video_state->srcSampleRate,
             video_state->srcNbChannels
     );
-
     onInfo(info);
 
     // endregion
@@ -1208,7 +1183,7 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
 
             if (video_state->useMediaCodec) {
                 LOGD("decoder_decode_frame() pkt.data == flush_pkt.data\n");
-                // audio
+                // audio清空队列
                 pthread_mutex_lock(&video_state->sampq.pmutex);
                 for (int i = 0; i < video_state->sampq.max_size; i++) {
                     Frame *vp = &video_state->sampq.queue[i];
@@ -1219,7 +1194,7 @@ static int decoder_decode_frame(Decoder *d, AVFrame *frame, AVSubtitle *sub) {
                 video_state->sampq.windex = 0;
                 pthread_cond_signal(&video_state->sampq.pcond);
                 pthread_mutex_unlock(&video_state->sampq.pmutex);
-                // video
+                // video清空队列
                 pthread_mutex_lock(&video_state->pictq.pmutex);
                 for (int i = 0; i < video_state->pictq.max_size; i++) {
                     Frame *vp = &video_state->pictq.queue[i];
@@ -1953,7 +1928,7 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
 }
 
 /* called to display each frame */
-static void video_refresh(void *opaque, double *remaining_time) {
+static void video_refresh(void *opaque, double *remaining_time, bool need_set_remaining_time) {
     VideoState *is = static_cast<VideoState *>(opaque);
     double time;// 当前时间点(是个时间点,不是时间段)
 
@@ -2047,7 +2022,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 if (delay > 0.0 && last_duration > 0.0) {
                     test_delay_one_time = true;
                     test_delay = last_duration;
-                    LOGD("video_refresh() test_delay = %lf\n", test_delay);
+                    LOGW("video_refresh() test_delay = %lf\n", test_delay);
                 }
             } else {
                 delay = test_delay;
@@ -2110,7 +2085,9 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     frame_queue_next(&is->pictq);
                     // alexander add
                     // sleep(0);
-                    *remaining_time = 0.0;
+                    if (need_set_remaining_time) {
+                        *remaining_time = 0.0;
+                    }
                     goto retry2;
                 }
             }
@@ -2829,7 +2806,6 @@ configure_audio_filters(VideoState *is, const char *afilters, int force_output_f
                                        asrc_args, nullptr, is->agraph);
     if (ret < 0)
         goto end;
-
 
     ret = avfilter_graph_create_filter(&filt_asink,
                                        avfilter_get_by_name("abuffersink"),
@@ -3752,7 +3728,7 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
             //#endif
 
-            is->audio_hw_buf_size = ret;
+            is->audio_hw_buf_size = ret;// 0
             is->audio_src = is->audio_tgt;
             is->audio_buf_size = 0;
             is->audio_buf_index = 0;
@@ -4685,15 +4661,18 @@ static void toggle_audio_display(VideoState *is) {
 
 static void *audio_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
-    int audio_size, len1;
-    is->audio_hw_buf_size = 4096;
-    is->audio_tgt.bytes_per_sec = 192000;
+    int audio_buf_size = 0, audio_buf_index = 0, len1;
+    is->audio_hw_buf_size = 19200;// 19200 4096(之前是这个值)
     is->audio_tgt.bytes_per_sec = av_samples_get_buffer_size(nullptr,
                                                              is->dstNbChannels,
                                                              is->dstSampleRate,
                                                              is->dstAVSampleFormat,
                                                              1);
-    LOGI("audio_play() bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
+    LOGI("audio_play()       is->audio_hw_buf_size = %d\n", is->audio_hw_buf_size);
+    LOGI("audio_play() is->audio_tgt.bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
+    if (is->audio_tgt.bytes_per_sec <= 0) {
+        is->audio_tgt.bytes_per_sec = 192000;
+    }
 
     LOGI("audio_play() start\n");
     while (1) {
@@ -4702,7 +4681,7 @@ static void *audio_play(void *arg) {
         }
 
         audio_callback_time = av_gettime_relative();
-        audio_size = audio_decode_frame(is);
+        audio_buf_size = audio_decode_frame(is);
         /*if (audio_size < 0) {
             is->audio_buf = nullptr;
             is->audio_buf_size = SDL_AUDIO_MIN_BUFFER_SIZE / is->audio_tgt.frame_size * is->audio_tgt.frame_size;
@@ -4711,24 +4690,20 @@ static void *audio_play(void *arg) {
                     update_sample_display(is, (int16_t *) is->audio_buf, audio_size);
                 }
             }*/
-        is->audio_buf_size = audio_size;
-        is->audio_buf_index = 0;
-        len1 = is->audio_buf_size - is->audio_buf_index;
-        is->audio_buf_index += len1;
-        is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
+        audio_buf_index = 0;
+        audio_buf_index += (audio_buf_size - audio_buf_index);
+        is->audio_write_buf_size = audio_buf_size - audio_buf_index;
 
         /* Let's assume the audio driver that is used by SDL has two periods. */
         if (!isnan(is->audio_clock)) {
             // 最关键的一个值.(pts是随着is->audio_clock值的变化而变化的,因为其他值是常量)
-            // is->audio_hw_buf_size = 4096
-            // is->audio_write_buf_size = 0
-            // is->audio_tgt.bytes_per_sec = 192000 176400
+            // 有规律地增长
             double pts = is->audio_clock -
                          (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
                          is->audio_tgt.bytes_per_sec;
 
             /*++test_get_master_clock_count;
-            LOGD("audio_play()===============================\n");
+            LOGD("audio_play()=====================================\n");
             LOGI("audio_play()    master_clock_count: %lld\n", test_get_master_clock_count);
             LOGI("audio_play()                   pts: %lf\n", pts);*/
 
@@ -4759,8 +4734,9 @@ static void *audio_play(void *arg) {
                 LOGI("audio_play()              is->audio_tgt.bytes_per_sec: %d\n",
                      is->audio_tgt.bytes_per_sec);
             }
-            set_clock_at(&is->audclk,
-                         pts, is->audio_clock_serial, audio_callback_time / 1000000.0);
+
+            set_clock_at(
+                    &is->audclk, pts, is->audio_clock_serial, audio_callback_time / 1000000.0);
             sync_clock_to_slave(&is->extclk, &is->audclk);
         }
     }
@@ -4775,6 +4751,7 @@ static void *video_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
+    bool need_set_remaining_time = true;
     if (is->useMediaCodec) {
         // 4K 1080P 720P 1920*816 1280*536 1024*576 960*540 720*576 640*480
         //        [>0] [>=0] [] [60/30/29/25/24/23/15/10] 正常
@@ -4787,13 +4764,20 @@ static void *video_play(void *arg) {
             if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
                 test_remaining_time = 0.0;
             }
-        } else if (isLive && bit_rate == 0 && bit_rate_video == 0) {
+        } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
             if (frame_rate >= 45) {
-                test_remaining_time = 0.081114435833333;// 快
-                test_remaining_time = 0.081114435844444;// 慢
+//                test_remaining_time = 0.081114435833333;// 快
+//                test_remaining_time = 0.081114435844444;// 慢
+//                test_remaining_time = 0.081114435844000;// 慢
+                test_remaining_time = 0.015333333333;
+                need_set_remaining_time = false;
             } else if (frame_rate == 0) {
                 test_remaining_time = 0.052335999899;// ?
+                test_remaining_time = 0.01;
+                need_set_remaining_time = false;
             }
+        } else if (bit_rate == 0 && bit_rate_video > 0) {
+
         }
         if (REMAINING_TIME >= 0.0) {
             test_remaining_time = REMAINING_TIME;
@@ -4845,7 +4829,7 @@ static void *video_play(void *arg) {
         remaining_time = test_remaining_time;
         //if((is->show_mode!=VideoState::SHOW_MODE_NONE)&&(!is->paused||is->force_refresh)){
         if (!is->paused || is->force_refresh) {
-            video_refresh(is, &remaining_time);
+            video_refresh(is, &remaining_time, need_set_remaining_time);
         }
     }
     LOGI("video_play() end\n");
