@@ -504,7 +504,7 @@ void onPaused() {
 }
 
 void onFinished() {
-    LOGF("onFinished()\n");
+    LOGF("onFinished() start\n");
     JNIEnv *jniEnv;
     bool isAttached = getEnv(&jniEnv);
     //LOGF("onFinished() isAttached: %d\n", isAttached);
@@ -526,6 +526,7 @@ void onFinished() {
     if (isAttached) {
         gJavaVm->DetachCurrentThread();
     }
+    LOGF("onFinished() end\n");
     //closeJni();
 }
 

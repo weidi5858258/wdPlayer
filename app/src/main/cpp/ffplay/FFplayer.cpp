@@ -4408,7 +4408,6 @@ static int create_avformat_context(void *arg) {
         }
         is->width = codecpar->width;
         is->height = codecpar->height;
-        onChangeWindow(codecpar->width, codecpar->height);
         // 视频宽高
         LOGI("create_avformat_context() width = %d height = %d\n",
              codecpar->width, codecpar->height);
@@ -4417,6 +4416,7 @@ static int create_avformat_context(void *arg) {
             LOGE("create_avformat_context() video stream_component_open ret = %d\n", ret);
             goto fail;
         }
+        onChangeWindow(codecpar->width, codecpar->height);
     } else {
         onChangeWindow(0, 0);
     }
@@ -5450,7 +5450,7 @@ int initPlayer() {
 
     int ret = stream_open(input_filename, file_iformat);
 
-    if (!video_state->useMediaCodec) {
+    if (video_state != nullptr && !video_state->useMediaCodec) {
         need_first_key_frame = false;
     }
 

@@ -889,6 +889,7 @@ public class PlayerWrapper {
             abandonAudioFocusRequest();
             stopForeground();
             System.gc();
+            Log.i(TAG, "removeView() System.gc()");
         }
     }
 
