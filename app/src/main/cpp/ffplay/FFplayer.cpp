@@ -4769,11 +4769,12 @@ static void *video_play(void *arg) {
 //                test_remaining_time = 0.081114435833333;// 快
 //                test_remaining_time = 0.081114435844444;// 慢
 //                test_remaining_time = 0.081114435844000;// 慢
-                test_remaining_time = 0.015333333333;
+                test_remaining_time = 0.03395553;
+                test_remaining_time = 0.033955505151195;// ?
                 need_set_remaining_time = false;
             } else if (frame_rate == 0) {
-                test_remaining_time = 0.052335999899;// ?
-                test_remaining_time = 0.01;
+                test_remaining_time = 0.052335999899;
+                test_remaining_time = 0.01;// ?
                 need_set_remaining_time = false;
             }
         } else if (bit_rate == 0 && bit_rate_video > 0) {
