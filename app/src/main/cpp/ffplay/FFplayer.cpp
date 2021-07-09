@@ -1928,7 +1928,7 @@ static void update_video_pts(VideoState *is, double pts, int64_t pos, int serial
 }
 
 /* called to display each frame */
-static void video_refresh(void *opaque, double *remaining_time, bool need_set_remaining_time) {
+static void video_refresh(void *opaque, double *remaining_time) {
     VideoState *is = static_cast<VideoState *>(opaque);
     double time;// 当前时间点(是个时间点,不是时间段)
 
@@ -2085,9 +2085,7 @@ static void video_refresh(void *opaque, double *remaining_time, bool need_set_re
                     frame_queue_next(&is->pictq);
                     // alexander add
                     // sleep(0);
-                    if (need_set_remaining_time) {
-                        *remaining_time = 0.0;
-                    }
+                    *remaining_time = 0.0;
                     goto retry2;
                 }
             }
@@ -3703,6 +3701,28 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             initVideoMediaCodec(is);
+
+            // alexander test
+            if (is->useMediaCodec) {
+                if (bit_rate > 0 && bit_rate_video >= 0) {
+                    if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
+                    }
+                } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
+                    if (frame_rate >= 45) {
+                        frame_rate = 25;
+                        is->video_st->avg_frame_rate.den =
+                                is->video_st->avg_frame_rate.num / frame_rate;
+                    } else if (frame_rate == 0) {
+                        frame_rate = 25;
+                        is->video_st->avg_frame_rate.den = 1;
+                        is->video_st->avg_frame_rate.num = 25;
+                    }
+                } else if (bit_rate == 0 && bit_rate_video > 0) {
+                    frame_rate = 25;
+                    is->video_st->avg_frame_rate.den = 1;
+                    is->video_st->avg_frame_rate.num = 25;
+                }
+            }
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4751,7 +4771,6 @@ static void *video_play(void *arg) {
     VideoState *is = static_cast<VideoState *>(arg);
     double remaining_time = 0.0;
     test_remaining_time = REFRESH_RATE;
-    bool need_set_remaining_time = true;
     if (is->useMediaCodec) {
         // 4K 1080P 720P 1920*816 1280*536 1024*576 960*540 720*576 640*480
         //        [>0] [>=0] [] [60/30/29/25/24/23/15/10] 正常
@@ -4759,6 +4778,7 @@ static void *video_play(void *arg) {
         // isLive [0] [0] [] [30/25] 正常
         // isLive [0] [0] [] [50] 不正常(video快)
         // isLive [0] [0] [] [0]  不正常(浙江绍兴公共台 江苏连云港综合 江苏连云港公共)
+        // 去看stream_component_open()方法中的处理
         test_remaining_time = 0.0000001;
         if (bit_rate > 0 && bit_rate_video >= 0) {
             if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
@@ -4766,16 +4786,14 @@ static void *video_play(void *arg) {
             }
         } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
             if (frame_rate >= 45) {
-//                test_remaining_time = 0.081114435833333;// 快
-//                test_remaining_time = 0.081114435844444;// 慢
-//                test_remaining_time = 0.081114435844000;// 慢
+                test_remaining_time = 0.081114435833333;// 快
+                test_remaining_time = 0.081114435844444;// 慢
+                test_remaining_time = 0.081114435844000;// 慢
                 test_remaining_time = 0.03395553;
-                test_remaining_time = 0.033955505151195;// ?
-                need_set_remaining_time = false;
+                test_remaining_time = 0.03395550515119435;// ?
             } else if (frame_rate == 0) {
                 test_remaining_time = 0.052335999899;
                 test_remaining_time = 0.01;// ?
-                need_set_remaining_time = false;
             }
         } else if (bit_rate == 0 && bit_rate_video > 0) {
 
@@ -4830,7 +4848,7 @@ static void *video_play(void *arg) {
         remaining_time = test_remaining_time;
         //if((is->show_mode!=VideoState::SHOW_MODE_NONE)&&(!is->paused||is->force_refresh)){
         if (!is->paused || is->force_refresh) {
-            video_refresh(is, &remaining_time, need_set_remaining_time);
+            video_refresh(is, &remaining_time);
         }
     }
     LOGI("video_play() end\n");
