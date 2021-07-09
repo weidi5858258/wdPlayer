@@ -464,6 +464,7 @@ extern long long curProgress;
 extern long long preProgress;
 extern int64_t timeStamp;
 
+static bool need_reset_frame_rate = false;
 static int frame_rate = 0;
 // Duration: 01:27:51.64, start: 0.000000, bitrate: 1666 kb/s
 static int64_t bit_rate = 0;
@@ -503,7 +504,7 @@ int last_h = 0;
 int last_serial = -1;
 int last_vfilter_idx = 0;
 //#endif
-AVRational frame_rate_avrational;
+AVRational frame_rate_avrational = (AVRational) {25, 1};
 
 static ANativeWindow_Buffer mANativeWindow_Buffer;
 static ANativeWindow *pANativeWindow = nullptr;
@@ -3241,7 +3242,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
 
     VideoState *is = video_state;
     // {1, 120000} {1, 90000} {1, 15360}
-    AVRational tb = is->video_st->time_base;
+    //AVRational tb = is->video_st->time_base;
     //LOGI("decoder_decode_frame_by_mediacodec() 1 sb.num: %d tb.den: %d\n", tb.num, tb.den);
     double pts;
     double duration;
@@ -3264,7 +3265,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     frame->width = is->width;
     frame->height = is->height;
     frame->reordered_opaque = -9223372036854775808;
-    frame->sample_aspect_ratio = (AVRational) {1, 1};
+    frame->sample_aspect_ratio = (AVRational) {25, 1};
     frame->format = 0;
 
     // region 对应于decoder_decode_frame函数返回后的处理结果
@@ -3368,8 +3369,14 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         last_vfilter_idx = is->vfilter_idx;
         // {30000, 1001} {25, 1} {60, 1}
         frame_rate_avrational = av_guess_frame_rate(is->ic, is->video_st, nullptr);
-        LOGI("decoder_decode_frame_by_mediacodec() num: %d den: %d\n",
-             frame_rate_avrational.num, frame_rate_avrational.den);
+        if (need_reset_frame_rate) {
+            frame_rate_avrational = (AVRational) {25, 1};
+        }
+        duration = (frame_rate_avrational.num
+                    && frame_rate_avrational.den ? av_q2d(
+                (AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
+        LOGI("decoder_decode_frame_by_mediacodec() num: %d den: %d duration: %lf\n",
+             frame_rate_avrational.num, frame_rate_avrational.den, duration);
         /*frame_rate_avrational = av_buffersink_get_frame_rate(filt_out);
         LOGI("decoder_decode_frame_by_mediacodec() num: %d den: %d\n",
              frame_rate_avrational.num, frame_rate_avrational.den);*/
@@ -3430,17 +3437,23 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     if (fabs(is->frame_last_filter_delay) > AV_NOSYNC_THRESHOLD / 10.0) {
         is->frame_last_filter_delay = 0;
     }
-    duration = (frame_rate_avrational.num
-                && frame_rate_avrational.den ? av_q2d(
-            (AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
-    pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+    /***
+     帧停留时间
+     duration = frame_rate_avrational.den / frame_rate_avrational.num;
+     1 / 25 = 0.04
+     1 / 30 = 0.033333
+     */
+    duration = (frame_rate_avrational.num && frame_rate_avrational.den
+                ? av_q2d((AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
+    //pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+    pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(frame_rate_avrational);
     if (video_decode_mc_log) {
         LOGW("decoder_decode_frame_by_mediacodec()\n"
              " pts: %lf duration: %lf\n"
              " pts: %lld pkt_pts: %lld pkt_dts: %lld pkt_pos: %lld pkt_duration: %lld pkt_size: %d\n",
              pts, duration,
-             frame->pts, frame->pkt_pts, frame->pkt_dts, frame->pkt_pos, frame->pkt_duration,
-             frame->pkt_size);
+             frame->pts, frame->pkt_pts, frame->pkt_dts,
+             frame->pkt_pos, frame->pkt_duration, frame->pkt_size);
     }
     /***
      这里如果被堵住,相当于handleVideoOutputBuffer(...)被堵住,又相当于onOutputBufferAvailable(...)被堵住.
@@ -3703,8 +3716,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
             initVideoMediaCodec(is);
 
             // alexander test
+            need_reset_frame_rate = false;
             if (is->useMediaCodec) {
-                bool need_reset_frame_rate = false;
                 if (bit_rate > 0 && bit_rate_video >= 0) {
                     if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
                     }
@@ -3717,11 +3730,10 @@ static int stream_component_open(VideoState *is, int stream_index) {
                 } else if (bit_rate == 0 && bit_rate_video > 0) {
                     need_reset_frame_rate = true;
                 }
-                if (need_reset_frame_rate) {
-                    frame_rate = 25;
-                    is->video_st->avg_frame_rate.num = 25;
-                    is->video_st->avg_frame_rate.den = 1;
-                }
+                /*if (need_reset_frame_rate) {
+                    //frame_rate = 25;
+                    is->video_st->avg_frame_rate = (AVRational) {25, 1};
+                }*/
             }
             break;
         case AVMEDIA_TYPE_AUDIO:
@@ -4790,10 +4802,12 @@ static void *video_play(void *arg) {
                 test_remaining_time = 0.081114435844444;// 慢
                 test_remaining_time = 0.081114435844000;// 慢
                 test_remaining_time = 0.03395553;
-                test_remaining_time = 0.03395550515119435;// ?
+                test_remaining_time = 0.03395550515119435;
+                test_remaining_time = 0.0;
             } else if (frame_rate == 0) {
                 test_remaining_time = 0.052335999899;
-                test_remaining_time = 0.01;// ?
+                test_remaining_time = 0.01;
+                test_remaining_time = 0.0;
             }
         } else if (bit_rate == 0 && bit_rate_video > 0) {
 
