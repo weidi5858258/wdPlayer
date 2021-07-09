@@ -3704,23 +3704,23 @@ static int stream_component_open(VideoState *is, int stream_index) {
 
             // alexander test
             if (is->useMediaCodec) {
+                bool need_reset_frame_rate = false;
                 if (bit_rate > 0 && bit_rate_video >= 0) {
                     if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
                     }
                 } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
                     if (frame_rate >= 45) {
-                        frame_rate = 25;
-                        is->video_st->avg_frame_rate.den =
-                                is->video_st->avg_frame_rate.num / frame_rate;
+                        need_reset_frame_rate = true;
                     } else if (frame_rate == 0) {
-                        frame_rate = 25;
-                        is->video_st->avg_frame_rate.den = 1;
-                        is->video_st->avg_frame_rate.num = 25;
+                        need_reset_frame_rate = true;
                     }
                 } else if (bit_rate == 0 && bit_rate_video > 0) {
+                    need_reset_frame_rate = true;
+                }
+                if (need_reset_frame_rate) {
                     frame_rate = 25;
-                    is->video_st->avg_frame_rate.den = 1;
                     is->video_st->avg_frame_rate.num = 25;
+                    is->video_st->avg_frame_rate.den = 1;
                 }
             }
             break;
