@@ -2686,7 +2686,7 @@ static int configure_video_filters(AVFilterGraph *graph,
         av_strlcatf(
                 buffersrc_args, sizeof(buffersrc_args), ":frame_rate=%d/%d", fr.num, fr.den);
     }
-    LOGI("configure_video_filters() buffersrc_args: %s\n", buffersrc_args);
+    LOGI("configure_video_filters() buffersrc_args:\n%s\n", buffersrc_args);
 
     const AVFilter *filt = avfilter_get_by_name("buffer");
     if (!filt) {
@@ -3570,6 +3570,7 @@ static int stream_component_open(VideoState *is, int stream_index) {
     const char *forced_codec_name = nullptr;
     int ret = 0;
     int stream_lowres = lowres;
+    AVRational rational;
 
     avctx = avcodec_alloc_context3(nullptr);
     if (!avctx) {
@@ -3658,6 +3659,12 @@ static int stream_component_open(VideoState *is, int stream_index) {
             if (is->video_st->avg_frame_rate.den != 0) {
                 // 帧率
                 frame_rate = is->video_st->avg_frame_rate.num / is->video_st->avg_frame_rate.den;
+            }
+            rational = av_guess_frame_rate(is->ic, is->video_st, nullptr);
+            if (rational.den != 0) {
+                frame_rate = rational.num / rational.den;
+                LOGI("stream_component_open()          rational.num = %d\n", rational.num);
+                LOGI("stream_component_open()          rational.den = %d\n", rational.den);
             }
             // 码率(视频)/比特率(音频)
             bit_rate = ic->bit_rate / 1000;
