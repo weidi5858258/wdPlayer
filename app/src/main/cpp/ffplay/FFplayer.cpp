@@ -3721,9 +3721,20 @@ static int stream_component_open(VideoState *is, int stream_index) {
 #endif
 
             // alexander test
+            AVG_FRAME_RATE_NUM = 25;
             need_reset_frame_rate = false;
             if (bit_rate_total > 0 && bit_rate_video >= 0) {
-                if (frame_rate >= 45 && is->width >= 3840 && is->height >= 2160) {
+                if (is->width >= 3840 && is->height >= 2160) {
+                    need_reset_frame_rate = true;
+                    if (bit_rate_video >= 60000) {
+                        if (frame_rate >= 45) {
+                            AVG_FRAME_RATE_NUM = 120;
+                        }
+                    } else if (bit_rate_video >= 10000) {
+                        if (frame_rate >= 45) {
+                            AVG_FRAME_RATE_NUM = 60;
+                        }
+                    }
                 }
             } else if (/*isLive && */bit_rate_total == 0 && bit_rate_video == 0) {
                 if (frame_rate >= 45) {

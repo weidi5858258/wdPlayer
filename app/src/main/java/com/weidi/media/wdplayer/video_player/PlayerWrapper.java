@@ -3157,7 +3157,7 @@ public class PlayerWrapper {
                     }
                     mThreadHandler.removeMessages(MSG_RELEASE);
                     if (mVideoWidth >= 3840 && mVideoHeight >= 2160) {
-                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 10000);
+                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 7000);
                     } else {
                         mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
                     }
