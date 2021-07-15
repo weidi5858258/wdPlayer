@@ -1205,7 +1205,7 @@ namespace alexander_media {
         videoWrapper->srcHeight = videoWrapper->father->avCodecContext->height;
         videoWrapper->srcAVPixelFormat = videoWrapper->father->avCodecContext->pix_fmt;
 
-        int64_t bit_rate = videoWrapper->father->avCodecContext->bit_rate;
+        int64_t bit_rate = videoWrapper->father->avCodecContext->bit_rate_total;
         int bit_rate_tolerance = videoWrapper->father->avCodecContext->bit_rate_tolerance;
         int bits_per_coded_sample = videoWrapper->father->avCodecContext->bits_per_coded_sample;
         int bits_per_raw_sample = videoWrapper->father->avCodecContext->bits_per_raw_sample;
@@ -1252,7 +1252,7 @@ namespace alexander_media {
         if (stream->avg_frame_rate.den) {
             frameRate = stream->avg_frame_rate.num / stream->avg_frame_rate.den;
         }
-        int bitRate = avFormatContext->bit_rate / 1000;
+        int bitRate = avFormatContext->bit_rate_total / 1000;
         LOGW("videoFrames          : %d\n", (long) videoFrames);
         LOGW("frameRate            : %d fps/Hz\n", frameRate);
         LOGW("bitRate              : %d kbps\n", bitRate);

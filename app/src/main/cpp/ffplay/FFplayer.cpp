@@ -464,10 +464,11 @@ extern long long curProgress;
 extern long long preProgress;
 extern int64_t timeStamp;
 
+static int AVG_FRAME_RATE_NUM = 25;
 static bool need_reset_frame_rate = false;
 static int frame_rate = 0;
 // Duration: 01:27:51.64, start: 0.000000, bitrate: 1666 kb/s
-static int64_t bit_rate = 0;
+static int64_t bit_rate_total = 0;
 // Stream #0:1: Video: rv40 (RV40 / 0x30345652), yuv420p, 1280x720, 1506 kb/s, 23.98 fps, 23.98 tbr, 1k tbn, 1k tbc
 static int64_t bit_rate_video = 0;
 static int64_t bit_rate_audio = 0;
@@ -553,7 +554,7 @@ static void showInfo() {
             "[%lld] [%lld] [%lld] [%d] [%s]"
             "\n[%s] [%s] [%d] [%d]"
             "\n[%s] [%s] [%d] [%d]",
-            (long long) bit_rate,
+            (long long) bit_rate_total,
             (long long) bit_rate_video,
             (long long) bit_rate_audio,
             frame_rate,
@@ -2013,20 +2014,15 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 test_last_duration = last_duration;
             }
             delay = compute_target_delay(last_duration, is);
-            /*if (delay == 0.0 && last_duration > 0.0) {
-                test_delay = delay = last_duration;
-            }
-            if (delay == 0.0 || delay > AV_SYNC_THRESHOLD_MAX) {
-                test_delay = delay = 0.04;
-            }*/
-            if (!test_delay_one_time) {
+            if (test_delay_one_time) {
+                delay = test_delay;
+            } else {
                 if (delay > 0.0 && last_duration > 0.0) {
+                    // 只执行一次,就是记录last_duration的有效值.因为有时它可能是0,还可能不断变化
                     test_delay_one_time = true;
                     test_delay = last_duration;
                     LOGW("video_refresh() test_delay = %lf\n", test_delay);
                 }
-            } else {
-                delay = test_delay;
             }
             double frame_timer_delay = is->frame_timer + delay;
             time = av_gettime_relative() / 1000000.0;
@@ -2452,7 +2448,11 @@ static void initVideoMediaCodec(void *opaque) {
     // durationUs
     parameters[2] = media_duration;
     // frame-rate
-    parameters[3] = frame_rate;
+    if (need_reset_frame_rate) {
+        parameters[3] = AVG_FRAME_RATE_NUM;
+    } else {
+        parameters[3] = frame_rate;
+    }
     // bitrate
     parameters[4] = (long long) bit_rate_video;
     // max_input_size
@@ -3370,7 +3370,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         // {30000, 1001} {25, 1} {60, 1}
         frame_rate_avrational = av_guess_frame_rate(is->ic, is->video_st, nullptr);
         if (need_reset_frame_rate) {
-            frame_rate_avrational = (AVRational) {25, 1};
+            frame_rate_avrational = (AVRational) {AVG_FRAME_RATE_NUM, 1};
         }
         duration = (frame_rate_avrational.num
                     && frame_rate_avrational.den ? av_q2d(
@@ -3667,7 +3667,7 @@ static int stream_component_open(VideoState *is, int stream_index) {
                 LOGI("stream_component_open()          rational.den = %d\n", rational.den);
             }
             // 码率(视频)/比特率(音频)
-            bit_rate = ic->bit_rate / 1000;
+            bit_rate_total = ic->bit_rate / 1000;
             bit_rate_video = avctx->bit_rate / 1000;
             codecid_video = codec->id;
 
@@ -3720,28 +3720,23 @@ static int stream_component_open(VideoState *is, int stream_index) {
             };
 #endif
 
-            initVideoMediaCodec(is);
-
             // alexander test
             need_reset_frame_rate = false;
-            if (is->useMediaCodec) {
-                if (bit_rate > 0 && bit_rate_video >= 0) {
-                    if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
-                    }
-                } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
-                    if (frame_rate >= 45) {
-                        need_reset_frame_rate = true;
-                    } else if (frame_rate == 0) {
-                        need_reset_frame_rate = true;
-                    }
-                } else if (bit_rate == 0 && bit_rate_video > 0) {
+            if (bit_rate_total > 0 && bit_rate_video >= 0) {
+                if (frame_rate >= 45 && is->width >= 3840 && is->height >= 2160) {
+                }
+            } else if (/*isLive && */bit_rate_total == 0 && bit_rate_video == 0) {
+                if (frame_rate >= 45) {
+                    need_reset_frame_rate = true;
+                } else if (frame_rate == 0) {
                     need_reset_frame_rate = true;
                 }
-                /*if (need_reset_frame_rate) {
-                    //frame_rate = 25;
-                    is->video_st->avg_frame_rate = (AVRational) {25, 1};
-                }*/
+            } else if (bit_rate_total == 0 && bit_rate_video > 0) {
+                need_reset_frame_rate = true;
             }
+
+            initVideoMediaCodec(is);
+
             break;
         case AVMEDIA_TYPE_AUDIO:
             int sample_rate, nb_channels;
@@ -4792,18 +4787,18 @@ static void *video_play(void *arg) {
     test_remaining_time = REFRESH_RATE;
     if (is->useMediaCodec) {
         // 4K 1080P 720P 1920*816 1280*536 1024*576 960*540 720*576 640*480
-        //        [>0] [>=0] [] [60/30/29/25/24/23/15/10] 正常
-        //        [0] [0] [] [25/24/23] 正常
-        // isLive [0] [0] [] [30/25] 正常
-        // isLive [0] [0] [] [50] 不正常(video快)
-        // isLive [0] [0] [] [0]  不正常(浙江绍兴公共台 江苏连云港综合 江苏连云港公共)
+        // 总码率 视频码率 音频采样率 帧率
+        //  [>0]  [>=0]    []     [60/30/29/25/24/23/15/10] 正常
+        //  [0]   [0]      []     [30/25/24/23] 正常
+        //  [0]   [0]      []     [50] 不正常
+        //  [0]   [0]      []     [0]  不正常
         // 去看stream_component_open()方法中的处理
         test_remaining_time = 0.0000001;
-        if (bit_rate > 0 && bit_rate_video >= 0) {
+        if (bit_rate_total > 0 && bit_rate_video >= 0) {
             if (frame_rate >= 45 || (is->width >= 3840 && is->height >= 2160)) {
                 test_remaining_time = 0.0;
             }
-        } else if (/*isLive && */bit_rate == 0 && bit_rate_video == 0) {
+        } else if (/*isLive && */bit_rate_total == 0 && bit_rate_video == 0) {
             if (frame_rate >= 45) {
                 test_remaining_time = 0.081114435833333;// 快
                 test_remaining_time = 0.081114435844444;// 慢
@@ -4816,7 +4811,7 @@ static void *video_play(void *arg) {
                 test_remaining_time = 0.01;
                 test_remaining_time = 0.0;
             }
-        } else if (bit_rate == 0 && bit_rate_video > 0) {
+        } else if (bit_rate_total == 0 && bit_rate_video > 0) {
 
         }
         if (REMAINING_TIME >= 0.0) {
@@ -5449,7 +5444,7 @@ int initPlayer() {
     curProgress = 0;
     preProgress = 0;
     frame_rate = 0;
-    bit_rate = 0;
+    bit_rate_total = 0;
     bit_rate_video = 0;
     bit_rate_audio = 0;
     codecid_video = AV_CODEC_ID_NONE;
