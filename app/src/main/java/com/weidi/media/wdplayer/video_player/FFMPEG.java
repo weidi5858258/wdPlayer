@@ -210,13 +210,14 @@ public class FFMPEG implements WdPlayer {
 
     // presentationTimeUs = pts
     private boolean feedInputBufferAndDrainOutputBuffer2(
-            int type, int serial, byte[] data, int size,
+            int type, int serial, int flags, byte[] data, int size,
             long pts, long dts, long pos, long duration) {
         if (mFfmpegUseMediaCodecDecode != null) {
             switch (type) {
                 case FfmpegUseMediaCodecDecode.TYPE_AUDIO:
                     if (mFfmpegUseMediaCodecDecode.mAudioWrapper != null) {
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.serial = serial;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.flags = flags;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.size = size;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.sampleTime = pts;
@@ -230,6 +231,7 @@ public class FFMPEG implements WdPlayer {
                 case FfmpegUseMediaCodecDecode.TYPE_VIDEO:
                     if (mFfmpegUseMediaCodecDecode.mVideoWrapper != null) {
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.serial = serial;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.flags = flags;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.size = size;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.sampleTime = pts;

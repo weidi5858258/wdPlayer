@@ -9,7 +9,6 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -84,6 +83,7 @@ public class FfmpegUseMediaCodecDecode {
         public boolean isHandling = false;
 
         public int serial;
+        int flags;// 判断是否是关键帧
         // 用于标识音频还是视频
         public int type;
         // 总时长
@@ -1321,7 +1321,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         videoSerial = 0;
-        mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(5);
+        mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(50);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
         mVideoDatasIndexQueue.needToWait = true;
@@ -1444,12 +1444,12 @@ public class FfmpegUseMediaCodecDecode {
                         && mVideoWrapper.isHandling) {
                     AVPacket avPacket = new AVPacket(wrapper.size);
                     avPacket.serial = wrapper.serial;
+                    avPacket.flags = wrapper.flags;
                     avPacket.data = wrapper.data;
                     avPacket.presentationTimeUs = wrapper.sampleTime;
                     avPacket.dts = wrapper.dts;
                     avPacket.pos = wrapper.pos;
                     avPacket.duration = wrapper.duration;
-                    avPacket.flags = 0;
 
                     if (videoSerial != avPacket.serial) {
                         // 说明seek过了
@@ -1884,6 +1884,63 @@ public class FfmpegUseMediaCodecDecode {
         return avPacket;
     }
 
+    private void drainAVPacket(ArrayBlockingQueue<AVPacket> queue, long takeCount) {
+        int size1 = queue.size();
+        if (size1 >= 5 && takeCount >= 10) {
+            boolean firstKeyFrame = false;
+            for (AVPacket avPacket : queue) {
+                firstKeyFrame = ((avPacket.flags & 0x0001) != 0);
+                if (firstKeyFrame) {
+                    break;
+                }
+            }
+            if (firstKeyFrame) {
+                Log.e(TAG, "drainFrame() size 1: " + size1);
+                Iterator<AVPacket> iterator = queue.iterator();
+                while (iterator.hasNext()) {
+                    AVPacket avPacket = iterator.next();
+                    if ((avPacket.flags & 0x0001) == 0) {
+                        avPacket = null;
+                        iterator.remove();
+                    } else {
+                        break;
+                    }
+                }
+                int size2 = queue.size();
+                Log.i(TAG, "drainFrame() size 2: " + size2);
+                if (size2 >= 5 && size1 > size2) {
+                    boolean secondKeyFrame = false;
+                    for (AVPacket avPacket : queue) {
+                        firstKeyFrame = ((avPacket.flags & 0x0001) != 0);
+                        if (firstKeyFrame && secondKeyFrame) {
+                            break;
+                        } else if (firstKeyFrame) {
+                            secondKeyFrame = true;
+                        }
+                    }
+                    if (firstKeyFrame && secondKeyFrame) {
+                        secondKeyFrame = false;
+                        iterator = queue.iterator();
+                        while (iterator.hasNext()) {
+                            AVPacket avPacket = iterator.next();
+                            if ((avPacket.flags & 0x0001) == 0) {
+                                avPacket = null;
+                                iterator.remove();
+                            } else {
+                                if (secondKeyFrame) {
+                                    break;
+                                }
+                                secondKeyFrame = true;
+                            }
+                        }
+                        //size1 = queue.size();
+                        Log.d(TAG, "drainFrame() size 3: " + size1);
+                    }
+                }
+            }
+        }
+    }
+
     private MediaCodec.Callback mVideoAsyncDecoderCallback = new MediaCodec.Callback() {
 
         @Override
@@ -1901,6 +1958,7 @@ public class FfmpegUseMediaCodecDecode {
                     // 没有元素就会阻塞
                     //Log.i(TAG, "onInputBufferAvailable() 1");
                     if (mVideoInputDatasQueue != null) {
+                        //drainAVPacket(mVideoInputDatasQueue, 10);
                         avPacket = mVideoInputDatasQueue.take();
                         if (useFFplay && avPacket != null) {
                             mVideoLock.lock();

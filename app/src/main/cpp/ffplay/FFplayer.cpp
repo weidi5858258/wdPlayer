@@ -3186,6 +3186,7 @@ static void *video_thread_mc(void *arg) {
         feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
                 d->queue->serial,
+                pkt.flags,
                 pkt.data,
                 pkt.size,
                 (long long int) pkt.pts,
@@ -3735,6 +3736,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
                             AVG_FRAME_RATE_NUM = 60;
                         }
                     }
+                } else if (frame_rate >= 45) {
+                    need_reset_frame_rate = true;
+                    AVG_FRAME_RATE_NUM = 120;
                 }
             } else if (/*isLive && */bit_rate_total == 0 && bit_rate_video == 0) {
                 if (frame_rate >= 45) {

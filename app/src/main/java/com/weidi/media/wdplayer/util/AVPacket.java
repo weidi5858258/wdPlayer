@@ -13,6 +13,7 @@ import java.util.Arrays;
 public class AVPacket implements Parcelable {
 
     public int serial;
+    public int flags;// 判断是否是关键帧
     public byte[] data;
     public int size;
     public long presentationTimeUs;// pts
@@ -20,7 +21,6 @@ public class AVPacket implements Parcelable {
     public long pos;
     public long duration;
     public MediaCodec.CryptoInfo cryptoInfo;
-    public int flags;
 
     public AVPacket(int size) {
         data = new byte[size];

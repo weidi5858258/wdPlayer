@@ -4244,6 +4244,7 @@ public class PlayerWrapper {
             String[] contents = null;
             String key = null;// 视频地址
             String value = null;
+            StringBuilder sb = new StringBuilder();
             boolean toDoIt = false;
             //一次读一行，读入null时文件结束
             while (mIsTesting && ((aLineContent = reader.readLine()) != null)) {
@@ -4291,6 +4292,20 @@ public class PlayerWrapper {
 
                     testAwait();
 
+                    int size = tempList.size();
+                    sb.delete(0, sb.length());
+                    sb.append(value);
+                    sb.append("[");
+                    sb.append(mVideoWidth);
+                    sb.append("*");
+                    sb.append(mVideoHeight);
+                    sb.append("]");
+                    tempList.clear();
+                    tempList.add(sb.toString());
+                    if (size > 1) {
+                        tempList.add(key);
+                    }
+
                     if (!mHasTestError) {
                         for (String path : tempList) {
                             availablePathList.add(path);
@@ -4305,6 +4320,7 @@ public class PlayerWrapper {
             contents = null;
             key = null;
             value = null;
+            sb = null;
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

@@ -72,6 +72,7 @@ bool feedInputBufferAndDrainOutputBuffer(int type,
 
 bool feedInputBufferAndDrainOutputBuffer2(int type,
                                           int serial,
+                                          int flags,
                                           unsigned char *encodedData,
                                           int size,
                                           long long int pts,

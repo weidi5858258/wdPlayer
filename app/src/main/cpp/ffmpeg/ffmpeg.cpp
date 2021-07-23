@@ -276,6 +276,7 @@ bool feedInputBufferAndDrainOutputBuffer(int type,
 
 bool feedInputBufferAndDrainOutputBuffer2(int type,
                                           int serial,
+                                          int flags,
                                           unsigned char *encodedData,
                                           int size,
                                           long long int pts,
@@ -294,6 +295,7 @@ bool feedInputBufferAndDrainOutputBuffer2(int type,
         feedAndDrainRet = bufferEnv->CallBooleanMethod(ffmpegJavaObject,
                                                        feedInputBufferAndDrainOutputBufferMethodID2,
                                                        (jint) type, (jint) serial,
+                                                       (jint) flags,
                                                        data,
                                                        (jint) size,
                                                        (jlong) pts,
@@ -695,7 +697,7 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
     feedInputBufferAndDrainOutputBufferMethodID = env->GetMethodID(
             FFMPEGClass, "feedInputBufferAndDrainOutputBuffer", "(I[BIJ)Z");
     feedInputBufferAndDrainOutputBufferMethodID2 = env->GetMethodID(
-            FFMPEGClass, "feedInputBufferAndDrainOutputBuffer2", "(II[BIJJJJ)Z");
+            FFMPEGClass, "feedInputBufferAndDrainOutputBuffer2", "(III[BIJJJJ)Z");
     createAudioTrackMethodID = env->GetMethodID(
             FFMPEGClass, "createAudioTrack", "(III)V");
     writeMethodID = env->GetMethodID(
