@@ -288,6 +288,9 @@ public class PlayerWrapper {
     private int mNeedVideoHeight;
     // 控制面板的高度
     private int mControllerPanelLayoutHeight;
+    private int bit_rate_total;
+    private int bit_rate_video;
+    private int frame_rate;
 
     // 音视频的加载进度
     private LinearLayout mDataCacheLayout;
@@ -2747,6 +2750,23 @@ public class PlayerWrapper {
         }
     }
 
+    private void getSomeInfo(String textInfo) throws Exception {
+        String[] infos = textInfo.split("] \\[");
+        if (infos.length >= 4) {
+            String bit_rate_total_str = infos[0];
+            String bit_rate_video_str = infos[1];
+            String frame_rate_str = infos[3];
+            bit_rate_total_str = bit_rate_video_str.substring(bit_rate_total_str.indexOf("["));
+            bit_rate_total = Integer.parseInt(bit_rate_total_str);
+            bit_rate_video = Integer.parseInt(bit_rate_video_str);
+            frame_rate = Integer.parseInt(frame_rate_str);
+            Log.i(TAG, "getSomeInfo()" +
+                    " bit_rate_total: " + bit_rate_total +
+                    " bit_rate_video: " + bit_rate_video +
+                    " frame_rate: " + frame_rate);
+        }
+    }
+
     private void onReady() {
         if (mIDmrPlayerAppCallback != null) {
             try {
@@ -3036,6 +3056,10 @@ public class PlayerWrapper {
             //Log.d(TAG, "Callback.MSG_ON_TRANSACT_INFO\n" + toastInfo);
             if (toastInfo.contains("[") && toastInfo.contains("]")) {
                 textInfo = toastInfo;
+                try {
+                    getSomeInfo(textInfo);
+                } catch (Exception e) {
+                }
                 if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
                     textInfoTV.setText(toastInfo);
                 } else {
@@ -4239,7 +4263,7 @@ public class PlayerWrapper {
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(testTargetPath1));
+            reader = new BufferedReader(new FileReader(testTargetPath2));
             String aLineContent = null;
             String[] contents = null;
             String key = null;// 视频地址
@@ -4292,6 +4316,9 @@ public class PlayerWrapper {
 
                     testAwait();
 
+                    if (value.contains("[")) {
+                        value = value.substring(0, value.indexOf("["));
+                    }
                     int size = tempList.size();
                     sb.delete(0, sb.length());
                     sb.append(value);
@@ -4299,6 +4326,12 @@ public class PlayerWrapper {
                     sb.append(mVideoWidth);
                     sb.append("*");
                     sb.append(mVideoHeight);
+                    sb.append("-");
+                    sb.append(bit_rate_total);
+                    sb.append("-");
+                    sb.append(bit_rate_video);
+                    sb.append("-");
+                    sb.append(frame_rate);
                     sb.append("]");
                     tempList.clear();
                     tempList.add(sb.toString());

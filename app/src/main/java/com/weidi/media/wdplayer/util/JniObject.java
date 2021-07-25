@@ -209,6 +209,11 @@ public class JniObject {
     }
 
     @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+    }
+
+    @Override
     public String toString() {
         return "JniObject{" +
                 "valueObject=" + valueObject +

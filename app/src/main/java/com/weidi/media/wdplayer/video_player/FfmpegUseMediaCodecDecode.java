@@ -1321,7 +1321,7 @@ public class FfmpegUseMediaCodecDecode {
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
         videoSerial = 0;
-        mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(50);
+        mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(30);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
         mVideoDatasIndexQueue.needToWait = true;
@@ -1462,6 +1462,12 @@ public class FfmpegUseMediaCodecDecode {
                             mFFMPEG.onTransact(DO_SOMETHING_CODE_clearQueue, null);
                         }
                         videoSerial = avPacket.serial;
+                        /*if (mVideoWrapper.decoderMediaCodec != null && videoSerial > 2) {
+                            Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 1");
+                            mVideoWrapper.decoderMediaCodec.flush();
+                            mVideoWrapper.decoderMediaCodec.start();
+                            Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 2");
+                        }*/
                     }
 
                     /*Log.d(TAG, "feedInputBufferAndDrainOutputBuffer()" +

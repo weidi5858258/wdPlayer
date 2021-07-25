@@ -2033,6 +2033,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 //LOGI("video_refresh()              is->frame_timer = %lf\n", is->frame_timer);
                 LOGI("video_refresh()            frame_timer_delay = %lf\n", frame_timer_delay);
                 LOGI("video_refresh()                         time = %lf\n", time);
+                LOGW("video_refresh()                              = %lf\n",
+                     (frame_timer_delay - time));
             }
 
             if (frame_timer_delay - time > AV_SYNC_THRESHOLD_MAX) {
@@ -2046,6 +2048,10 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 //is->frame_timer = time - 2 * delay;
                 is->frame_timer = time - (0.05 + delay);
             }
+
+            /*LOGI("video_refresh() audio pts: %lf\n", is->audclk.pts);
+            LOGD("video_refresh() video pts: %lf\n", is->vidclk.pts);
+            LOGW("video_refresh()       pts: %lf\n", (is->vidclk.pts - is->audclk.pts));*/
 
             if (time < frame_timer_delay) {
                 *remaining_time = FFMIN(frame_timer_delay - time, *remaining_time);
@@ -5645,7 +5651,8 @@ bool isPlaying() {
  单位秒.比如seek到100秒,就传100
  */
 int seekTo(int64_t timestamp) {
-    LOGI("seekTo() timeStamp: %lld\n", (long long) timestamp);
+    LOGI("seekTo()   timeStamp: %lld\n", (long long) timestamp);
+    LOGI("seekTo() isRunning(): %d\n", isRunning());
     timeStamp = -1;
     if (!isRunning()) {
         timeStamp = timestamp;
