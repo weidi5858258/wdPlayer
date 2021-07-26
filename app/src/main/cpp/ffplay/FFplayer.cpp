@@ -483,6 +483,7 @@ static bool isPausedForCacheAudio = false;
 double REMAINING_TIME = -0.01;
 static double test_remaining_time = 0.0;
 static bool need_first_key_frame = true;
+static bool has_seeked = false;
 
 static long long int test_get_master_clock_count = 0;
 static double test_delay = 0.0;
@@ -3170,6 +3171,22 @@ static void *video_thread_mc(void *arg) {
             pictq->windex = 0;
             pthread_cond_signal(&pictq->pcond);
             pthread_mutex_unlock(&pictq->pmutex);
+
+            /*if (has_seeked) {
+                has_seeked = false;
+                need_first_key_frame = true;
+                feedInputBufferAndDrainOutputBuffer2(
+                        0x0002,
+                        d->queue->serial,
+                        pkt.flags,
+                        pkt.data,
+                        pkt.size,
+                        (long long int) pkt.pts,
+                        (long long int) pkt.dts,
+                        (long long int) pkt.pos,
+                        (long long int) pkt.duration);
+                av_packet_unref(&pkt);
+            }*/
             continue;
         }
 
@@ -5482,6 +5499,7 @@ int initPlayer() {
     isPausedForCacheVideo = false;
     isPausedForCacheAudio = false;
     need_first_key_frame = true;
+    has_seeked = false;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
@@ -5659,6 +5677,7 @@ int seekTo(int64_t timestamp) {
         return -1;
     }
 
+    has_seeked = true;
     stream_seek(video_state,
                 (int64_t) (timestamp * AV_TIME_BASE),
                 (int64_t) (10.000000 * AV_TIME_BASE), 0);
