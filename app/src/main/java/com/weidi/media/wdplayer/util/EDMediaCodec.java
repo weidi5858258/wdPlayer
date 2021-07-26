@@ -61,6 +61,7 @@ public class EDMediaCodec {
             int size,
             long presentationTimeUs,
             int flags,
+            boolean release,
             boolean render,
             boolean needFeedInputBuffer) {
         if (needFeedInputBuffer) {
@@ -75,11 +76,11 @@ public class EDMediaCodec {
                     presentationTimeUs,
                     flags)
                     &&
-                    drainOutputBuffer(callback, type, mediaCodec, render);
+                    drainOutputBuffer(callback, type, mediaCodec, release, render);
         }
 
         // 录制屏幕时,video是没有Input过程的
-        return drainOutputBuffer(callback, type, mediaCodec, render);
+        return drainOutputBuffer(callback, type, mediaCodec, release, render);
     }
 
     /***
@@ -164,10 +165,10 @@ public class EDMediaCodec {
             e.printStackTrace();
             if (type == TYPE.TYPE_AUDIO) {
                 Log.e(TAG, "feedInputBuffer() Audio Input occur exception: " + e);
-                callback.handleAudioOutputBuffer(-1, null, null);
+                //callback.handleAudioOutputBuffer(-1, null, null);
             } else {
                 Log.e(TAG, "feedInputBuffer() Video Input occur exception: " + e);
-                callback.handleVideoOutputBuffer(-1, null, null);
+                //callback.handleVideoOutputBuffer(-1, null, null);
             }
             return false;
         }
@@ -183,19 +184,22 @@ public class EDMediaCodec {
             Callback callback,
             TYPE type,
             MediaCodec codec,
+            boolean release,
             boolean render) {
         // 房间信息
         MediaCodec.BufferInfo roomInfo = new MediaCodec.BufferInfo();
         ByteBuffer room = null;
         for (; ; ) {
-            if (type == TYPE.TYPE_AUDIO) {
-                if (callback.isAudioFinished()) {
-                    callback.handleAudioOutputBuffer(-1, null, null);
+            if (type == TYPE.TYPE_VIDEO) {
+                if (callback.isVideoFinished()) {
+                    //callback.handleVideoOutputBuffer(-1, null, null);
+                    roomInfo = null;
                     break;
                 }
             } else {
-                if (callback.isVideoFinished()) {
-                    callback.handleVideoOutputBuffer(-1, null, null);
+                if (callback.isAudioFinished()) {
+                    //callback.handleAudioOutputBuffer(-1, null, null);
+                    roomInfo = null;
                     break;
                 }
             }
@@ -208,38 +212,39 @@ public class EDMediaCodec {
                  pid 6967 (.media.wdplayer)
                  */
                 int roomIndex = codec.dequeueOutputBuffer(roomInfo, TIME_OUT);
-                /*if (type == TYPE.TYPE_AUDIO) {
-                    //Log.d(TAG, "drainOutputBuffer() Audio roomIndex: " + roomIndex);
-                } else {
-                    //Log.w(TAG, "drainOutputBuffer() Video roomIndex: " + roomIndex);
-                }*/
                 switch (roomIndex) {
-                    case MediaCodec.INFO_TRY_AGAIN_LATER:// -1
+                    case MediaCodec.INFO_TRY_AGAIN_LATER: {
+                        // -1
                         // 不断的调用,不要打印日志
                         break;
-                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED:// -2
+                    }
+                    case MediaCodec.INFO_OUTPUT_FORMAT_CHANGED: {
+                        // -2
                         // 像音频,第三个输出日志
                         // 一般一个视频各自调用一次
-                        if (type == TYPE.TYPE_AUDIO) {
-                            Log.d(TAG, "drainOutputBuffer() " +
-                                    "Audio Output MediaCodec.INFO_OUTPUT_FORMAT_CHANGED");
-                            callback.handleAudioOutputFormat(codec.getOutputFormat());
-                        } else {
+                        if (type == TYPE.TYPE_VIDEO) {
                             Log.w(TAG, "drainOutputBuffer() " +
                                     "Video Output MediaCodec.INFO_OUTPUT_FORMAT_CHANGED");
                             callback.handleVideoOutputFormat(codec.getOutputFormat());
+                        } else {
+                            Log.d(TAG, "drainOutputBuffer() " +
+                                    "Audio Output MediaCodec.INFO_OUTPUT_FORMAT_CHANGED");
+                            callback.handleAudioOutputFormat(codec.getOutputFormat());
                         }
                         break;
-                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED:// -3
+                    }
+                    case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED: {
+                        // -3
                         // 像音频,第二个输出日志.视频好像没有这个输出日志
-                        if (type == TYPE.TYPE_AUDIO) {
-                            Log.d(TAG, "drainOutputBuffer() " +
-                                    "Audio Output MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
-                        } else {
+                        if (type == TYPE.TYPE_VIDEO) {
                             Log.w(TAG, "drainOutputBuffer() " +
                                     "Video Output MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
+                        } else {
+                            Log.d(TAG, "drainOutputBuffer() " +
+                                    "Audio Output MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED");
                         }
                         break;
+                    }
                     default:
                         break;
                 }
@@ -247,68 +252,74 @@ public class EDMediaCodec {
                     break;
                 }
 
-                if ((roomInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {// 2
-                    if (type == TYPE.TYPE_AUDIO) {
-                        Log.d(TAG, "drainOutputBuffer() " +
-                                "Audio Output MediaCodec.BUFFER_FLAG_CODEC_CONFIG");
-                    } else {
+                /*if ((roomInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {// 2
+                    if (type == TYPE.TYPE_VIDEO) {
                         Log.w(TAG, "drainOutputBuffer() " +
                                 "Video Output MediaCodec.BUFFER_FLAG_CODEC_CONFIG");
-                    }
-                    //codec.releaseOutputBuffer(roomIndex, render);
-                    //continue;
-                }
-                if ((roomInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {// 4
-                    if (type == TYPE.TYPE_AUDIO) {
-                        Log.d(TAG, "drainOutputBuffer() " +
-                                "Audio Output MediaCodec.BUFFER_FLAG_END_OF_STREAM");
                     } else {
+                        Log.d(TAG, "drainOutputBuffer() " +
+                                "Audio Output MediaCodec.BUFFER_FLAG_CODEC_CONFIG");
+                    }
+                }*/
+
+                /*if ((roomInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {// 4
+                    if (type == TYPE.TYPE_VIDEO) {
                         Log.w(TAG, "drainOutputBuffer() " +
                                 "Video Output MediaCodec.BUFFER_FLAG_END_OF_STREAM");
+                    } else {
+                        Log.d(TAG, "drainOutputBuffer() " +
+                                "Audio Output MediaCodec.BUFFER_FLAG_END_OF_STREAM");
                     }
                     // 结束
                     return true;
-                }
+                }*/
 
                 // 根据房间号找到房间
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    //Log.i(TAG, "drainOutputBuffer() roomIndex: " + roomIndex);
-                    room = codec.getOutputBuffer(roomIndex);
-                } else {
-                    room = codec.getOutputBuffers()[roomIndex];
+                try {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        room = codec.getOutputBuffer(roomIndex);
+                    } else {
+                        room = codec.getOutputBuffers()[roomIndex];
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "onOutputBufferAvailable() " + e.toString());
+                    return false;
                 }
-                // 房间大小
-                int roomSize = roomInfo.size;
+
                 // 不能根据room是否为null来判断是audio还是video(但我的三星Note2手机上是可以的)
-                if (room != null) {
+                if (room != null && roomInfo != null) {
+                    // 房间大小
+                    int roomSize = roomInfo.size;
                     room.position(roomInfo.offset);
                     room.limit(roomInfo.offset + roomSize);
-                    if (type == TYPE.TYPE_AUDIO) {
-                        callback.handleAudioOutputBuffer(roomIndex, room, roomInfo);
-                    } else {
+                    if (type == TYPE.TYPE_VIDEO) {
                         callback.handleVideoOutputBuffer(roomIndex, room, roomInfo);
+                    } else {
+                        callback.handleAudioOutputBuffer(roomIndex, room, roomInfo);
                     }
                     room.clear();
                 } else {
-                    if (type == TYPE.TYPE_AUDIO) {
-                        callback.handleAudioOutputBuffer(roomIndex, null, null);
-                    } else {
+                    if (type == TYPE.TYPE_VIDEO) {
                         callback.handleVideoOutputBuffer(roomIndex, null, null);
+                    } else {
+                        callback.handleAudioOutputBuffer(roomIndex, null, null);
                     }
                 }
 
-                codec.releaseOutputBuffer(roomIndex, render);
+                if (release) {
+                    codec.releaseOutputBuffer(roomIndex, render);
+                }
             } catch (MediaCodec.CryptoException
                     | IllegalStateException
                     | IllegalArgumentException
                     | NullPointerException e) {
                 e.printStackTrace();
-                if (type == TYPE.TYPE_AUDIO) {
-                    Log.e(TAG, "drainOutputBuffer() Audio Output occur exception: " + e);
-                    callback.handleAudioOutputBuffer(-1, null, null);
-                } else {
+                if (type == TYPE.TYPE_VIDEO) {
                     Log.e(TAG, "drainOutputBuffer() Video Output occur exception: " + e);
-                    callback.handleVideoOutputBuffer(-1, null, null);
+                    //callback.handleVideoOutputBuffer(-1, null, null);
+                } else {
+                    Log.e(TAG, "drainOutputBuffer() Audio Output occur exception: " + e);
+                    //callback.handleAudioOutputBuffer(-1, null, null);
                 }
                 return false;
             }
