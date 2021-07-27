@@ -3172,6 +3172,7 @@ static void *video_thread_mc(void *arg) {
             pthread_cond_signal(&pictq->pcond);
             pthread_mutex_unlock(&pictq->pmutex);
 
+            // 导致音视频不同步
             /*if (has_seeked) {
                 has_seeked = false;
                 need_first_key_frame = true;

@@ -1323,7 +1323,7 @@ public class FfmpegUseMediaCodecDecode {
 
         Log.w(TAG, "initVideoMediaCodec() video    mediaFormat: \n" + mediaFormat);
 
-        hasSeeked = false;
+        afterHasSeekedCount = 0;
         videoSerial = 0;
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(30);
         mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
@@ -1470,21 +1470,27 @@ public class FfmpegUseMediaCodecDecode {
                             mFFMPEG.onTransact(DO_SOMETHING_CODE_clearQueue, null);
                         }
                         videoSerial = avPacket.serial;
+                        /***
+                         Why?
+                         seek后视频硬解码速度变慢,导致视频播放也变慢,音视频不同步
+                         afterHasSeekedCount的作用:
+                         MediaCodec经过flush,start后,不能马上调用releaseOutputBuffer(...),会error.
+                         过一定时间后,就不会error了.
+                         */
                         if (mVideoWrapper.decoderMediaCodec != null
                                 && videoSerial > 2
                                 && ((mVideoWrapper.width >= 3840 && mVideoWrapper.height >= 2160) || mVideoWrapper.frameRate >= 45)) {
                             Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 1");
                             mVideoLock.lock();
+                            afterHasSeekedCount = 0;
                             mVideoWrapper.decoderMediaCodec.flush();
                             mVideoWrapper.decoderMediaCodec.start();
                             mVideoLock.unlock();
                             Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 2");
-                            hasSeeked = true;
                             avPacket = null;
                             return true;
                         }
                     }
-                    hasSeeked = false;
 
                     /*Log.d(TAG, "feedInputBufferAndDrainOutputBuffer()" +
                             " pts: " + avPacket.presentationTimeUs +
@@ -1579,8 +1585,8 @@ public class FfmpegUseMediaCodecDecode {
     public void releaseOutputBuffer(boolean render) {
         int roomIndex = -1;
         try {
-            //Log.i(TAG, "releaseOutputBuffer() 1");
             mVideoLock.lock();
+            //Log.i(TAG, "releaseOutputBuffer() 1");
             if (mVideoDatasIndexQueue != null) {
                 //Object object = mVideoDatasIndexQueue.take();// 阻塞
                 Object object = mVideoDatasIndexQueue.poll();// 非阻塞
@@ -1589,11 +1595,13 @@ public class FfmpegUseMediaCodecDecode {
                         && mVideoWrapper != null
                         && mVideoWrapper.decoderMediaCodec != null) {
                     roomIndex = (int) object;
-                    //Log.i(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
-                    if (hasSeeked) {
-                        return;
+                    if (roomIndex >= 0 && afterHasSeekedCount >= 5) {
+                        //Log.i(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
+                        mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
+                        if (afterHasSeekedCount >= Integer.MAX_VALUE) {
+                            afterHasSeekedCount = 5;
+                        }
                     }
-                    mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
                 }
             }
             mVideoLock.unlock();
@@ -1829,6 +1837,7 @@ public class FfmpegUseMediaCodecDecode {
                 }
 
                 mVideoLock.lock();
+                ++afterHasSeekedCount;
                 avPacket = getAvPacket();
                 mVideoLock.unlock();
             }
@@ -1921,7 +1930,7 @@ public class FfmpegUseMediaCodecDecode {
     final Lock mVideoLock = new ReentrantLock();
     private ArrayList<AVPacket> mVideoList = new ArrayList<AVPacket>();
     private int videoSerial = 0;
-    private boolean hasSeeked = false;
+    private int afterHasSeekedCount = 0;
 
     private AVPacket getAvPacket() {
         if (mVideoList.isEmpty()) {
@@ -2038,6 +2047,7 @@ public class FfmpegUseMediaCodecDecode {
             }
             if (mVideoWrapper == null || !mVideoWrapper.isHandling) {
                 Log.e(TAG, "onInputBufferAvailable() return");
+                avPacket = null;
                 try {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0,
                             MediaCodec.BUFFER_FLAG_END_OF_STREAM);
@@ -2058,7 +2068,7 @@ public class FfmpegUseMediaCodecDecode {
                 room = null;
             }
             if (room == null) {
-                Log.e(TAG, "onInputBufferAvailable() return for room is null");
+                Log.e(TAG, "onInputBufferAvailable()  return for room is null");
                 avPacket = null;
                 try {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
@@ -2071,10 +2081,10 @@ public class FfmpegUseMediaCodecDecode {
             int size = avPacket.size;
             long presentationTimeUs = avPacket.presentationTimeUs;
             int flags = avPacket.flags;
-            if (size <= 0) {
+            /*if (size <= 0) {
                 Log.e(TAG, "onInputBufferAvailable() BUFFER_FLAG_END_OF_STREAM");
                 flags = MediaCodec.BUFFER_FLAG_END_OF_STREAM;
-            }
+            }*/
             //Log.w(TAG, "onInputBufferAvailable() data:\n" + Arrays.toString(data));
             // 入住之前打扫一下房间
             room.clear();
@@ -2087,8 +2097,11 @@ public class FfmpegUseMediaCodecDecode {
                     | MediaCodec.CryptoException e) {
                 Log.e(TAG, "onInputBufferAvailable() queueInputBuffer " + e.toString());
             }
-            //avPacket.clear();
-            //avPacket = null;
+
+            if (!useFFplay) {
+                avPacket.clear();
+                avPacket = null;
+            }
         }
 
         @Override
