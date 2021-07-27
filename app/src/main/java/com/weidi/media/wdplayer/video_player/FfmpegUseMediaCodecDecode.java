@@ -1593,11 +1593,11 @@ public class FfmpegUseMediaCodecDecode {
                         && mVideoWrapper != null
                         && mVideoWrapper.decoderMediaCodec != null) {
                     roomIndex = (int) object;
-                    if (roomIndex >= 0 && afterHasSeekedCount >= 5) {
+                    if (roomIndex >= 0 && afterHasSeekedCount >= 2) {
                         //Log.i(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
                         mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
                         if (afterHasSeekedCount >= Integer.MAX_VALUE) {
-                            afterHasSeekedCount = 5;
+                            afterHasSeekedCount = 2;
                         }
                     }
                 }
