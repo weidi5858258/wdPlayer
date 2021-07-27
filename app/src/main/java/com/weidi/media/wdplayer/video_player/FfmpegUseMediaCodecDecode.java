@@ -1487,8 +1487,6 @@ public class FfmpegUseMediaCodecDecode {
                             mVideoWrapper.decoderMediaCodec.start();
                             mVideoLock.unlock();
                             Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 2");
-                            avPacket = null;
-                            return true;
                         }
                     }
 
