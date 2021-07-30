@@ -336,6 +336,10 @@ public class PlayerWrapper {
         Shuffle_Off, Shuffle_On
     }
 
+    public enum Window {
+        Full_Screen, Max_Screen, Min_Screen
+    }
+
     // 关闭重复播放
     private Repeat mRepeat = Repeat.Repeat_Off;
     // 关闭随机播放
@@ -343,6 +347,7 @@ public class PlayerWrapper {
     // 当mShuffle == Shuffle.Shuffle_Off时,上一首,下一首才有效
     private boolean mPlayPrevFile = false;
     private boolean mPlayNextFile = false;
+    private Window mWindow = Window.Max_Screen;
 
     // 必须首先被调用
     public void setService(Service service) {
@@ -1859,7 +1864,7 @@ public class PlayerWrapper {
 
     // 执行全屏和取消全屏的方法
     private void setFullscreen(Activity context, boolean fullscreen) {
-        Window window = context.getWindow();
+        android.view.Window window = context.getWindow();
         WindowManager.LayoutParams winParams = window.getAttributes();
         final int bits = WindowManager.LayoutParams.FLAG_FULLSCREEN;
         if (fullscreen) {
@@ -1983,6 +1988,7 @@ public class PlayerWrapper {
             handleScreenFlag = 3;
         }
 
+        mWindow = Window.Full_Screen;
         mIsPortraitScreen = false;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
@@ -2112,6 +2118,7 @@ public class PlayerWrapper {
             return;
         }
 
+        mWindow = Window.Max_Screen;
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
@@ -2252,6 +2259,7 @@ public class PlayerWrapper {
 
         handleScreenFlag = 1;
 
+        mWindow = Window.Min_Screen;
         mIsPortraitScreen = true;
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(android.R.color.transparent));
@@ -2918,13 +2926,16 @@ public class PlayerWrapper {
                     } else {
                         handlePortraitScreenWithTV();
                     }
-                    //handlePortraitScreenWithTV();
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
             default:
-                // 竖屏
-                handlePortraitScreen();
+                if (mWindow == Window.Min_Screen) {
+                    handlePortraitScreenWithTV();
+                } else {
+                    // 竖屏
+                    handlePortraitScreen();
+                }
                 break;
         }
 

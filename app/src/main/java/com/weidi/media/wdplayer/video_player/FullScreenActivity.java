@@ -297,10 +297,18 @@ public class FullScreenActivity extends Activity {
                     break;
                 case 3:
                     if (PlayerWrapper.IS_PHONE) {
-                        EventBusUtils.post(
-                                PlayerService.class,
-                                PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
-                                new Object[]{1000});
+                        int orientation = getResources().getConfiguration().orientation;
+                        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                            EventBusUtils.post(
+                                    PlayerService.class,
+                                    PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                                    new Object[]{1000});
+                        } else {
+                            EventBusUtils.post(
+                                    PlayerService.class,
+                                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                                    new Object[]{2});
+                        }
                     } else {
                         EventBusUtils.post(
                                 PlayerService.class,
