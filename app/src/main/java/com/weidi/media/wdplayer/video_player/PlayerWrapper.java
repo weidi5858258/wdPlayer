@@ -3172,6 +3172,8 @@ public class PlayerWrapper {
             float pos = (float) currentPosition / mMediaDuration;
             int target = Math.round(pos * mPositionSeekBar.getMax());
             mPositionSeekBar.setProgress(target);
+            mControllerPanelLayout.requestLayout();
+            mControllerPanelLayout.invalidate();
         }
 
         if (mPresentationTime < (mMediaDuration - 5)) {
