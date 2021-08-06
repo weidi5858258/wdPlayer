@@ -3765,8 +3765,8 @@ static int stream_component_open(VideoState *is, int stream_index) {
                     AVG_FRAME_RATE_NUM = 120;
                 }
             } else if (/*isLive && */bit_rate_total == 0 && bit_rate_video == 0) {
-                if (frame_rate >= 45) {
-                    need_reset_frame_rate = true;
+                if (frame_rate == 50) {
+                    //need_reset_frame_rate = true;
                 } else if (frame_rate == 0) {
                     need_reset_frame_rate = true;
                 }

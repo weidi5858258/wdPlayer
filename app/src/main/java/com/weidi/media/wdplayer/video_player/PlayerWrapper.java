@@ -2576,6 +2576,8 @@ public class PlayerWrapper {
             mPlayIB.setVisibility(View.INVISIBLE);
             mPauseIB.setVisibility(View.VISIBLE);
             mWdPlayer.pause();
+            mControllerPanelLayout.requestLayout();
+            mControllerPanelLayout.invalidate();
         }
     }
 
@@ -2597,6 +2599,8 @@ public class PlayerWrapper {
                 mLoadingLayout.setVisibility(View.GONE);
             }
             mWdPlayer.play();
+            mControllerPanelLayout.requestLayout();
+            mControllerPanelLayout.invalidate();
         }
     }
 
