@@ -3538,7 +3538,7 @@ public class PlayerWrapper {
                 if (f == null) {
                     continue;
                 }
-                if (!f.getAbsolutePath().startsWith("/storage/emulated/0")) {
+                if (f.getAbsolutePath().startsWith("/storage/emulated/0/")) {
                     file = f;
                     rootDir = f.getAbsolutePath();
                     break;
