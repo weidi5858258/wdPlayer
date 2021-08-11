@@ -3540,8 +3540,8 @@ public class PlayerWrapper {
                 }
                 if (f.getAbsolutePath().startsWith("/storage/emulated/0/")) {
                     file = f;
+                } else {
                     rootDir = f.getAbsolutePath();
-                    break;
                 }
             }
         }
@@ -3582,11 +3582,11 @@ public class PlayerWrapper {
             }
         }
 
-        sb.delete(0, sb.length());
+        /*sb.delete(0, sb.length());
         sb.append(file.getAbsolutePath());
         sb.append("/");
         sb.append("test.url");
-        testTargetPath1 = sb.toString();
+        testTargetPath1 = sb.toString();*/
 
         if (IS_PHONE || IS_WATCH) {
             sb.delete(0, sb.length());
@@ -4235,7 +4235,7 @@ public class PlayerWrapper {
     private String testTargetPath;
 
     // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/test.url
-    private String testTargetPath1;
+    //private String testTargetPath1;
 
     // /storage/emulated/0/Android/data/com.weidi.media.wdplayer/files/shared/iptv.url
     private String testTargetPath2;
@@ -4265,7 +4265,7 @@ public class PlayerWrapper {
      */
     private void startTest() {
         if (mIsTesting
-                || TextUtils.isEmpty(testTargetPath1)
+                //|| TextUtils.isEmpty(testTargetPath1)
                 || TextUtils.isEmpty(testTargetPath2)) {
             Log.i(TAG, "startTest() return");
             return;
@@ -4407,7 +4407,7 @@ public class PlayerWrapper {
             StringBuilder sb = new StringBuilder();
             sb.append(testTargetPath);
             sb.append("/");
-            sb.append("temp_test.url");
+            sb.append("temp_iptv.url");
             writer = new BufferedWriter(new FileWriter(sb.toString(), true));
             for (String path : availablePathList) {
                 writer.write(path);
