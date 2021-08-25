@@ -195,7 +195,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{audioPlaybackPath, "audio/"});
                                 break;
@@ -257,7 +257,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{audioPlaybackPath, "audio/"});
                                 break;
@@ -272,7 +272,7 @@ public class LocalAudioActivityForWear extends WearableActivity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{audioPlaybackPath, "audio/"});
                 }

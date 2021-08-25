@@ -48,35 +48,35 @@ public class MediaButtonReceiver extends BroadcastReceiver {
             switch (keyCode) {
                 case KeyEvent.KEYCODE_HEADSETHOOK:// 79
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_HEADSETHOOK, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_HEADSETHOOK, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:// 85
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_STOP:// 86
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_STOP, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_STOP, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:// 88
                     // 三击
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_PREVIOUS, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PREVIOUS, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_NEXT:// 87
                     // 双击
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_NEXT, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_NEXT, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY:// 126
                     // 单击
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_PLAY, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PLAY, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:// 127
                     // 单击
                     EventBusUtils.post(
-                            PlayerService.class, KeyEvent.KEYCODE_MEDIA_PAUSE, null);
+                            PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PAUSE, null);
                     break;
                 default:
                     break;

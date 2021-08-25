@@ -3,7 +3,6 @@ package com.weidi.media.wdplayer.video_player;
 import android.Manifest;
 import android.app.Activity;
 import android.app.ActivityManager;
-import android.app.UiModeManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
@@ -14,23 +13,13 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.OrientationEventListener;
-import android.view.OrientationListener;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
 import com.weidi.eventbus.EventBusUtils;
-import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.utils.PermissionsUtils;
 
@@ -156,12 +145,12 @@ public class JniPlayerActivity extends Activity {
 
             if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
@@ -199,12 +188,12 @@ public class JniPlayerActivity extends Activity {
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要无状态栏的横屏
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
@@ -411,7 +400,7 @@ public class JniPlayerActivity extends Activity {
     private void internalResume() {
         if (PlayerWrapper.IS_TV && noFinish) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         }
@@ -420,7 +409,7 @@ public class JniPlayerActivity extends Activity {
     private void internalPause() {
         if (PlayerWrapper.IS_TV && noFinish) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{2});
         }
@@ -437,12 +426,12 @@ public class JniPlayerActivity extends Activity {
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要有状态栏的横屏
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{2});
             } else {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
@@ -467,7 +456,7 @@ public class JniPlayerActivity extends Activity {
         } else {
             Log.d(TAG, "internalCreate() PlayerService is alive");
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_SHOW_WINDOW,
                     new Object[]{mPath, mType});
         }

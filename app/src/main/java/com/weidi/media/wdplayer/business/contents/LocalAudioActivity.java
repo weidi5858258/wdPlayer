@@ -183,7 +183,7 @@ public class LocalAudioActivity extends Activity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "audio/"});
                                 break;
@@ -245,7 +245,7 @@ public class LocalAudioActivity extends Activity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{audioPlaybackPath, "audio/"});
                                 break;
@@ -260,7 +260,7 @@ public class LocalAudioActivity extends Activity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{audioPlaybackPath, "audio/"});
                 }

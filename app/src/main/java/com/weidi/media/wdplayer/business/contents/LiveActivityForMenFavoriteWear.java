@@ -220,7 +220,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -273,7 +273,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -291,7 +291,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});
                 }

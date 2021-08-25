@@ -144,12 +144,12 @@ public class FullScreenActivity extends Activity {
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
         }*/
@@ -175,12 +175,12 @@ public class FullScreenActivity extends Activity {
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要无状态栏的横屏
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
@@ -197,13 +197,13 @@ public class FullScreenActivity extends Activity {
                     break;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                     EventBusUtils.post(
-                            PlayerWrapper.class,
+                            PlayerWrapper.class.getName(),
                             BUTTON_CLICK_FR,
                             null);
                     break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     EventBusUtils.post(
-                            PlayerWrapper.class,
+                            PlayerWrapper.class.getName(),
                             BUTTON_CLICK_FF,
                             null);
                     break;
@@ -216,12 +216,12 @@ public class FullScreenActivity extends Activity {
                                 FFMPEG.getDefault().onTransact(
                                         FFMPEG.DO_SOMETHING_CODE_isPlaying, null))) {
                             EventBusUtils.post(
-                                    PlayerWrapper.class,
+                                    PlayerWrapper.class.getName(),
                                     BUTTON_CLICK_PAUSE,
                                     null);
                         } else {
                             EventBusUtils.post(
-                                    PlayerWrapper.class,
+                                    PlayerWrapper.class.getName(),
                                     BUTTON_CLICK_PLAY,
                                     null);
                         }
@@ -285,13 +285,13 @@ public class FullScreenActivity extends Activity {
             switch (msg.what) {
                 case 1:
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                             new Object[]{0});
                     break;
                 case 2:
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                             new Object[]{2});
                     break;
@@ -300,18 +300,18 @@ public class FullScreenActivity extends Activity {
                         int orientation = getResources().getConfiguration().orientation;
                         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
                             EventBusUtils.post(
-                                    PlayerService.class,
+                                    PlayerService.class.getName(),
                                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                                     new Object[]{1000});
                         } else {
                             EventBusUtils.post(
-                                    PlayerService.class,
+                                    PlayerService.class.getName(),
                                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                                     new Object[]{2});
                         }
                     } else {
                         EventBusUtils.post(
-                                PlayerService.class,
+                                PlayerService.class.getName(),
                                 PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                                 new Object[]{2});
                     }

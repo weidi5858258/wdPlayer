@@ -104,12 +104,12 @@ public class LocalVideoActivityForWear extends WearableActivity {
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
         }
@@ -233,7 +233,7 @@ public class LocalVideoActivityForWear extends WearableActivity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, type});
                                 break;
@@ -295,7 +295,7 @@ public class LocalVideoActivityForWear extends WearableActivity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -310,7 +310,7 @@ public class LocalVideoActivityForWear extends WearableActivity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});
                 }

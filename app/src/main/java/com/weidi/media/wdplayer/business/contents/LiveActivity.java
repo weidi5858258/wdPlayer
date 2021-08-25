@@ -148,12 +148,12 @@ public class LiveActivity extends Activity {
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
         }
@@ -287,7 +287,7 @@ public class LiveActivity extends Activity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -340,7 +340,7 @@ public class LiveActivity extends Activity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -358,7 +358,7 @@ public class LiveActivity extends Activity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});
                 }

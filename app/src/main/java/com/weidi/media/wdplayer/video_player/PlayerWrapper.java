@@ -3363,7 +3363,7 @@ public class PlayerWrapper {
                 setType("audio/");
             }
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_SHOW_WINDOW,
                     new Object[]{mCurPath, mType});
             return;

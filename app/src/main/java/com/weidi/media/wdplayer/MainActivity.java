@@ -187,12 +187,12 @@ public class MainActivity extends AppCompatActivity {
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
         }
@@ -341,14 +341,14 @@ public class MainActivity extends AppCompatActivity {
                             MyToast.show("禁用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, false).commit();
                             EventBusUtils.post(
-                                    PlayerService.class,
+                                    PlayerService.class.getName(),
                                     COMMAND_STOP_SECOND_PLAYERSERVICE,
                                     null);
                         } else {
                             MyToast.show("启用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
                             EventBusUtils.post(
-                                    PlayerService.class,
+                                    PlayerService.class.getName(),
                                     COMMAND_START_SECOND_PLAYERSERVICE,
                                     null);
                         }
@@ -448,7 +448,7 @@ public class MainActivity extends AppCompatActivity {
         if (IS_TV) {
             findViewById(R.id.address_et).setVisibility(View.GONE);
             Object result = EventBusUtils.post(
-                    PlayerWrapper.class, DO_SOMETHING_EVENT_IS_RUNNING, null);
+                    PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_IS_RUNNING, null);
             boolean isRunning = false;
             if (result != null) {
                 isRunning = (boolean) result;
@@ -457,11 +457,11 @@ public class MainActivity extends AppCompatActivity {
                 findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
 
                 long mediaDuration = (long) EventBusUtils.post(
-                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
+                        PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
                 mRepeat = (PlayerWrapper.Repeat) EventBusUtils.post(
-                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_REPEAT, null);
+                        PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_REPEAT, null);
                 mShuffle = (PlayerWrapper.Shuffle) EventBusUtils.post(
-                        PlayerWrapper.class, DO_SOMETHING_EVENT_GET_SHUFFLE, null);
+                        PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_SHUFFLE, null);
 
                 SeekBar progress_bar = findViewById(R.id.progress_bar);
                 RelativeLayout show_time_rl = findViewById(R.id.show_time_rl);
@@ -581,28 +581,28 @@ public class MainActivity extends AppCompatActivity {
         switch (v.getId()) {
             case R.id.button_fr:
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_FR,
                         null);
                 mFrIB.requestFocus();
                 break;
             case R.id.button_ff:
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_FF,
                         null);
                 mFfIB.requestFocus();
                 break;
             case R.id.button_prev:
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PREV,
                         null);
                 mPrevIB.requestFocus();
                 break;
             case R.id.button_next:
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_NEXT,
                         null);
                 mNextIB.requestFocus();
@@ -611,7 +611,7 @@ public class MainActivity extends AppCompatActivity {
                 mPlayIB.setVisibility(View.INVISIBLE);
                 mPauseIB.setVisibility(View.VISIBLE);
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PLAY,
                         null);
                 mPauseIB.requestFocus();
@@ -620,14 +620,14 @@ public class MainActivity extends AppCompatActivity {
                 mPlayIB.setVisibility(View.VISIBLE);
                 mPauseIB.setVisibility(View.INVISIBLE);
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PAUSE,
                         null);
                 mPlayIB.requestFocus();
                 break;
             case R.id.button_exit:
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_EXIT,
                         null);
                 findViewById(R.id.text).requestFocus();
@@ -637,7 +637,7 @@ public class MainActivity extends AppCompatActivity {
                 mVolumeNormal.setVisibility(View.INVISIBLE);
                 mVolumeMute.setVisibility(View.VISIBLE);
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_VOLUME_NORMAL,
                         null);
                 mVolumeMute.requestFocus();
@@ -646,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
                 mVolumeNormal.setVisibility(View.VISIBLE);
                 mVolumeMute.setVisibility(View.INVISIBLE);
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_VOLUME_MUTE,
                         null);
                 mVolumeNormal.requestFocus();
@@ -655,7 +655,7 @@ public class MainActivity extends AppCompatActivity {
                 mRepeat = PlayerWrapper.Repeat.Repeat_All;
                 setRepeatView();
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_OFF,
                         null);
                 mRepeatAll.requestFocus();
@@ -664,7 +664,7 @@ public class MainActivity extends AppCompatActivity {
                 mRepeat = PlayerWrapper.Repeat.Repeat_One;
                 setRepeatView();
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_ALL,
                         null);
                 mRepeatOne.requestFocus();
@@ -673,7 +673,7 @@ public class MainActivity extends AppCompatActivity {
                 mRepeat = PlayerWrapper.Repeat.Repeat_Off;
                 setRepeatView();
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_ONE,
                         null);
                 mRepeatOff.requestFocus();
@@ -682,7 +682,7 @@ public class MainActivity extends AppCompatActivity {
                 mShuffle = PlayerWrapper.Shuffle.Shuffle_On;
                 setShuffleView();
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_SHUFFLE_OFF,
                         null);
                 mShuffleOn.requestFocus();
@@ -691,7 +691,7 @@ public class MainActivity extends AppCompatActivity {
                 mShuffle = PlayerWrapper.Shuffle.Shuffle_Off;
                 setShuffleView();
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_SHUFFLE_ON,
                         null);
                 mShuffleOff.requestFocus();
@@ -728,7 +728,7 @@ public class MainActivity extends AppCompatActivity {
                         startService(intent);
                     } else {
                         EventBusUtils.post(
-                                PlayerService.class,
+                                PlayerService.class.getName(),
                                 PlayerService.COMMAND_SHOW_WINDOW,
                                 new Object[]{mediaPath, mediaType});
                     }
@@ -743,14 +743,14 @@ public class MainActivity extends AppCompatActivity {
             }
             case R.id.width_screen_btn: {
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         DO_SOMETHING_EVENT_WIDTH_SCREEN,
                         null);
                 break;
             }
             case R.id.min_screen_btn: {
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         DO_SOMETHING_EVENT_MIN_SCREEN,
                         null);
                 break;
@@ -773,14 +773,14 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.test_start_btn: {
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_TEST_START,
                         null);
                 break;
             }
             case R.id.test_stop_btn: {
                 EventBusUtils.post(
-                        PlayerWrapper.class,
+                        PlayerWrapper.class.getName(),
                         BUTTON_CLICK_TEST_STOP,
                         null);
                 break;

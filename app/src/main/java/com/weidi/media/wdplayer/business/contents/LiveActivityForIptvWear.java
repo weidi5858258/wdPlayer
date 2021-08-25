@@ -117,12 +117,12 @@ public class LiveActivityForIptvWear extends WearableActivity {
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
             EventBusUtils.post(
-                    PlayerService.class,
+                    PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
         }
@@ -139,12 +139,12 @@ public class LiveActivityForIptvWear extends WearableActivity {
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要无状态栏的横屏
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
                 EventBusUtils.post(
-                        PlayerService.class,
+                        PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
             }
@@ -251,7 +251,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
                         switch (viewId) {
                             case R.id.item_root_layout:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -313,7 +313,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
                         switch (mClickCount) {
                             case 1:
                                 EventBusUtils.post(
-                                        PlayerService.class,
+                                        PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
                                 break;
@@ -328,7 +328,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
                     }
                 } else {
                     EventBusUtils.post(
-                            PlayerService.class,
+                            PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});
                 }
