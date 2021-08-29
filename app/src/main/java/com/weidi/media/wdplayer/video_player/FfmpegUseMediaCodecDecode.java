@@ -1164,6 +1164,7 @@ public class FfmpegUseMediaCodecDecode {
             mediaFormat.setInteger(MediaFormat.KEY_BITRATE_MODE,
                     MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CQ);
         }
+        // 指定解码后的帧格式是"COLOR_FormatYUV420Flexible"格式
         /*mediaFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT,
                 MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible);*/
 

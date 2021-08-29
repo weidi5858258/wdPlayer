@@ -432,7 +432,7 @@ public class MediaUtils {
                     continue;
                 }
 
-                /*if (codecCapabilities.getVideoCapabilities() != null) {
+                if (codecCapabilities.getVideoCapabilities() != null) {
                     // video解码器
                     Log.d(TAG, "-----------------------------------------------------");
                     Log.d(TAG,
@@ -449,7 +449,7 @@ public class MediaUtils {
                     // audio解码器
                     Log.d(TAG,
                             "findAllDecodersByMime() audio codecName: " + mediaCodecInfo.getName());
-                }*/
+                }
 
                 Log.d(TAG,
                         "findAllDecodersByMime() codecName: " + mediaCodecInfo.getName());
