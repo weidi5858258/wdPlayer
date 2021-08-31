@@ -2,18 +2,19 @@ package com.weidi.media.wdplayer.video_player;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
+import com.weidi.eventbus.EventBusUtils;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
@@ -21,14 +22,10 @@ import com.weidi.media.wdplayer.util.MediaUtils;
 
 import java.io.File;
 
-import static android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
-import static android.media.AudioDeviceInfo.TYPE_USB_HEADSET;
-import static android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
 import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
-import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 
@@ -80,6 +77,7 @@ public class FFMPEG implements WdPlayer {
     private volatile static FFMPEG sFFMPEG;
 
     private FFMPEG() {
+        EventBusUtils.register(this);
     }
 
     public static FFMPEG getDefault() {
@@ -153,6 +151,7 @@ public class FFMPEG implements WdPlayer {
     public static final int DO_SOMETHING_CODE_setTimeDifference = 1129;
     public static final int DO_SOMETHING_CODE_setRemainingTime = 1130;
     public static final int DO_SOMETHING_CODE_clearQueue = 1131;
+    public static final int DO_SOMETHING_CODE_postDelayed = 1132;
 
     private byte[] eof = new byte[]{-1, -1, -1, -1, -1};
 
@@ -370,6 +369,20 @@ public class FFMPEG implements WdPlayer {
                 mFfmpegUseMediaCodecDecode.releaseOutputBuffer(false);
             }
         }
+    }
+
+    // 供native层调用,主要是使用Handler的延时功能
+    private void postDelayed(final int what, final long delayMillis) {
+        if (Looper.getMainLooper() == Looper.myLooper()) {
+            EventBusUtils.removeUiMessages(DO_SOMETHING_CODE_postDelayed);
+        } else {
+            EventBusUtils.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
+        }
+        EventBusUtils.postDelayed(
+                FFMPEG.class.getName(),
+                DO_SOMETHING_CODE_postDelayed,
+                delayMillis,
+                new Object[]{what});
     }
 
     private Context mContext;
@@ -680,6 +693,26 @@ public class FFMPEG implements WdPlayer {
     @Override
     public long getDuration() {
         return Long.parseLong(onTransact(DO_SOMETHING_CODE_getDuration, null));
+    }
+
+    private Object onEvent(int what, Object[] objArray) {
+        Object result = null;
+        switch (what) {
+            case DO_SOMETHING_CODE_postDelayed: {
+                if (objArray != null && objArray.length > 0) {
+                    JniObject jniObject = JniObject.obtain();
+                    jniObject.valueInt = (int) objArray[0];
+                    onTransact(DO_SOMETHING_CODE_postDelayed, jniObject);
+                    objArray = null;
+                    objArray[0] = null;
+                    jniObject = null;
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        return result;
     }
 
     // 供jni层调用(底层信息才是通过这个接口反映到java层的)

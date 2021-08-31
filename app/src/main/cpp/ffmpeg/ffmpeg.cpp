@@ -103,6 +103,7 @@ jmethodID feedInputBufferAndDrainOutputBufferMethodID2 = nullptr;
 jmethodID createAudioTrackMethodID = nullptr;
 jmethodID writeMethodID = nullptr;
 jmethodID sleepMethodID = nullptr;
+jmethodID postDelayed_jmethodID = nullptr;
 
 jobject videoProducerObject = nullptr;
 jobject videoConsumerObject = nullptr;
@@ -411,6 +412,19 @@ void sleep(long ms) {
     }
 }
 
+void postDelayed(int what, long long delayMillis) {
+    JNIEnv *env;
+    bool isAttached = getEnv(&env);
+    if (env != nullptr
+        && ffmpegJavaObject != nullptr
+        && postDelayed_jmethodID != nullptr) {
+        env->CallVoidMethod(ffmpegJavaObject, postDelayed_jmethodID, what, delayMillis);
+    }
+    if (isAttached) {
+        gJavaVm->DetachCurrentThread();
+    }
+}
+
 // 回调java端FFMPEG类中的有关方法
 int onLoadProgressUpdated(int code, int progress) {
     //LOGI("onLoadProgressUpdated() code: %d progress: %d\n", code, progress);
@@ -704,6 +718,8 @@ static jint onTransact_init(JNIEnv *env, jobject ffmpegObject,
             FFMPEGClass, "write", "([BII)V");
     sleepMethodID = env->GetMethodID(
             FFMPEGClass, "sleep", "(J)V");
+    postDelayed_jmethodID = env->GetMethodID(
+            FFMPEGClass, "postDelayed", "(IJ)V");
 
     jobject jni_object;
     jfieldID fieldID;
@@ -1771,6 +1787,11 @@ char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
             strncpy(info, "DO_SOMETHING_CODE_clearQueue",
                     strlen("DO_SOMETHING_CODE_clearQueue"));
             break;
+        case DO_SOMETHING_CODE_postDelayed: {
+            strncpy(info, "DO_SOMETHING_CODE_postDelayed",
+                    strlen("DO_SOMETHING_CODE_postDelayed"));
+            break;
+        }
         default:
             strncpy(info, "DO_SOMETHING_CODE_nothing",
                     strlen("DO_SOMETHING_CODE_nothing"));
@@ -1932,6 +1953,10 @@ Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobje
         }
         case DO_SOMETHING_CODE_clearQueue: {
             clearQueue();
+            return env->NewStringUTF(ret);
+        }
+        case DO_SOMETHING_CODE_postDelayed: {
+            onEvent(env->GetIntField(jniObject, valueInt_jfieldID));
             return env->NewStringUTF(ret);
         }
 

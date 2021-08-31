@@ -5780,4 +5780,15 @@ void clearQueue() {
     pthread_mutex_unlock(&video_state->pictq.pmutex);
 }
 
+void onEvent(int what) {
+    LOGI("onEvent() what: %d\n", what);
+    switch (what) {
+        case 0: {
+            break;
+        }
+        default:
+            break;
+    }
+}
+
 //}// namespace

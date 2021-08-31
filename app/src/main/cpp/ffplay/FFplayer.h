@@ -52,6 +52,8 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        long long int duration,
                                        const uint8_t *data);
 
+void onEvent(int what);
+
 //}
 
 
