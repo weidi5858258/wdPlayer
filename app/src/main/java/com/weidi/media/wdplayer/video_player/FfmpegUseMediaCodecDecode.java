@@ -1353,10 +1353,11 @@ public class FfmpegUseMediaCodecDecode {
         afterHasSeekedCount = 0;
         videoSerial = 0;
         mVideoInputDatasQueue = new ArrayBlockingQueue<AVPacket>(30);
-        //mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
+        mVideoDatasIndexQueue = new ArrayBlockingQueue<Integer>(15);
         mVideoInputDatasQueue.needToWait = true;
-        //mVideoDatasIndexQueue.needToWait = true;
+        mVideoDatasIndexQueue.needToWait = true;
         mVideoDatasIndexMap.clear();
+        mVideoList.clear();
 
         /*if (PlayerWrapper.IS_TV) {
             mediaFormat.setInteger("profile", 8);
@@ -1623,7 +1624,7 @@ public class FfmpegUseMediaCodecDecode {
         try {
             mVideoLock.lock();
             //Log.i(TAG, "releaseOutputBuffer() 1");
-            /*if (mVideoDatasIndexQueue != null) {
+            if (mVideoDatasIndexQueue != null) {
                 //Object object = mVideoDatasIndexQueue.take();// 阻塞
                 Object object = mVideoDatasIndexQueue.poll();// 非阻塞
                 if (object != null
@@ -1639,9 +1640,9 @@ public class FfmpegUseMediaCodecDecode {
                         }
                     }
                 }
-            }*/
+            }
 
-            if (!mVideoDatasIndexMap.isEmpty() && afterHasSeekedCount >= 2) {
+            /*if (!mVideoDatasIndexMap.isEmpty() && afterHasSeekedCount >= 2) {
                 Arrays.sort(mVideoDatasIndexMap.keySet().toArray());
                 roomIndex = mVideoDatasIndexMap.get(mVideoDatasIndexMap.keyAt(0));
                 mVideoDatasIndexMap.removeAt(0);
@@ -1652,7 +1653,7 @@ public class FfmpegUseMediaCodecDecode {
                         afterHasSeekedCount = 2;
                     }
                 }
-            }
+            }*/
             mVideoLock.unlock();
         } catch (Exception e) {
             Log.e(TAG, "releaseOutputBuffer() " + e.toString());
@@ -1874,7 +1875,7 @@ public class FfmpegUseMediaCodecDecode {
 
             AVPacket avPacket = null;
             if (useFFplay) {
-                /*try {
+                try {
                     // 超出限制就会阻塞
                     //Log.i(TAG, "handleVideoOutputBuffer() 1\n");
                     if (mVideoDatasIndexQueue != null) {
@@ -1883,10 +1884,10 @@ public class FfmpegUseMediaCodecDecode {
                     //Log.i(TAG, "handleVideoOutputBuffer() 2\n");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
-                }*/
+                }
 
                 mVideoLock.lock();
-                mVideoDatasIndexMap.put(roomInfo.presentationTimeUs, roomIndex);
+                //mVideoDatasIndexMap.put(roomInfo.presentationTimeUs, roomIndex);
                 ++afterHasSeekedCount;
                 avPacket = getAvPacket();
                 mVideoLock.unlock();
@@ -2131,12 +2132,12 @@ public class FfmpegUseMediaCodecDecode {
             // 使用mVideoDatasIndexQueue
             // 使用avPacket.pts时,roomInfo.presentationTimeUs值依次增大
             // 显示时间戳.这个时间戳用来告诉播放器该在什么时候显示这一帧的数据
-            //long presentationTimeUs = avPacket.pts;
+            long presentationTimeUs = avPacket.pts;
 
             // 使用mVideoDatasIndexMap
             // 使用avPacket.dts时,roomInfo.presentationTimeUs值不是依次增大
             // 解码时间戳.这个时间戳的意义在于告诉播放器该在什么时候解码这一帧的数据
-            long presentationTimeUs = avPacket.dts;
+            //long presentationTimeUs = avPacket.dts;
             int flags = avPacket.flags;
             //Log.i(TAG, "onInputBufferAvailable()  presentationTimeUs: " + presentationTimeUs);
             /*if (size <= 0) {
