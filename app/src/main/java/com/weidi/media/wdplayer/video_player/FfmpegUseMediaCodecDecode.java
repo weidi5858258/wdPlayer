@@ -367,6 +367,8 @@ public class FfmpegUseMediaCodecDecode {
                     lock.unlock();
                 }
             }
+            //
+            mVideoLock.lock();
             if (!mVideoDatasIndexMap.isEmpty()) {
                 int size = mVideoDatasIndexMap.size();
                 for (int i = 0; i < size; i++) {
@@ -378,8 +380,6 @@ public class FfmpegUseMediaCodecDecode {
                 }
                 mVideoDatasIndexMap.clear();
             }
-            //
-            mVideoLock.lock();
             if (mVideoList != null) {
                 Iterator<AVPacket> iter = mVideoList.iterator();
                 while (iter.hasNext()) {
