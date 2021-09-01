@@ -1235,7 +1235,7 @@ public class SimpleVideoPlayer {
             if (readDataSize > 0) {
                 wrapper.data = data.data;
                 wrapper.size = data.size;
-                wrapper.sampleTime = data.presentationTimeUs;
+                wrapper.sampleTime = data.pts;
 
                 // 向MediaCodec喂数据
                 if (!feedInputBufferAndDrainOutputBuffer(wrapper)) {

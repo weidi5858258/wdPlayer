@@ -4,8 +4,6 @@ import android.media.MediaCodec;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.Arrays;
-
 /**
  * Created by alexander on 2020/1/17.
  */
@@ -16,7 +14,7 @@ public class AVPacket implements Parcelable {
     public int flags;// 判断是否是关键帧
     public byte[] data;
     public int size;
-    public long presentationTimeUs;// pts
+    public long pts;
     public long dts;
     public long pos;
     public long duration;
@@ -30,7 +28,7 @@ public class AVPacket implements Parcelable {
     public AVPacket(int size, long presentationTimeUs) {
         data = new byte[size];
         this.size = size;
-        this.presentationTimeUs = presentationTimeUs;
+        this.pts = presentationTimeUs;
     }
 
     public void clear() {
@@ -42,7 +40,7 @@ public class AVPacket implements Parcelable {
     protected AVPacket(Parcel in) {
         data = in.createByteArray();
         size = in.readInt();
-        presentationTimeUs = in.readLong();
+        pts = in.readLong();
         flags = in.readInt();
     }
 
@@ -67,7 +65,7 @@ public class AVPacket implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeByteArray(data);
         dest.writeInt(size);
-        dest.writeLong(presentationTimeUs);
+        dest.writeLong(pts);
         dest.writeInt(flags);
     }
 

@@ -185,7 +185,7 @@ public class FFMPEG implements WdPlayer {
                     if (mFfmpegUseMediaCodecDecode.mAudioWrapper != null) {
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.size = size;
-                        mFfmpegUseMediaCodecDecode.mAudioWrapper.sampleTime = presentationTimeUs;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.pts = presentationTimeUs;
                         return mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
                                 mFfmpegUseMediaCodecDecode.mAudioWrapper);
                     }
@@ -194,7 +194,7 @@ public class FFMPEG implements WdPlayer {
                     if (mFfmpegUseMediaCodecDecode.mVideoWrapper != null) {
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.size = size;
-                        mFfmpegUseMediaCodecDecode.mVideoWrapper.sampleTime = presentationTimeUs;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.pts = presentationTimeUs;
                         return mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
                                 mFfmpegUseMediaCodecDecode.mVideoWrapper);
                     }
@@ -219,7 +219,7 @@ public class FFMPEG implements WdPlayer {
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.flags = flags;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.size = size;
-                        mFfmpegUseMediaCodecDecode.mAudioWrapper.sampleTime = pts;
+                        mFfmpegUseMediaCodecDecode.mAudioWrapper.pts = pts;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.dts = dts;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.pos = pos;
                         mFfmpegUseMediaCodecDecode.mAudioWrapper.duration = duration;
@@ -233,7 +233,7 @@ public class FFMPEG implements WdPlayer {
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.flags = flags;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.data = data;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.size = size;
-                        mFfmpegUseMediaCodecDecode.mVideoWrapper.sampleTime = pts;
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.pts = pts;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.dts = dts;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.pos = pos;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.duration = duration;
@@ -541,7 +541,11 @@ public class FFMPEG implements WdPlayer {
                 jniObject.writeInt(USE_MODE_ONLY_AUDIO);
             }*/
             if (mPath.endsWith(".h264")) {
-                jniObject.writeInt(USE_MODE_ONLY_VIDEO);
+                if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
+                    jniObject.writeInt(USE_MODE_MEDIA_FFPLAY);
+                } else if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)) {
+                    jniObject.writeInt(USE_MODE_ONLY_VIDEO);
+                }
             } else {
                 jniObject.writeBoolean(PlayerWrapper.IS_WATCH ? true : false);
                 onTransact(DO_SOMETHING_CODE_isWatch, jniObject);
