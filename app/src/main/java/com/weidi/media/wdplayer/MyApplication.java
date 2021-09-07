@@ -23,7 +23,7 @@ public class MyApplication extends WeidiApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-        EventBusUtils.init();
+        EventBusUtils.setContext(getApplicationContext());
     }
 
 }
