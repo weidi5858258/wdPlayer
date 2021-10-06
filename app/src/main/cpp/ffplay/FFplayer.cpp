@@ -116,7 +116,7 @@ extern "C" {
 
 #define OS_ANDROID 1
 #define MAX_AUDIO_FRAME_SIZE 19200
-#define MAX_RELATIVE_TIME     15000000
+#define MAX_RELATIVE_TIME    15000000
 
 static unsigned sws_flags = SWS_BICUBIC;
 
@@ -4259,11 +4259,11 @@ static int create_avformat_context(void *arg) {
         scan_all_pmts_set = 1;
     }
     // 设置udp,http超时,30秒
-    av_dict_set(&format_opts, "timeout", "30000000", 0);
+    //av_dict_set(&format_opts, "timeout", "30000000", 0);
     // 设置rtsp超时,30秒
-    av_dict_set(&format_opts, "rtsp_transport", "tcp", 0); // 设置tcp
-    av_dict_set(&format_opts, "rtsp_transport", "udp", 0); // 设置udp
-    av_dict_set(&format_opts, "stimeout", "30000000", 0);
+    //av_dict_set(&format_opts, "rtsp_transport", "tcp", 0); // 设置tcp
+    //av_dict_set(&format_opts, "rtsp_transport", "udp", 0); // 设置udp
+    //av_dict_set(&format_opts, "stimeout", "30000000", 0);
     LOGI("create_avformat_context() avformat_open_input\n");
     // 网络不好时,这个函数
     startTime = av_gettime_relative();
@@ -4274,9 +4274,9 @@ static int create_avformat_context(void *arg) {
     if (ret < 0) {
         char buf[1024];
         av_strerror(ret, buf, 1024);
-        onError(0x100, buf);
         // 这里就是某些视频初始化失败的地方
         LOGE("create_avformat_context() Couldn't open file, because this: [ (%d)(%s) ]", ret, buf);
+        onError(0x100, buf);
         print_error(is->filename, ret);
         goto fail;
     }
