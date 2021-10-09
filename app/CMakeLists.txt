@@ -1,10 +1,10 @@
+cmake_minimum_required(VERSION 3.4.1)
+#add_definitions(-std=c++11)
+
 # 根目录的CMakeLists.txt文件中主要负责：
 # 1.声明CMake最低版本
 # 2.编译出的so库文件存放的位置
 # 3.各个子目录的路径
-
-cmake_minimum_required(VERSION 3.4.1)
-#add_definitions(-std=c++11)
 
 # set(CMAKE_CXX_FLAGS "-Wno-error=format-security -Wno-error=pointer-sign"
 
