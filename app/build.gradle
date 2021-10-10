@@ -17,7 +17,9 @@ android {
                         "-DANDROID_CPP_FEATURES=rtti exceptions",
                         "-DANDROID_STL=c++_shared",// 需要使用到std::to_string()这个函数
                         //"-DANDROID_STL=c++_static",// 需要使用到std::to_string()这个函数
-                        //"-DANDROID_TOOLCHAIN=gcc",// GCC is no longer supported
+                        //如果不用gcc编译,那么rmvb格式的视频播放不了,错误原因还找不到
+                        "-DANDROID_TOOLCHAIN=gcc",// GCC is no longer supported
+                        //"-DANDROID_TOOLCHAIN=clang",
                         "-DANDROID_ARM_MODE=arm"
                 // 使用下面这种方式时,加载so出错
                 // abiFilters 'armeabi-v7a', 'armeabi', 'x86', 'x86_64', 'arm64-v8a'
@@ -47,18 +49,18 @@ android {
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-//            storeFile file('/root/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
         release {
             keyAlias 'weidi'
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-//            storeFile file('/root/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
     }
     buildTypes {
