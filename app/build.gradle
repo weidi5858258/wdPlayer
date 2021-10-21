@@ -7,6 +7,7 @@ android {
     defaultConfig {
         applicationId "com.weidi.media.wdplayer"
         minSdkVersion 23
+
         targetSdkVersion 29
         versionCode 1
         versionName "1.0"
@@ -49,18 +50,18 @@ android {
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
         release {
             keyAlias 'weidi'
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
     }
     buildTypes {
