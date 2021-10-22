@@ -5432,7 +5432,7 @@ int initPlayer() {
     argv[0] = "ffplay";
 
     LOGI("initPlayer() start\n");
-    LOGI("initPlayer() av_version_info = %s\n", av_version_info());
+    LOGI("initPlayer() av_version_info = %s\n", av_version_info());// ff4.0--ijk0.8.25--20200221--001
     LOGI("initPlayer() argc = %d\n", argc);
     for (int j = 0; j < argc; j++) {
         LOGI("initPlayer() argv[%d]: %s\n", j, argv[j]);
@@ -5471,10 +5471,10 @@ int initPlayer() {
     av_register_all();
     avcodec_register_all();
 
-    LOGI("initPlayer()  display_disable = %d\n", display_disable);// 总开头
-    LOGI("initPlayer()    video_disable = %d\n", video_disable);
-    LOGI("initPlayer()    audio_disable = %d\n", audio_disable);
-    LOGI("initPlayer() subtitle_disable = %d\n", subtitle_disable);
+    LOGI("initPlayer()  display_disable = %d\n", display_disable); // 0 总开头
+    LOGI("initPlayer()    video_disable = %d\n", video_disable);   // 0
+    LOGI("initPlayer()    audio_disable = %d\n", audio_disable);   // 0
+    LOGI("initPlayer() subtitle_disable = %d\n", subtitle_disable);// 1
 
     runOneTime = true;
     isStarted = false;
@@ -5522,14 +5522,14 @@ int initPlayer() {
 
     LOGI("initPlayer()     screen_width = %d\n", screen_width);
     LOGI("initPlayer()    screen_height = %d\n", screen_height);
-
+    // 开始初始化
     int ret = stream_open(input_filename, file_iformat);
 
     if (video_state != nullptr && !video_state->useMediaCodec) {
         need_first_key_frame = false;
     }
 
-    LOGI("initPlayer() ret = %d\n", ret);
+    LOGI("initPlayer() ret = %d\n", ret); // 为"0"表示初始化成功
     LOGI("initPlayer() end\n");
     return ret;
 }
