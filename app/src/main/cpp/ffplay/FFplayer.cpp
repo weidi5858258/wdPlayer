@@ -4769,7 +4769,7 @@ static void *audio_play(void *arg) {
 
         /* Let's assume the audio driver that is used by SDL has two periods. */
         if (!isnan(is->audio_clock)) {
-            // 最关键的一个值.(pts是随着is->audio_clock值的变化而变化的,因为其他值是常量)
+            // 最关键的一个值(pts是随着is->audio_clock值的变化而变化的,因为其他值是常量)
             // 有规律地增长
             double pts = is->audio_clock -
                          (double) (2 * is->audio_hw_buf_size + is->audio_write_buf_size) /
