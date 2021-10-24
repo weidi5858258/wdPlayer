@@ -118,48 +118,24 @@ extern "C" {
 #define MAX_AUDIO_FRAME_SIZE 19200
 #define MAX_RELATIVE_TIME    15000000
 
-static unsigned sws_flags = SWS_BICUBIC;
-
-enum {
-    AV_SYNC_AUDIO_MASTER, /* default choice */
-    AV_SYNC_VIDEO_MASTER,
-    AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
-};
-
-// 就是一个节点(node)
-typedef struct MyAVPacketList {
-    AVPacket pkt;
-    struct MyAVPacketList *next;
-    // packet_queue_put_private_impl
-    int serial;
-} MyAVPacketList;
-
-typedef struct PacketQueue {
-    // 用于判断是video还是audio队列
-    int stream_index;
-    // first_pkt是flush_pkt,在packet_queue_start中实现
-    MyAVPacketList *first_pkt, *last_pkt;
-    // packet_queue_init(0) MyAVPacketList的个数
-    int nb_packets;
-    // init(0)
-    int size;
-    // init(0)
-    int64_t duration;
-    // packet_queue_init(1) packet_queue_start(0)
-    int abort_request;
-    // init(0) packet_queue_put_private_impl(++)
-    int serial;
-    // packet_queue_init
-    pthread_mutex_t pmutex;
-    // packet_queue_init
-    pthread_cond_t pcond;
-} PacketQueue;
-
 // 保存解码帧的个数
 #define VIDEO_PICTURE_QUEUE_SIZE 3
 #define SAMPLE_QUEUE_SIZE 9
 #define SUBPICTURE_QUEUE_SIZE 16
 #define FRAME_QUEUE_SIZE FFMAX(SAMPLE_QUEUE_SIZE, FFMAX(VIDEO_PICTURE_QUEUE_SIZE, SUBPICTURE_QUEUE_SIZE))
+
+static unsigned sws_flags = SWS_BICUBIC;
+
+enum {
+    AV_SYNC_AUDIO_MASTER,   /* default choice */
+    AV_SYNC_VIDEO_MASTER,
+    AV_SYNC_EXTERNAL_CLOCK, /* synchronize to an external clock */
+};
+
+struct AVBSFInternal {
+    AVPacket *buffer_pkt;
+    int eof;
+};
 
 typedef struct AudioParams {
     int freq;
@@ -183,6 +159,35 @@ typedef struct Clock {
     int *queue_serial;    /* pointer to the current packet queue serial, used for obsolete clock detection */
 } Clock;
 
+// 就是一个节点(node).取名为MyAVPacketNode AVPacketNode
+typedef struct MyAVPacketList {
+    AVPacket pkt;
+    struct MyAVPacketList *next;
+    // packet_queue_put_private_impl
+    int serial;
+} MyAVPacketList;
+
+typedef struct PacketQueue {
+    // 用于判断是video队列还是audio队列
+    int stream_index;
+    // first_pkt是flush_pkt,在packet_queue_start中实现
+    MyAVPacketList *first_pkt, *last_pkt;
+    // packet_queue_init(0) MyAVPacketList的个数
+    int nb_packets;
+    // init(0)
+    int size;
+    // init(0)
+    int64_t duration;
+    // packet_queue_init(1) packet_queue_start(0)
+    int abort_request;
+    // init(0) packet_queue_put_private_impl(++)只要seek后就会增1,以此来区分哪些数据是seek前还是seek后的数据
+    int serial;
+    // packet_queue_init
+    pthread_mutex_t pmutex;
+    // packet_queue_init
+    pthread_cond_t pcond;
+} PacketQueue;
+
 /* Common struct for handling all types of decoded data and allocated render buffers. */
 typedef struct Frame {
     AVFrame *frame;
@@ -202,9 +207,8 @@ typedef struct Frame {
 
 // 存放解码帧
 typedef struct FrameQueue {
-    // 用于判断是video还是audio队列
+    // 用于判断是video队列还是audio队列
     int stream_index;
-    bool isBlocked;
     Frame queue[FRAME_QUEUE_SIZE];// 16
     int rindex;
     int windex;
@@ -351,6 +355,7 @@ typedef struct VideoState {
     enum AVPixelFormat dstAVPixelFormat;
     // video硬解码
     bool useMediaCodec;
+    // video硬解码情况下,是否需要调用av_bsf_send_packet_方法
     bool need_to_do_for_av_bsf_packet;
     const AVBitStreamFilter *avBitStreamFilter = nullptr;
     AVBSFContext *avbsfContext = nullptr;
@@ -376,11 +381,6 @@ typedef struct VideoState {
     pthread_cond_t pcontinue_read_thread;
 
 } VideoState;
-
-struct AVBSFInternal {
-    AVPacket *buffer_pkt;
-    int eof;
-};
 
 VideoState *video_state = nullptr;
 
@@ -478,8 +478,6 @@ static int64_t startTime = 0;
 static int64_t endTime = 0;
 static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
-static bool isPausedForCacheVideo = false;
-static bool isPausedForCacheAudio = false;
 double REMAINING_TIME = -0.01;
 static double test_remaining_time = 0.0;
 static bool need_first_key_frame = true;
@@ -789,18 +787,6 @@ static int packet_queue_put_nullpacket(PacketQueue *q, int stream_index) {
     return packet_queue_put(q, pkt);
 }
 
-/* packet queue handling */
-static int packet_queue_init(PacketQueue *q) {
-    LOGI("packet_queue_init() start\n");
-    memset(q, 0, sizeof(PacketQueue));
-    q->pmutex = PTHREAD_MUTEX_INITIALIZER;
-    q->pcond = PTHREAD_COND_INITIALIZER;
-    q->abort_request = 1;
-    q->stream_index = -1;
-    LOGI("packet_queue_init() end\n");
-    return 0;
-}
-
 static void packet_queue_flush(PacketQueue *q) {
     MyAVPacketList *pkt, *pkt1;
 
@@ -838,6 +824,18 @@ static void packet_queue_start(PacketQueue *q) {
     packet_queue_put_private(q, &flush_pkt);
     pthread_mutex_unlock(&q->pmutex);
     LOGI("packet_queue_start() end\n");
+}
+
+/* packet queue handling */
+static int packet_queue_init(PacketQueue *q) {
+    LOGI("packet_queue_init() start\n");
+    memset(q, 0, sizeof(PacketQueue));
+    q->pmutex = PTHREAD_MUTEX_INITIALIZER;
+    q->pcond = PTHREAD_COND_INITIALIZER;
+    q->abort_request = 1;
+    q->stream_index = -1;
+    LOGI("packet_queue_init() end\n");
+    return 0;
 }
 
 /* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
@@ -884,25 +882,25 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
         } else if (!block) {
             ret = 0;
             break;
-        } else {
-            /*play_pause();
-            if (pkt->stream_index == video_state->audio_stream) {
-                isPausedForCacheAudio = video_state->paused;
-            } else if (pkt->stream_index == video_state->video_stream) {
-                isPausedForCacheVideo = video_state->paused;
-            }*/
-
-            // 在packet_queue_put_private函数中发送信号,表示有数据了,可以去取数据了
-            //LOGI("packet_queue_get() pthread_cond_wait start\n");
-            pthread_cond_wait(&q->pcond, &q->pmutex);
-            //LOGI("packet_queue_get() pthread_cond_wait end\n");
-
-            /*if (pkt->stream_index == video_state->audio_stream) {
-                isPausedForCacheAudio = video_state->paused;
-            } else if (pkt->stream_index == video_state->video_stream) {
-                isPausedForCacheVideo = video_state->paused;
-            }*/
         }
+
+        /*play_pause();
+        if (pkt->stream_index == video_state->audio_stream) {
+            isPausedForCacheAudio = video_state->paused;
+        } else if (pkt->stream_index == video_state->video_stream) {
+            isPausedForCacheVideo = video_state->paused;
+        }*/
+
+        // 在packet_queue_put_private函数中发送信号,表示有数据了,可以去取数据了
+        //LOGI("packet_queue_get() pthread_cond_wait start\n");
+        pthread_cond_wait(&q->pcond, &q->pmutex);
+        //LOGI("packet_queue_get() pthread_cond_wait end\n");
+
+        /*if (pkt->stream_index == video_state->audio_stream) {
+            isPausedForCacheAudio = video_state->paused;
+        } else if (pkt->stream_index == video_state->video_stream) {
+            isPausedForCacheVideo = video_state->paused;
+        }*/
     }
     pthread_mutex_unlock(&q->pmutex);
 
@@ -999,9 +997,7 @@ static Frame *frame_queue_peek_writable(FrameQueue *f) {
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
             //LOGI("frame_queue_peek_writable() audio pthread_cond_wait start\n");
         }*/
-        f->isBlocked = true;
         pthread_cond_wait(&f->pcond, &f->pmutex);
-        f->isBlocked = false;
         /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
             LOGI("frame_queue_peek_writable() video pthread_cond_wait end\n");
         } else if (f->max_size == SAMPLE_QUEUE_SIZE) {
@@ -2866,11 +2862,6 @@ static void *audio_thread(void *arg) {
         //return AVERROR(ENOMEM);
         return nullptr;
     }
-    //#if CONFIG_AVFILTER
-    int last_serial = -1;
-    int64_t dec_channel_layout;
-    int reconfigure;
-    //#endif
     VideoState *is = static_cast<VideoState *>(arg);
     Frame *af = nullptr;
     AVRational tb;
@@ -2890,32 +2881,6 @@ static void *audio_thread(void *arg) {
         if (got_frame) {
             // 创建一个AVRational结构体数据
             tb = (AVRational) {1, frame->sample_rate};
-            //#if CONFIG_AVFILTER
-            /*dec_channel_layout = get_valid_channel_layout(frame->channel_layout, frame->channels);
-            reconfigure = cmp_audio_fmts(is->audio_filter_src.fmt, is->audio_filter_src.channels,
-                                         static_cast<AVSampleFormat>(frame->format), frame->channels)
-                          || is->audio_filter_src.channel_layout != dec_channel_layout
-                          || is->audio_filter_src.freq != frame->sample_rate
-                          || is->auddec.pkt_serial != last_serial;
-            if (reconfigure) {
-                char buf1[1024], buf2[1024];
-                av_get_channel_layout_string(buf1, sizeof(buf1), -1, is->audio_filter_src.channel_layout);
-                av_get_channel_layout_string(buf2, sizeof(buf2), -1, dec_channel_layout);
-                LOGI("audio_thread() Audio frame changed from rate:%d ch:%d fmt:%s layout:%s serial:%d to rate:%d ch:%d fmt:%s layout:%s serial:%d\n",
-                       is->audio_filter_src.freq, is->audio_filter_src.channels,
-                       av_get_sample_fmt_name(is->audio_filter_src.fmt), buf1, last_serial,
-                       frame->sample_rate, frame->channels,
-                       av_get_sample_fmt_name(static_cast<AVSampleFormat>(frame->format)),
-                       buf2, is->auddec.pkt_serial);
-                is->audio_filter_src.fmt = static_cast<AVSampleFormat>(frame->format);
-                is->audio_filter_src.channels = frame->channels;
-                is->audio_filter_src.channel_layout = dec_channel_layout;
-                is->audio_filter_src.freq = frame->sample_rate;
-                last_serial = is->auddec.pkt_serial;
-                if ((ret = configure_audio_filters(is, afilters, 1)) < 0) {
-                    goto the_end;
-                }
-            }*/
 
             if ((ret = av_buffersrc_add_frame(is->in_audio_filter, frame)) < 0) {
                 goto the_end;
@@ -2923,7 +2888,6 @@ static void *audio_thread(void *arg) {
 
             while ((ret = av_buffersink_get_frame_flags(is->out_audio_filter, frame, 0)) >= 0) {
                 tb = av_buffersink_get_time_base(is->out_audio_filter);
-                //#endif
                 if (!(af = frame_queue_peek_writable(&is->sampq))) {
                     goto the_end;
                 }
@@ -2936,7 +2900,6 @@ static void *audio_thread(void *arg) {
 
                 av_frame_move_ref(af->frame, frame);
                 frame_queue_push(&is->sampq);
-                //#if CONFIG_AVFILTER
                 if (is->audioq.serial != is->auddec.pkt_serial || is->abort_request) {
                     break;
                 }
@@ -2945,14 +2908,11 @@ static void *audio_thread(void *arg) {
             if (ret == AVERROR_EOF) {
                 is->auddec.finished = is->auddec.pkt_serial;
             }
-            //#endif
         }
     } while (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF);
 
     the_end:
-    //#if CONFIG_AVFILTER
     avfilter_graph_free(&is->agraph);
-    //#endif
     av_frame_free(&frame);
     LOGI("audio_thread() end\n");
 
@@ -4755,14 +4715,6 @@ static void *audio_play(void *arg) {
 
         audio_callback_time = av_gettime_relative();
         audio_buf_size = audio_decode_frame(is);
-        /*if (audio_size < 0) {
-            is->audio_buf = nullptr;
-            is->audio_buf_size = SDL_AUDIO_MIN_BUFFER_SIZE / is->audio_tgt.frame_size * is->audio_tgt.frame_size;
-            } else {
-                if (is->show_mode != VideoState::SHOW_MODE_VIDEO) {
-                    update_sample_display(is, (int16_t *) is->audio_buf, audio_size);
-                }
-            }*/
         audio_buf_index = 0;
         audio_buf_index += (audio_buf_size - audio_buf_index);
         is->audio_write_buf_size = audio_buf_size - audio_buf_index;
@@ -5432,7 +5384,8 @@ int initPlayer() {
     argv[0] = "ffplay";
 
     LOGI("initPlayer() start\n");
-    LOGI("initPlayer() av_version_info = %s\n", av_version_info());// ff4.0--ijk0.8.25--20200221--001
+    LOGI("initPlayer() av_version_info = %s\n",
+         av_version_info());// ff4.0--ijk0.8.25--20200221--001
     LOGI("initPlayer() argc = %d\n", argc);
     for (int j = 0; j < argc; j++) {
         LOGI("initPlayer() argv[%d]: %s\n", j, argv[j]);
@@ -5497,8 +5450,6 @@ int initPlayer() {
     test_delay = 0.0;
     test_last_duration = 0.0;
     test_delay_one_time = false;
-    isPausedForCacheVideo = false;
-    isPausedForCacheAudio = false;
     need_first_key_frame = true;
     has_seeked = false;
 
