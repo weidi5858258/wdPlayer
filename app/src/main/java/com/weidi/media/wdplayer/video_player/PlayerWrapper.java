@@ -46,7 +46,6 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
@@ -2729,17 +2728,17 @@ public class PlayerWrapper {
         switch (mRepeat) {
             case Repeat_Off:
                 mRepeatOff.setVisibility(View.VISIBLE);
-                mRepeatAll.setVisibility(View.INVISIBLE);
-                mRepeatOne.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.GONE);
+                mRepeatOne.setVisibility(View.GONE);
                 break;
             case Repeat_All:
-                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatOff.setVisibility(View.GONE);
                 mRepeatAll.setVisibility(View.VISIBLE);
-                mRepeatOne.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.GONE);
                 break;
             case Repeat_One:
-                mRepeatOff.setVisibility(View.INVISIBLE);
-                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOff.setVisibility(View.GONE);
+                mRepeatAll.setVisibility(View.GONE);
                 mRepeatOne.setVisibility(View.VISIBLE);
                 break;
             default:
@@ -2751,10 +2750,10 @@ public class PlayerWrapper {
         switch (mShuffle) {
             case Shuffle_Off:
                 mShuffleOff.setVisibility(View.VISIBLE);
-                mShuffleOn.setVisibility(View.INVISIBLE);
+                mShuffleOn.setVisibility(View.GONE);
                 break;
             case Shuffle_On:
-                mShuffleOff.setVisibility(View.INVISIBLE);
+                mShuffleOff.setVisibility(View.GONE);
                 mShuffleOn.setVisibility(View.VISIBLE);
                 break;
             default:
@@ -3225,7 +3224,7 @@ public class PlayerWrapper {
     private int getPauseRlHeight() {
         int pauseRlHeight = 0;
         if (mPlayerService != null || mRemotePlayerService != null) {
-            RelativeLayout pause_rl = mRootView.findViewById(R.id.pause_rl);
+            RelativeLayout pause_rl = mRootView.findViewById(R.id.button_control_layout);
             pauseRlHeight = pause_rl.getHeight();
             SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
             RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
@@ -3266,6 +3265,144 @@ public class PlayerWrapper {
             }
         }
         return pauseRlHeight;
+    }
+
+    private int getPauseRlHeight2() {
+        if (mPlayerService == null && mRemotePlayerService == null) {
+            return 0;
+        }
+
+        // 按钮的Layout,不包括SeekBar
+        RelativeLayout controlLaout = mRootView.findViewById(R.id.button_control_layout);
+        int controlLayoutWidth = controlLaout.getWidth();
+        int controlLayoutHeight = controlLaout.getHeight();
+        SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
+        // 显示时间的Layout
+        RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
+        // 播放/暂停,退出,音量
+        ImageButton button_play = mRootView.findViewById(R.id.button_play);
+        ImageButton button_pause = mRootView.findViewById(R.id.button_pause);
+        ImageButton button_exit = mRootView.findViewById(R.id.button_exit);
+        ImageButton button_volume = mRootView.findViewById(R.id.volume_normal);
+        // 快退快进
+        ImageButton button_fr = mRootView.findViewById(R.id.button_fr);
+        ImageButton button_ff = mRootView.findViewById(R.id.button_ff);
+        // 上一首下一首
+        ImageButton button_prev = mRootView.findViewById(R.id.button_prev);
+        ImageButton button_next = mRootView.findViewById(R.id.button_next);
+        // 关闭重复/重复全部/重复单个
+        ImageButton button_repeat_off = mRootView.findViewById(R.id.button_repeat_off);
+        ImageButton button_repeat_all = mRootView.findViewById(R.id.button_repeat_all);
+        ImageButton button_repeat_one = mRootView.findViewById(R.id.button_repeat_one);
+        // 顺序/乱序
+        ImageButton button_shuffle_off = mRootView.findViewById(R.id.button_shuffle_off);
+        ImageButton button_shuffle_on = mRootView.findViewById(R.id.button_shuffle_on);
+
+        if (mIsLive && !mIsH264) {
+            progress_bar.setVisibility(View.GONE);
+            show_time_rl.setVisibility(View.GONE);
+            if (!IS_WATCH) {
+                button_fr.setVisibility(View.GONE);
+                button_ff.setVisibility(View.GONE);
+            }
+
+            return controlLayoutHeight;
+        }
+
+        progress_bar.setVisibility(View.VISIBLE);
+        show_time_rl.setVisibility(View.VISIBLE);
+        if (!IS_WATCH) {
+            button_fr.setVisibility(View.VISIBLE);
+            button_ff.setVisibility(View.VISIBLE);
+        }
+        setRepeatView();
+        setShuffleView();
+
+        // 分配宽度
+        int leftLayoutWidth = 0;
+        int rightLayoutWidth = 0;
+        int centerLayoutWidth = 0;
+        if (mIsLive && !mIsH264) {
+            centerLayoutWidth = controlLayoutWidth - leftLayoutWidth * 2;
+        } else {
+            leftLayoutWidth = controlLayoutWidth * 3 / 8;
+            rightLayoutWidth = leftLayoutWidth;
+            centerLayoutWidth = controlLayoutWidth - leftLayoutWidth * 2;
+        }
+        Log.i(TAG, "getPauseRlHeight2()");
+        // 播放/暂停按钮的宽高
+        int maxButtonWantedWidth = 0;
+        int maxButtonWantedHeight = 0;
+        // 其他按钮的宽高
+        int minButtonWantedWidth = 0;
+        int minButtonWantedHeight = 0;
+        // 间隙
+        int space = 16;
+        if (mWindow == Window.Min_Screen) {
+            space = 0;
+        }
+        if (mWindow == Window.Min_Screen) {
+            maxButtonWantedWidth = 48;
+            maxButtonWantedHeight = 48;
+            minButtonWantedWidth = 32;
+            minButtonWantedHeight = 32;
+            Log.i(TAG, "getPauseRlHeight2()");
+            if (centerLayoutWidth > 0) {
+                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > centerLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
+                }
+            }
+            if (mIsLive && !mIsH264) {
+
+            } else {
+                if (leftLayoutWidth > 0) {
+
+                }
+                if (rightLayoutWidth > 0) {
+
+                }
+            }
+            Log.i(TAG, "getPauseRlHeight2()");
+        } else {
+            maxButtonWantedWidth = 72;
+            maxButtonWantedHeight = 72;
+            minButtonWantedWidth = 48;
+            minButtonWantedHeight = 48;
+            if (centerLayoutWidth > 0) {
+                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > centerLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
+                }
+            }
+        }
+
+
+        int imageButtonWidth = button_exit.getWidth();
+        int imageButtonHeight = button_exit.getHeight();
+        int space1 = (leftLayoutWidth - 4 * imageButtonWidth) / 5;// Window.Max_Screen
+        int space2 = (leftLayoutWidth - 4 * imageButtonWidth) / 3;// Window.Min_Screen
+
+
+        int imageButtonWantedWidth = 48;
+
+        LinearLayout.LayoutParams params = null;
+        if (mWindow == Window.Min_Screen) {
+            params = (LinearLayout.LayoutParams) button_exit.getLayoutParams();
+            params.setMarginStart(0);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+
+
+        } else {
+
+        }
+
+        return controlLayoutHeight;
     }
 
     private SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {

@@ -47,9 +47,11 @@ extern "C" {
 #include "libswresample/swresample.h"
 
 #if CONFIG_AVFILTER
+
 # include "libavfilter/avfilter.h"
 # include "libavfilter/buffersink.h"
 # include "libavfilter/buffersrc.h"
+
 #endif
 
 #include "cmdutils.h"
@@ -159,12 +161,12 @@ typedef struct Clock {
     int *queue_serial;    /* pointer to the current packet queue serial, used for obsolete clock detection */
 } Clock;
 
-// 就是一个节点(node).取名为MyAVPacketNode AVPacketNode
+// 表示一个节点(node),不是一串.取名为MyAVPacketNode或者AVPacketNode更合适
 typedef struct MyAVPacketList {
     AVPacket pkt;
-    struct MyAVPacketList *next;
-    // packet_queue_put_private_impl
+    // packet_queue_put_private_impl 当前pkt的标志.当操作seek后,不是所有的pkt都是相同的了
     int serial;
+    struct MyAVPacketList *next;
 } MyAVPacketList;
 
 typedef struct PacketQueue {
@@ -174,13 +176,14 @@ typedef struct PacketQueue {
     MyAVPacketList *first_pkt, *last_pkt;
     // packet_queue_init(0) MyAVPacketList的个数
     int nb_packets;
-    // init(0)
+    // init(0) 整个队列中的MyAVPacketList所占的空间大小,单位为"字节"
     int size;
     // init(0)
     int64_t duration;
     // packet_queue_init(1) packet_queue_start(0)
     int abort_request;
     // init(0) packet_queue_put_private_impl(++)只要seek后就会增1,以此来区分哪些数据是seek前还是seek后的数据
+    // PacketQueue->serial ---> MyAVPacketList->serial ---> Decoder->pkt_serial
     int serial;
     // packet_queue_init
     pthread_mutex_t pmutex;
@@ -480,6 +483,7 @@ static AVPacket comparePkt[2];
 static bool run_one_time_for_compare_two_avpacket = true;
 double REMAINING_TIME = -0.01;
 static double test_remaining_time = 0.0;
+// 意思就是第一帧需要关键帧
 static bool need_first_key_frame = true;
 static bool has_seeked = false;
 
@@ -650,9 +654,7 @@ int64_t get_valid_channel_layout(int64_t channel_layout, int channels) {
         return 0;
 }
 
-static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt, MyAVPacketList *pkt1) {
-    pkt1->pkt = *pkt;
-    pkt1->next = nullptr;
+static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt) {
     if (pkt == &flush_pkt) {
         // packet_queue_start
         // is->seek_req(seekTo)
@@ -663,42 +665,44 @@ static void packet_queue_put_private_impl(PacketQueue *q, AVPacket *pkt, MyAVPac
             LOGD("packet_queue_put_private_impl() audio PacketQueue:serial = %d\n", q->serial);
         }
     }
+
+    MyAVPacketList *pkt1 = nullptr;
+    pkt1 = static_cast<MyAVPacketList *>(av_malloc(sizeof(MyAVPacketList)));
+    if (!pkt1) {
+        LOGE("packet_queue_put_private_impl() 申请内存失败!!!\n");
+        return;
+    }
+    pkt1->pkt = *pkt;
     pkt1->serial = q->serial;
+    pkt1->next = nullptr;
 
     if (!q->last_pkt) {
+        // 当q->last_pkt为NULL时,first_pkt和last_pkt都指向同一个MyAVPacketList
         q->first_pkt = pkt1;
     } else {
+        // q->last_pkt表示上一个MyAVPacketList,意思就是上一个的MyAVPacketList的next指向当前的pkt1
         q->last_pkt->next = pkt1;
     }
 
     q->last_pkt = pkt1;
     q->nb_packets++;
+    // 下面两个的值不重要
     q->size += pkt1->pkt.size + sizeof(*pkt1);
     q->duration += pkt1->pkt.duration;
 
     int consumer;
-    // 加载的数据
     if (q->stream_index == video_state->audio_stream) {
-        /*if (isPausedForCacheAudio && audio_packets == 140) {
-            play_pause();
-            pthread_cond_signal(&q->pcond);
-        }*/
         consumer = MSG_ON_TRANSACT_AUDIO_CONSUMER;
-        //LOGI("packet_queue_put_private_impl() audio q->nb_packets: %d\n", q->nb_packets);
     } else if (q->stream_index == video_state->video_stream) {
-        /*if (isPausedForCacheVideo && video_packets == 50) {
-            play_pause();
-            pthread_cond_signal(&q->pcond);
-        }*/
         consumer = MSG_ON_TRANSACT_VIDEO_CONSUMER;
-        //LOGI("packet_queue_put_private_impl() video q->nb_packets: %d\n", q->nb_packets);
     }
     if (q->nb_packets % 5 == 0) {
+        // 更新"生产者"进度条
         onLoadProgressUpdated(consumer, q->nb_packets);
     }
 
     /* XXX: should duplicate packet data in DV case */
-    // 向队列中每增加一个AVPacket就发送信号
+    // 向队列中每增加一个MyAVPacketList就发送一次信号,告诉"消费者"有数据了,"你"可以拿去解码了
     pthread_cond_signal(&q->pcond);
 }
 
@@ -707,15 +711,10 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
         return -1;
     }
 
-    MyAVPacketList *pkt1;
-    pkt1 = static_cast<MyAVPacketList *>(av_malloc(sizeof(MyAVPacketList)));
-    if (!pkt1) {
-        return -1;
-    }
-
     if (q->stream_index == video_state->video_stream
         && video_state->useMediaCodec
         && video_state->need_to_do_for_av_bsf_packet
+        && pkt->data // 防止packet_queue_put_nullpacket这个方法的调用
         && pkt != &flush_pkt) {
         // pkt数据通过av_bsf_send_packet和av_bsf_receive_packet函数加工后,数据大小不变
         if (run_one_time_for_compare_two_avpacket) {
@@ -732,7 +731,7 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
             if (run_one_time_for_compare_two_avpacket) {
                 av_packet_ref(&comparePkt[1], pkt);
             }
-            packet_queue_put_private_impl(q, pkt, pkt1);
+            packet_queue_put_private_impl(q, pkt);
         }
         if (run_one_time_for_compare_two_avpacket) {
             int size = pkt->size;
@@ -758,7 +757,7 @@ static int packet_queue_put_private(PacketQueue *q, AVPacket *pkt) {
         return 0;
     }
 
-    packet_queue_put_private_impl(q, pkt, pkt1);
+    packet_queue_put_private_impl(q, pkt);
 
     return 0;
 }
@@ -840,13 +839,13 @@ static int packet_queue_init(PacketQueue *q) {
 
 /* return < 0 if aborted, 0 if no packet and > 0 if packet.  */
 static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *serial) {
-    MyAVPacketList *pkt1;
-    int ret;
+    MyAVPacketList *pkt1 = nullptr;
+    int ret = 1;
 
     pthread_mutex_lock(&q->pmutex);
     for (;;) {
         if (q->abort_request) {
-            ret = -1;
+            ret = -1;// 中止退出
             break;
         }
 
@@ -857,14 +856,13 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
                 q->last_pkt = nullptr;
             }
             q->nb_packets--;
-            q->size -= pkt1->pkt.size + sizeof(*pkt1);
+            q->size -= (pkt1->pkt.size + sizeof(*pkt1));
             q->duration -= pkt1->pkt.duration;
             *pkt = pkt1->pkt;
             if (serial) {
                 *serial = pkt1->serial;
             }
             av_free(pkt1);
-            ret = 1;
 
             // region alexander add
             int consumer;
@@ -874,33 +872,20 @@ static int packet_queue_get(PacketQueue *q, AVPacket *pkt, int block, int *seria
                 consumer = MSG_ON_TRANSACT_VIDEO_CONSUMER;
             }
             if (q->nb_packets % 5 == 0) {
+                // 更新"消费者"进度条
                 onLoadProgressUpdated(consumer, q->nb_packets);
             }
             // endregion
 
             break;
         } else if (!block) {
-            ret = 0;
+            ret = 0;// 没有数据,并且不需要被阻塞时.当前不会走到这里.
             break;
         }
 
-        /*play_pause();
-        if (pkt->stream_index == video_state->audio_stream) {
-            isPausedForCacheAudio = video_state->paused;
-        } else if (pkt->stream_index == video_state->video_stream) {
-            isPausedForCacheVideo = video_state->paused;
-        }*/
-
-        // 在packet_queue_put_private函数中发送信号,表示有数据了,可以去取数据了
-        //LOGI("packet_queue_get() pthread_cond_wait start\n");
+        // 在packet_queue_put_private_impl函数中发送信号,表示有数据了,可以去取数据了.
+        // 因此在下一次循环中就能取到一个数据了
         pthread_cond_wait(&q->pcond, &q->pmutex);
-        //LOGI("packet_queue_get() pthread_cond_wait end\n");
-
-        /*if (pkt->stream_index == video_state->audio_stream) {
-            isPausedForCacheAudio = video_state->paused;
-        } else if (pkt->stream_index == video_state->video_stream) {
-            isPausedForCacheVideo = video_state->paused;
-        }*/
     }
     pthread_mutex_unlock(&q->pmutex);
 
@@ -2628,7 +2613,7 @@ static int configure_filtergraph(AVFilterGraph *graph, const char *filtergraph,
 
     /* Reorder the filters to ensure that inputs of the custom filters are merged first */
     for (i = 0; i < graph->nb_filters - nb_filters; i++)
-        FFSWAP(AVFilterContext*, graph->filters[i], graph->filters[i + nb_filters]);
+        FFSWAP(AVFilterContext * , graph->filters[i], graph->filters[i + nb_filters]);
 
     ret = avfilter_graph_config(graph, nullptr);
     fail:
@@ -2801,7 +2786,8 @@ configure_audio_filters(VideoState *is, const char *afilters, int force_output_f
                    1, is->audio_filter_src.freq);
     if (is->audio_filter_src.channel_layout)
         snprintf(asrc_args + ret, sizeof(asrc_args) - ret,
-                 ":channel_layout=0x%" PRIx64, is->audio_filter_src.channel_layout);
+                 ":channel_layout=0x%"
+    PRIx64, is->audio_filter_src.channel_layout);
 
     ret = avfilter_graph_create_filter(&filt_asrc,
                                        avfilter_get_by_name("abuffer"), "ffplay_abuffer",
@@ -3086,7 +3072,7 @@ static void *video_thread_mc(void *arg) {
         }
 
         // 小于0的情况是is->abort_request为1
-        // 向PacketQueue队列取数据.如果没有数据刚被阻塞
+        // 向PacketQueue队列取数据.如果没有数据则被阻塞
         /***
          PacketQueue(when video no data)
 
@@ -3100,15 +3086,12 @@ static void *video_thread_mc(void *arg) {
          最后,导致
             FrameQueue(video no data).
             那么此时调用sleep(0)时,也会被block.(现象就是画面不动)
-
          */
         if (packet_queue_get(d->queue, &pkt, 1, &d->pkt_serial) < 0) {
             break;
         }
 
-        if (d->queue->serial != d->pkt_serial
-            /*|| pkt.data == nullptr
-            || pkt.size <= 0*/) {
+        if (d->queue->serial != d->pkt_serial) {
             av_packet_unref(&pkt);
             LOGD("video_thread_mc() d->queue->serial != d->pkt_serial continue\n");
             continue;
@@ -3151,12 +3134,14 @@ static void *video_thread_mc(void *arg) {
             continue;
         }
 
-        // region
-        if (pkt.size <= 0) {
+        // 不要合并到"d->queue->serial != d->pkt_serial"这一步中去
+        if (pkt.data == nullptr || pkt.size <= 0) {
             av_packet_unref(&pkt);
+            LOGD("video_thread_mc() pkt.data is nullptr\n");
             continue;
         }
 
+        // region
         if (need_first_key_frame) {
             if (pkt.flags & AV_PKT_FLAG_KEY) {
                 // 关键帧
@@ -3169,14 +3154,14 @@ static void *video_thread_mc(void *arg) {
 
         feedInputBufferAndDrainOutputBuffer2(
                 0x0002,
-                d->queue->serial,
+                d->pkt_serial, // d->queue->serial
                 pkt.flags,
                 pkt.data,
                 pkt.size,
-                (long long int) pkt.pts,
-                (long long int) pkt.dts,
+                (long long int) pkt.pts,// 什么时候显示
+                (long long int) pkt.dts,// 什么时候解码
                 (long long int) pkt.pos,
-                (long long int) pkt.duration);
+                (long long int) pkt.duration);// 当前帧播放时长
         av_packet_unref(&pkt);
         // endregion
     }
@@ -3187,7 +3172,7 @@ static void *video_thread_mc(void *arg) {
 }
 
 /***
- * video_thread_mc ---> feedInputBufferAndDrainOutputBuffer ---> decoder_decode_frame_by_mediacodec
+ * video_thread_mc ---> feedInputBufferAndDrainOutputBuffer2 ---> decoder_decode_frame_by_mediacodec
  *
  * 把frame数据保存到FrameQueue(pictq)中
  * @param roomIndex
@@ -3215,8 +3200,9 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        long long int dts_,
                                        long long int pos_,
                                        long long int duration_,
-                                       const uint8_t *data) {
-    if (video_state->abort_request) {
+                                       const uint8_t *data) {// 数据已经没有用了
+    VideoState *is = video_state;
+    if (is->abort_request) {
         return 0;
     }
 
@@ -3225,20 +3211,12 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
         frame = av_frame_alloc();
     }
 
-    VideoState *is = video_state;
     // {1, 120000} {1, 90000} {1, 15360}
     //AVRational tb = is->video_st->time_base;
-    //LOGI("decoder_decode_frame_by_mediacodec() 1 sb.num: %d tb.den: %d\n", tb.num, tb.den);
     double pts;
     double duration;
     int ret = 0;
 
-    /*frame->data[0] = const_cast<uint8_t *>(data);
-    frame->data[1] = const_cast<uint8_t *>(data);
-    frame->data[2] = const_cast<uint8_t *>(data);
-    frame->linesize[0] = is->width;
-    frame->linesize[1] = is->height;
-    frame->linesize[2] = is->height;*/
     frame->flags = 0;
     frame->pts = pts_;
     frame->pkt_pts = pts_;
@@ -3368,68 +3346,20 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
     }
     // endregion
 
-    /*ret = av_buffersrc_add_frame(filt_in, frame);
-    if (ret < 0) {
-        LOGE("decoder_decode_frame_by_mediacodec() av_buffersrc_add_frame failed\n");
-        //goto the_end;
-        return 0;
-    }*/
-
-    /*while (ret >= 0) {
-        if (is->abort_request) {
-            break;
-        }
-
-        is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
-        ret = av_buffersink_get_frame_flags(filt_out, frame, 0);
-        if (ret < 0) {
-            if (ret == AVERROR_EOF) {
-                is->viddec.finished = is->viddec.pkt_serial;
-            }
-            ret = 0;
-            break;
-        }
-        is->frame_last_filter_delay =
-                av_gettime_relative() / 1000000.0 - is->frame_last_returned_time;
-        if (fabs(is->frame_last_filter_delay) > AV_NOSYNC_THRESHOLD / 10.0) {
-            is->frame_last_filter_delay = 0;
-        }
-        tb = av_buffersink_get_time_base(filt_out);
-        LOGI("decoder_decode_frame_by_mediacodec() 2 sb.num: %d tb.den: %d\n", tb.num, tb.den);
-        duration = (frame_rate_avrational.num
-                    && frame_rate_avrational.den ? av_q2d(
-                (AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
-        pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
-        if (video_decode_mc_log) {
-            LOGW("decoder_decode_frame_by_mediacodec()\n"
-                 " pts: %lf duration: %lf\n"
-                 " pts: %lld pkt_pts: %lld pkt_dts: %lld pkt_pos: %lld pkt_duration: %lld pkt_size: %d\n",
-                 pts, duration,
-                 frame->pts, frame->pkt_pts, frame->pkt_dts, frame->pkt_pos, frame->pkt_duration,
-                 frame->pkt_size);
-        }
-        ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
-        av_frame_unref(frame);
-
-        if (is->videoq.serial != is->viddec.pkt_serial) {
-            break;
-        }
-    }*/
-
     is->frame_last_returned_time = av_gettime_relative() / 1000000.0;
-    is->frame_last_filter_delay =
-            av_gettime_relative() / 1000000.0 - is->frame_last_returned_time;
+    is->frame_last_filter_delay = av_gettime_relative() / 1000000.0 - is->frame_last_returned_time;
     if (fabs(is->frame_last_filter_delay) > AV_NOSYNC_THRESHOLD / 10.0) {
         is->frame_last_filter_delay = 0;
     }
-    /***
+    /*
      帧停留时间
      duration = frame_rate_avrational.den / frame_rate_avrational.num;
      1 / 25 = 0.04
      1 / 30 = 0.033333
      */
-    duration = (frame_rate_avrational.num && frame_rate_avrational.den
-                ? av_q2d((AVRational) {frame_rate_avrational.den, frame_rate_avrational.num}) : 0);
+    duration = (frame_rate_avrational.num && frame_rate_avrational.den)
+               ? av_q2d((AVRational) {frame_rate_avrational.den, frame_rate_avrational.num})
+               : 0;
     //pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
     pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(frame_rate_avrational);
     if (video_decode_mc_log) {
@@ -3440,7 +3370,7 @@ int decoder_decode_frame_by_mediacodec(int roomIndex,
              frame->pts, frame->pkt_pts, frame->pkt_dts,
              frame->pkt_pos, frame->pkt_duration, frame->pkt_size);
     }
-    /***
+    /*
      这里如果被堵住,相当于handleVideoOutputBuffer(...)被堵住,又相当于onOutputBufferAvailable(...)被堵住.
      然后就影响到onInputBufferAvailable(...)不被回调.
      */
@@ -3970,7 +3900,7 @@ static void *read_thread(void *arg) {
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
     if (timeStamp >= 0/* && !is->useMediaCodec*/) {
         stream_seek(
-                is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
+                is, (int64_t)(timeStamp * AV_TIME_BASE), (int64_t)(10.000000 * AV_TIME_BASE), 0);
     }
     timeStamp = -1;
 
@@ -4848,7 +4778,7 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
-            av_usleep((int64_t) (remaining_time * 1000000.0));
+            av_usleep((int64_t)(remaining_time * 1000000.0));
         } else if (is->paused) {
             av_usleep(10000);
         }
@@ -5469,7 +5399,7 @@ int initPlayer() {
     //signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t *) &flush_pkt;
+    flush_pkt.data = (uint8_t * ) & flush_pkt;
 
     LOGI("initPlayer()     screen_width = %d\n", screen_width);
     LOGI("initPlayer()    screen_height = %d\n", screen_height);
@@ -5631,8 +5561,8 @@ int seekTo(int64_t timestamp) {
 
     has_seeked = true;
     stream_seek(video_state,
-                (int64_t) (timestamp * AV_TIME_BASE),
-                (int64_t) (10.000000 * AV_TIME_BASE), 0);
+                (int64_t)(timestamp * AV_TIME_BASE),
+                (int64_t)(10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 
@@ -5676,7 +5606,7 @@ static void do_seek(double incr) {
             pos = is->ic->start_time / (double) AV_TIME_BASE;
         }
         LOGI("do_seek() 4 pos = %lf incr = %lf seek_by_bytes = %d\n", pos, incr, seek_by_bytes);
-        stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
+        stream_seek(is, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
     }
 }
 

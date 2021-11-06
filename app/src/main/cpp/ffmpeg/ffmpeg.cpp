@@ -295,7 +295,8 @@ bool feedInputBufferAndDrainOutputBuffer2(int type,
                 data, 0, size, reinterpret_cast<const jbyte *>(encodedData));
         feedAndDrainRet = bufferEnv->CallBooleanMethod(ffmpegJavaObject,
                                                        feedInputBufferAndDrainOutputBufferMethodID2,
-                                                       (jint) type, (jint) serial,
+                                                       (jint) type,
+                                                       (jint) serial,
                                                        (jint) flags,
                                                        data,
                                                        (jint) size,
@@ -907,7 +908,7 @@ static jint onTransact_initPlayer(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) -1;
+    return (jint) - 1;
 }
 
 static jint onTransact_readData(JNIEnv *env, jobject thiz,
@@ -1093,7 +1094,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         int roomIndex = intArray[0];
         int offset = intArray[1];
         int size = intArray[2];
-        int flags = intArray[3];// 被改为了serial
+        int serial = intArray[3];
 
         long long int pts = longArray[0];
         long long int dts = longArray[1];
@@ -1170,7 +1171,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                         handleRet = decoder_decode_frame_by_mediacodec(roomIndex,
                                                                        offset,
                                                                        size,
-                                                                       flags,
+                                                                       serial,
                                                                        presentationTimeUs,
                                                                        pts,
                                                                        dts,
@@ -1395,7 +1396,7 @@ static jboolean onTransact_isRunning(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-            false;
+    false;
 }
 
 static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
@@ -1431,7 +1432,7 @@ static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-            false;
+    false;
 }
 
 static jint onTransact_isPausedForUser(JNIEnv *env, jobject thiz,
@@ -1464,7 +1465,7 @@ static jint onTransact_isPausedForUser(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-            false;
+    false;
 }
 
 static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
@@ -1507,7 +1508,7 @@ static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) -1;
+    return (jint) - 1;
 }
 
 static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
@@ -1550,7 +1551,7 @@ static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) -1;
+    return (jint) - 1;
 }
 
 static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
@@ -1587,7 +1588,7 @@ static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) -1;
+    return (jint) - 1;
 }
 
 static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
@@ -1622,13 +1623,13 @@ static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jlong) -1;
+    return (jlong) - 1;
 }
 
 static jint onTransact_download(JNIEnv *env, jobject thiz,
                                 jint code, jobject jniObject) {
     if (use_mode != USE_MODE_MEDIA_MEDIACODEC) {
-        return (jint) -1;
+        return (jint) - 1;
     }
 
     jint flag = env->GetIntField(jniObject, valueInt_jfieldID);
@@ -1805,7 +1806,9 @@ char *getStrFromDO_SOMETHING_CODE(DO_SOMETHING_CODE code) {
  * jobject thiz 代表定义native方法的类的对象(如果native方法不是static的话)
  */
 extern "C"
-JNIEXPORT jstring JNICALL
+JNIEXPORT jstring
+
+JNICALL
 Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobject thiz,
                                                               jint code,
                                                               jobject jniObject) {
