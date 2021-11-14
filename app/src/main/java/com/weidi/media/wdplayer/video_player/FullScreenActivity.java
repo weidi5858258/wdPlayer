@@ -11,7 +11,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 
 import androidx.annotation.NonNull;
 
@@ -19,8 +19,6 @@ import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PAUSE;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_PLAY;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_pause;
-import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_play;
 
 /***
 
@@ -196,13 +194,13 @@ public class FullScreenActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_DOWN:
                     break;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerWrapper.class.getName(),
                             BUTTON_CLICK_FR,
                             null);
                     break;
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerWrapper.class.getName(),
                             BUTTON_CLICK_FF,
                             null);
@@ -215,12 +213,12 @@ public class FullScreenActivity extends Activity {
                         if (Boolean.parseBoolean(
                                 FFMPEG.getDefault().onTransact(
                                         FFMPEG.DO_SOMETHING_CODE_isPlaying, null))) {
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerWrapper.class.getName(),
                                     BUTTON_CLICK_PAUSE,
                                     null);
                         } else {
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerWrapper.class.getName(),
                                     BUTTON_CLICK_PLAY,
                                     null);
@@ -284,13 +282,13 @@ public class FullScreenActivity extends Activity {
             //super.handleMessage(msg);
             switch (msg.what) {
                 case 1:
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                             new Object[]{0});
                     break;
                 case 2:
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                             new Object[]{2});
@@ -299,18 +297,18 @@ public class FullScreenActivity extends Activity {
                     if (PlayerWrapper.IS_PHONE) {
                         int orientation = getResources().getConfiguration().orientation;
                         if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerService.class.getName(),
                                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                                     new Object[]{1000});
                         } else {
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerService.class.getName(),
                                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                                     new Object[]{2});
                         }
                     } else {
-                        EventBusUtils.post(
+                        Phone.call(
                                 PlayerService.class.getName(),
                                 PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                                 new Object[]{2});

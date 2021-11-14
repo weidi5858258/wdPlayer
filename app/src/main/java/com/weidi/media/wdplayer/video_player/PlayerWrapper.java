@@ -58,7 +58,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
@@ -600,7 +600,7 @@ public class PlayerWrapper {
     }
 
     private void onCreate() {
-        EventBusUtils.register(this);
+        Phone.register(this);
 
         mPathTimeMap.clear();
         mContentsMap.clear();
@@ -847,7 +847,7 @@ public class PlayerWrapper {
             mHandlerThread.quit();
             mHandlerThread = null;
         }
-        EventBusUtils.unregister(this);
+        Phone.unregister(this);
     }
 
     private void onRelease() {
@@ -3318,17 +3318,6 @@ public class PlayerWrapper {
         setRepeatView();
         setShuffleView();
 
-        // 分配宽度
-        int leftLayoutWidth = 0;
-        int rightLayoutWidth = 0;
-        int centerLayoutWidth = 0;
-        if (mIsLive && !mIsH264) {
-            centerLayoutWidth = controlLayoutWidth - leftLayoutWidth * 2;
-        } else {
-            leftLayoutWidth = controlLayoutWidth * 3 / 8;
-            rightLayoutWidth = leftLayoutWidth;
-            centerLayoutWidth = controlLayoutWidth - leftLayoutWidth * 2;
-        }
         Log.i(TAG, "getPauseRlHeight2()");
         // 播放/暂停按钮的宽高
         int maxButtonWantedWidth = 0;
@@ -3339,30 +3328,28 @@ public class PlayerWrapper {
         // 间隙
         int space = 16;
         if (mWindow == Window.Min_Screen) {
-            space = 0;
-        }
-        if (mWindow == Window.Min_Screen) {
             maxButtonWantedWidth = 48;
             maxButtonWantedHeight = 48;
             minButtonWantedWidth = 32;
             minButtonWantedHeight = 32;
             Log.i(TAG, "getPauseRlHeight2()");
-            if (centerLayoutWidth > 0) {
-                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > centerLayoutWidth) {
-                    minButtonWantedWidth -= 2;
-                    minButtonWantedHeight = minButtonWantedWidth;
-                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                    maxButtonWantedHeight = maxButtonWantedWidth;
-                }
-            }
-            if (mIsLive && !mIsH264) {
-
-            } else {
-                if (leftLayoutWidth > 0) {
-
-                }
-                if (rightLayoutWidth > 0) {
-
+            if (controlLayoutWidth > 0) {
+                if (mIsLive && !mIsH264) {
+                    space = 16;
+                    while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
+                        minButtonWantedWidth -= 2;
+                        minButtonWantedHeight = minButtonWantedWidth;
+                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                        maxButtonWantedHeight = maxButtonWantedWidth;
+                    }
+                } else {
+                    space = 0;
+                    while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
+                        minButtonWantedWidth -= 2;
+                        minButtonWantedHeight = minButtonWantedWidth;
+                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                        maxButtonWantedHeight = maxButtonWantedWidth;
+                    }
                 }
             }
             Log.i(TAG, "getPauseRlHeight2()");
@@ -3371,35 +3358,47 @@ public class PlayerWrapper {
             maxButtonWantedHeight = 72;
             minButtonWantedWidth = 48;
             minButtonWantedHeight = 48;
-            if (centerLayoutWidth > 0) {
-                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > centerLayoutWidth) {
-                    minButtonWantedWidth -= 2;
-                    minButtonWantedHeight = minButtonWantedWidth;
-                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                    maxButtonWantedHeight = maxButtonWantedWidth;
+            if (controlLayoutWidth > 0) {
+                if (mIsLive && !mIsH264) {
+                    space = 32;
+                    while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
+                        minButtonWantedWidth -= 2;
+                        minButtonWantedHeight = minButtonWantedWidth;
+                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                        maxButtonWantedHeight = maxButtonWantedWidth;
+                    }
+                } else {
+                    space = 16;
+                    while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
+                        minButtonWantedWidth -= 2;
+                        minButtonWantedHeight = minButtonWantedWidth;
+                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                        maxButtonWantedHeight = maxButtonWantedWidth;
+                    }
                 }
             }
         }
 
-
-        int imageButtonWidth = button_exit.getWidth();
-        int imageButtonHeight = button_exit.getHeight();
-        int space1 = (leftLayoutWidth - 4 * imageButtonWidth) / 5;// Window.Max_Screen
-        int space2 = (leftLayoutWidth - 4 * imageButtonWidth) / 3;// Window.Min_Screen
-
-
-        int imageButtonWantedWidth = 48;
-
-        LinearLayout.LayoutParams params = null;
+        RelativeLayout.LayoutParams params = null;
         if (mWindow == Window.Min_Screen) {
-            params = (LinearLayout.LayoutParams) button_exit.getLayoutParams();
-            params.setMarginStart(0);
-            params.width = minButtonWantedWidth;
-            params.height = minButtonWantedHeight;
+            if (mIsLive && !mIsH264) {
+                params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
+                params.setMarginStart(0);
+                params.width = minButtonWantedWidth;
+                params.height = minButtonWantedHeight;
+                button_exit.setLayoutParams(params);
 
+                params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
+            } else {
+
+            }
 
         } else {
+            if (mIsLive && !mIsH264) {
 
+            } else {
+
+            }
         }
 
         return controlLayoutHeight;
@@ -3499,7 +3498,7 @@ public class PlayerWrapper {
             } else if (mIsAudio) {
                 setType("audio/");
             }
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_SHOW_WINDOW,
                     new Object[]{mCurPath, mType});

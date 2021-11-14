@@ -14,7 +14,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
@@ -77,7 +77,7 @@ public class FFMPEG implements WdPlayer {
     private volatile static FFMPEG sFFMPEG;
 
     private FFMPEG() {
-        EventBusUtils.register(this);
+        Phone.register(this);
     }
 
     public static FFMPEG getDefault() {
@@ -374,11 +374,11 @@ public class FFMPEG implements WdPlayer {
     // 供native层调用,主要是使用Handler的延时功能
     private void postDelayed(final int what, final long delayMillis) {
         if (Looper.getMainLooper() == Looper.myLooper()) {
-            EventBusUtils.removeUiMessages(DO_SOMETHING_CODE_postDelayed);
+            Phone.removeUiMessages(DO_SOMETHING_CODE_postDelayed);
         } else {
-            EventBusUtils.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
+            Phone.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
         }
-        EventBusUtils.postDelayed(
+        Phone.callDelayed(
                 FFMPEG.class.getName(),
                 DO_SOMETHING_CODE_postDelayed,
                 delayMillis,

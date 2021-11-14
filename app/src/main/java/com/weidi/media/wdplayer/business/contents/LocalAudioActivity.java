@@ -14,7 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.video_player.PlayerService;
@@ -28,7 +28,6 @@ import java.util.Map;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
-import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
@@ -182,7 +181,7 @@ public class LocalAudioActivity extends Activity {
 
                         switch (viewId) {
                             case R.id.item_root_layout:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "audio/"});
@@ -244,7 +243,7 @@ public class LocalAudioActivity extends Activity {
 
                         switch (mClickCount) {
                             case 1:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{audioPlaybackPath, "audio/"});
@@ -259,7 +258,7 @@ public class LocalAudioActivity extends Activity {
                         maybeJumpToPosition(audioPlaybackPath);
                     }
                 } else {
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{audioPlaybackPath, "audio/"});

@@ -14,7 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
@@ -219,7 +219,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
 
                         switch (viewId) {
                             case R.id.item_root_layout:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -272,7 +272,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
 
                         switch (mClickCount) {
                             case 1:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -290,7 +290,7 @@ public class LiveActivityForMenFavoriteWear extends Activity {
                         maybeJumpToPosition(videoPlaybackPath);
                     }
                 } else {
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});

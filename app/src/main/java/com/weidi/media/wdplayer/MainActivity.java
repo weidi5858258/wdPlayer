@@ -29,16 +29,14 @@ import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.business.contents.LiveActivity;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForIptv;
 import com.weidi.media.wdplayer.business.contents.LiveActivityForMenFavorite;
 import com.weidi.media.wdplayer.business.contents.LocalAudioActivity;
-import com.weidi.media.wdplayer.socket.SocketClient;
 import com.weidi.media.wdplayer.socket.SocketServer;
 import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.FullScreenActivity;
-import com.weidi.media.wdplayer.video_player.JniPlayerActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
 import com.weidi.utils.MyToast;
@@ -81,7 +79,6 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
-import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 import static com.weidi.media.wdplayer.video_player.JniPlayerActivity.isRunService;
 import static com.weidi.media.wdplayer.video_player.PlayerService.COMMAND_START_SECOND_PLAYERSERVICE;
 import static com.weidi.media.wdplayer.video_player.PlayerService.COMMAND_STOP_SECOND_PLAYERSERVICE;
@@ -186,12 +183,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
@@ -347,14 +344,14 @@ public class MainActivity extends AppCompatActivity {
                         if (needTwoPlayer) {
                             MyToast.show("禁用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, false).commit();
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerService.class.getName(),
                                     COMMAND_STOP_SECOND_PLAYERSERVICE,
                                     null);
                         } else {
                             MyToast.show("启用同时使用两个播放器");
                             sp.edit().putBoolean(NEED_TWO_PLAYER, true).commit();
-                            EventBusUtils.post(
+                            Phone.call(
                                     PlayerService.class.getName(),
                                     COMMAND_START_SECOND_PLAYERSERVICE,
                                     null);
@@ -454,7 +451,7 @@ public class MainActivity extends AppCompatActivity {
     private void internalResume() {
         if (IS_TV) {
             findViewById(R.id.address_et).setVisibility(View.GONE);
-            Object result = EventBusUtils.post(
+            Object result = Phone.call(
                     PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_IS_RUNNING, null);
             boolean isRunning = false;
             if (result != null) {
@@ -463,11 +460,11 @@ public class MainActivity extends AppCompatActivity {
             if (isRunning) {
                 findViewById(R.id.controller_panel_framelayout).setVisibility(View.VISIBLE);
 
-                long mediaDuration = (long) EventBusUtils.post(
+                long mediaDuration = (long) Phone.call(
                         PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_MEDIA_DURATION, null);
-                mRepeat = (PlayerWrapper.Repeat) EventBusUtils.post(
+                mRepeat = (PlayerWrapper.Repeat) Phone.call(
                         PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_REPEAT, null);
-                mShuffle = (PlayerWrapper.Shuffle) EventBusUtils.post(
+                mShuffle = (PlayerWrapper.Shuffle) Phone.call(
                         PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_GET_SHUFFLE, null);
 
                 SeekBar progress_bar = findViewById(R.id.progress_bar);
@@ -587,28 +584,28 @@ public class MainActivity extends AppCompatActivity {
     private void onClick(View v) {
         switch (v.getId()) {
             case R.id.button_fr:
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_FR,
                         null);
                 mFrIB.requestFocus();
                 break;
             case R.id.button_ff:
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_FF,
                         null);
                 mFfIB.requestFocus();
                 break;
             case R.id.button_prev:
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PREV,
                         null);
                 mPrevIB.requestFocus();
                 break;
             case R.id.button_next:
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_NEXT,
                         null);
@@ -617,7 +614,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_play:
                 mPlayIB.setVisibility(View.INVISIBLE);
                 mPauseIB.setVisibility(View.VISIBLE);
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PLAY,
                         null);
@@ -626,14 +623,14 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_pause:
                 mPlayIB.setVisibility(View.VISIBLE);
                 mPauseIB.setVisibility(View.INVISIBLE);
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_PAUSE,
                         null);
                 mPlayIB.requestFocus();
                 break;
             case R.id.button_exit:
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_EXIT,
                         null);
@@ -643,7 +640,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.volume_normal:
                 mVolumeNormal.setVisibility(View.INVISIBLE);
                 mVolumeMute.setVisibility(View.VISIBLE);
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_VOLUME_NORMAL,
                         null);
@@ -652,7 +649,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.volume_mute:
                 mVolumeNormal.setVisibility(View.VISIBLE);
                 mVolumeMute.setVisibility(View.INVISIBLE);
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_VOLUME_MUTE,
                         null);
@@ -661,7 +658,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_repeat_off:
                 mRepeat = PlayerWrapper.Repeat.Repeat_All;
                 setRepeatView();
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_OFF,
                         null);
@@ -670,7 +667,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_repeat_all:
                 mRepeat = PlayerWrapper.Repeat.Repeat_One;
                 setRepeatView();
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_ALL,
                         null);
@@ -679,7 +676,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_repeat_one:
                 mRepeat = PlayerWrapper.Repeat.Repeat_Off;
                 setRepeatView();
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_REPEAT_ONE,
                         null);
@@ -688,7 +685,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_shuffle_off:
                 mShuffle = PlayerWrapper.Shuffle.Shuffle_On;
                 setShuffleView();
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_SHUFFLE_OFF,
                         null);
@@ -697,7 +694,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.button_shuffle_on:
                 mShuffle = PlayerWrapper.Shuffle.Shuffle_Off;
                 setShuffleView();
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_SHUFFLE_ON,
                         null);
@@ -734,7 +731,7 @@ public class MainActivity extends AppCompatActivity {
                                 PlayerService.COMMAND_SHOW_WINDOW);
                         startService(intent);
                     } else {
-                        EventBusUtils.post(
+                        Phone.call(
                                 PlayerService.class.getName(),
                                 PlayerService.COMMAND_SHOW_WINDOW,
                                 new Object[]{mediaPath, mediaType});
@@ -749,14 +746,14 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
             case R.id.width_screen_btn: {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         DO_SOMETHING_EVENT_WIDTH_SCREEN,
                         null);
                 break;
             }
             case R.id.min_screen_btn: {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         DO_SOMETHING_EVENT_MIN_SCREEN,
                         null);
@@ -779,14 +776,14 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             case R.id.test_start_btn: {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_TEST_START,
                         null);
                 break;
             }
             case R.id.test_stop_btn: {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerWrapper.class.getName(),
                         BUTTON_CLICK_TEST_STOP,
                         null);

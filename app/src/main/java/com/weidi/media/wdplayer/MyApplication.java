@@ -3,7 +3,7 @@ package com.weidi.media.wdplayer;
 import android.content.Context;
 
 import com.weidi.application.WeidiApplication;
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 
 /***
  Created by root on 18-12-13.
@@ -23,7 +23,7 @@ public class MyApplication extends WeidiApplication {
     @Override
     public void onCreate() {
         super.onCreate();
-        EventBusUtils.setContext(getApplicationContext());
+        Phone.setContext(getApplicationContext());
     }
 
 }

@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.media.AudioManager;
 import android.view.KeyEvent;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 
@@ -47,35 +47,35 @@ public class MediaButtonReceiver extends BroadcastReceiver {
                     " keyCode: " + keyCode);
             switch (keyCode) {
                 case KeyEvent.KEYCODE_HEADSETHOOK:// 79
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_HEADSETHOOK, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:// 85
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_STOP:// 86
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_STOP, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PREVIOUS:// 88
                     // 三击
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PREVIOUS, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_NEXT:// 87
                     // 双击
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_NEXT, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PLAY:// 126
                     // 单击
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PLAY, null);
                     break;
                 case KeyEvent.KEYCODE_MEDIA_PAUSE:// 127
                     // 单击
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(), KeyEvent.KEYCODE_MEDIA_PAUSE, null);
                     break;
                 default:

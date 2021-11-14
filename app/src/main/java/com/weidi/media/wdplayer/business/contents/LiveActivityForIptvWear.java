@@ -13,7 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.recycler_view.WearableVerticalLayoutManager;
@@ -116,12 +116,12 @@ public class LiveActivityForIptvWear extends WearableActivity {
                 " newConfig: " + newConfig.toString());
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
@@ -250,7 +250,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
 
                         switch (viewId) {
                             case R.id.item_root_layout:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -312,7 +312,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
 
                         switch (mClickCount) {
                             case 1:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -327,7 +327,7 @@ public class LiveActivityForIptvWear extends WearableActivity {
                         maybeJumpToPosition(videoPlaybackPath);
                     }
                 } else {
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});

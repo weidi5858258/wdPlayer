@@ -19,7 +19,7 @@ import android.view.OrientationEventListener;
 import android.view.View;
 import android.view.WindowManager;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.R;
 import com.weidi.utils.PermissionsUtils;
 
@@ -144,12 +144,12 @@ public class JniPlayerActivity extends Activity {
             }
 
             if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{0});
             } else {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
@@ -399,7 +399,7 @@ public class JniPlayerActivity extends Activity {
 
     private void internalResume() {
         if (PlayerWrapper.IS_TV && noFinish) {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
@@ -408,7 +408,7 @@ public class JniPlayerActivity extends Activity {
 
     private void internalPause() {
         if (PlayerWrapper.IS_TV && noFinish) {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{2});
@@ -425,12 +425,12 @@ public class JniPlayerActivity extends Activity {
             if (getResources().getConfiguration().orientation ==
                     Configuration.ORIENTATION_LANDSCAPE) {
                 // 需要有状态栏的横屏
-                EventBusUtils.post(
+                Phone.call(
                         PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                         new Object[]{2});
             } else {
-                EventBusUtils.post(
+                Phone.call(
                         PlayerService.class.getName(),
                         PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                         null);
@@ -455,7 +455,7 @@ public class JniPlayerActivity extends Activity {
             startService(intent);
         } else {
             Log.d(TAG, "internalCreate() PlayerService is alive");
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_SHOW_WINDOW,
                     new Object[]{mPath, mType});

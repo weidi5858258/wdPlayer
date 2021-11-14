@@ -19,7 +19,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
 
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.log.MLog;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.JniObject;
@@ -147,12 +147,12 @@ public class LiveActivity extends Activity {
         }
 
         if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                     new Object[]{0});
         } else {
-            EventBusUtils.post(
+            Phone.call(
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
                     null);
@@ -286,7 +286,7 @@ public class LiveActivity extends Activity {
 
                         switch (viewId) {
                             case R.id.item_root_layout:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -339,7 +339,7 @@ public class LiveActivity extends Activity {
 
                         switch (mClickCount) {
                             case 1:
-                                EventBusUtils.post(
+                                Phone.call(
                                         PlayerService.class.getName(),
                                         PlayerService.COMMAND_SHOW_WINDOW,
                                         new Object[]{videoPlaybackPath, "video/"});
@@ -357,7 +357,7 @@ public class LiveActivity extends Activity {
                         maybeJumpToPosition(videoPlaybackPath);
                     }
                 } else {
-                    EventBusUtils.post(
+                    Phone.call(
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_SHOW_WINDOW,
                             new Object[]{videoPlaybackPath, "video/"});

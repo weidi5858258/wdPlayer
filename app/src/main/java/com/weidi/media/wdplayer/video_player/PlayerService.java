@@ -32,7 +32,7 @@ import android.view.WindowManager;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerApp;
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
-import com.weidi.eventbus.EventBusUtils;
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.MainActivity;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.WearMainActivity;
@@ -110,7 +110,7 @@ public class PlayerService extends Service {
     private View mView;
 
     private void internalCreate() {
-        EventBusUtils.register(this);
+        Phone.register(this);
         registerHeadsetPlugReceiver();
         registerTelephonyReceiver();
 
@@ -286,7 +286,7 @@ public class PlayerService extends Service {
             mPlayerWrapper.onDestroy();
         mWindowManager.removeView(mView);
         unRegisterHeadsetPlugReceiver();
-        EventBusUtils.unregister(this);
+        Phone.unregister(this);
         unbindRemotePlayerService();
     }
 
