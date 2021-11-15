@@ -356,17 +356,17 @@ void write(unsigned char *pcmData,
         jbyteArray audioData = audioEnv->NewByteArray(sizeInBytes);
 
         // 第一种方式
-        audioEnv->SetByteArrayRegion(
-                audioData, 0, sizeInBytes, reinterpret_cast<const jbyte *>(pcmData));
+        /*audioEnv->SetByteArrayRegion(
+                audioData, 0, sizeInBytes, reinterpret_cast<const jbyte *>(pcmData));*/
 
         // 第二种方式
         // 拷贝数组需要对指针操作
-        /*jbyte *cache = audioEnv->GetByteArrayElements(audioData, NULL);
-        memcpy(cache, pcmData, (size_t) sizeInBytes);
+        jbyte *elems = audioEnv->GetByteArrayElements(audioData, NULL);
+        memcpy(elems, pcmData, (size_t) sizeInBytes);
         // 同步到audioData,并释放cache,与GetByteArrayElements对应
         // 如果不调用,audioData里面是空的,播放无声,并且会内存泄漏
         // 不能放到audioEnv->CallVoidMethod(...)的后面调用
-        audioEnv->ReleaseByteArrayElements(audioData, cache, 0);*/
+        audioEnv->ReleaseByteArrayElements(audioData, elems, 0);
 
         // AudioTrack->write
         audioEnv->CallVoidMethod(ffmpegJavaObject, writeMethodID,
@@ -925,7 +925,7 @@ static jint onTransact_initPlayer(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) - 1;
+    return (jint) -1;
 }
 
 static jint onTransact_readData(JNIEnv *env, jobject thiz,
@@ -1413,7 +1413,7 @@ static jboolean onTransact_isRunning(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-    false;
+            false;
 }
 
 static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
@@ -1449,7 +1449,7 @@ static jboolean onTransact_isPlaying(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-    false;
+            false;
 }
 
 static jint onTransact_isPausedForUser(JNIEnv *env, jobject thiz,
@@ -1482,7 +1482,7 @@ static jint onTransact_isPausedForUser(JNIEnv *env, jobject thiz,
     }
 
     return (jboolean)
-    false;
+            false;
 }
 
 static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
@@ -1525,7 +1525,7 @@ static jint onTransact_stepAdd(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) - 1;
+    return (jint) -1;
 }
 
 static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
@@ -1568,7 +1568,7 @@ static jint onTransact_stepSubtract(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) - 1;
+    return (jint) -1;
 }
 
 static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
@@ -1605,7 +1605,7 @@ static jint onTransact_seekTo(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jint) - 1;
+    return (jint) -1;
 }
 
 static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
@@ -1640,13 +1640,13 @@ static jlong onTransact_getDuration(JNIEnv *env, jobject thiz,
             break;
     }
 
-    return (jlong) - 1;
+    return (jlong) -1;
 }
 
 static jint onTransact_download(JNIEnv *env, jobject thiz,
                                 jint code, jobject jniObject) {
     if (use_mode != USE_MODE_MEDIA_MEDIACODEC) {
-        return (jint) - 1;
+        return (jint) -1;
     }
 
     jint flag = env->GetIntField(jniObject, valueInt_jfieldID);
