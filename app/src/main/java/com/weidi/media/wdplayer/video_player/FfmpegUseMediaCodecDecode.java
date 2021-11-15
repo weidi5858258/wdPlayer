@@ -1493,6 +1493,7 @@ public class FfmpegUseMediaCodecDecode {
                     avPacket.dts = wrapper.dts;
                     avPacket.pos = wrapper.pos;
                     avPacket.duration = wrapper.duration;
+                    wrapper.data = null;
 
                     if (videoSerial != avPacket.serial) {
                         // 说明seek过了
@@ -1913,18 +1914,18 @@ public class FfmpegUseMediaCodecDecode {
             mVideoJniObject.valueIntArray = videoValueIntArray;
             mVideoJniObject.valueLong = roomInfo.presentationTimeUs;
             mVideoJniObject.valueLongArray = videoValueLongArray;
-            videoValueObjectArray[0] = room;
-            videoValueObjectArray[1] = roomInfo;
-            mVideoJniObject.valueObjectArray = videoValueObjectArray;
-
-            int ret = Integer.parseInt(
-                    mFFMPEG.onTransact(
-                            FFMPEG.DO_SOMETHING_CODE_handleVideoOutputBuffer, mVideoJniObject));
+            // videoValueObjectArray[0] = room;
+            // videoValueObjectArray[1] = roomInfo;
+            // mVideoJniObject.valueObjectArray = videoValueObjectArray;
 
             if (avPacket != null) {
                 avPacket.clear();
                 avPacket = null;
             }
+
+            int ret = Integer.parseInt(
+                    mFFMPEG.onTransact(
+                            FFMPEG.DO_SOMETHING_CODE_handleVideoOutputBuffer, mVideoJniObject));
 
             return ret;
         }

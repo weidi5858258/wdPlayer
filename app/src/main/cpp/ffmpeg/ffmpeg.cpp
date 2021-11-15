@@ -291,6 +291,23 @@ bool feedInputBufferAndDrainOutputBuffer2(int type,
         && ffmpegJavaObject != nullptr
         && feedInputBufferAndDrainOutputBufferMethodID2 != nullptr) {
         jbyteArray data = bufferEnv->NewByteArray(size);
+        jbyte *elems = bufferEnv->GetByteArrayElements(data, NULL);
+        memcpy(elems, encodedData, size);
+        bufferEnv->ReleaseByteArrayElements(data, elems, 0);
+        feedAndDrainRet = bufferEnv->CallBooleanMethod(ffmpegJavaObject,
+                                                       feedInputBufferAndDrainOutputBufferMethodID2,
+                                                       (jint) type,
+                                                       (jint) serial,
+                                                       (jint) flags,
+                                                       data,
+                                                       (jint) size,
+                                                       (jlong) pts,
+                                                       (jlong) dts,
+                                                       (jlong) pos,
+                                                       (jlong) duration);
+        bufferEnv->DeleteLocalRef(data);
+
+        /*jbyteArray data = bufferEnv->NewByteArray(size);
         bufferEnv->SetByteArrayRegion(
                 data, 0, size, reinterpret_cast<const jbyte *>(encodedData));
         feedAndDrainRet = bufferEnv->CallBooleanMethod(ffmpegJavaObject,
@@ -304,7 +321,7 @@ bool feedInputBufferAndDrainOutputBuffer2(int type,
                                                        (jlong) dts,
                                                        (jlong) pos,
                                                        (jlong) duration);
-        bufferEnv->DeleteLocalRef(data);
+        bufferEnv->DeleteLocalRef(data);*/
     }
     if (audioIsAttached) {
         gJavaVm->DetachCurrentThread();
@@ -1080,11 +1097,11 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
     jint handleRet = 0;
     jobject intArrayObject = env->GetObjectField(jniObject, valueIntArray_jfieldID);
     jobject longArrayObject = env->GetObjectField(jniObject, valueLongArray_jfieldID);
-    jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
+    // jobject objectArrayObject = env->GetObjectField(jniObject, valueObjectArray_jfieldID);
     jlong presentationTimeUs = env->GetLongField(jniObject, valueLong_jfieldID);
     if (intArrayObject != nullptr
         && longArrayObject != nullptr
-        && objectArrayObject != nullptr) {
+        /*&& objectArrayObject != nullptr*/) {
         jint *intArray = reinterpret_cast<jint *>(
                 env->GetIntArrayElements(
                         static_cast<jintArray>(intArrayObject), nullptr));
@@ -1101,12 +1118,12 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         long long int pos = longArray[2];
         long long int duration = longArray[3];
 
-        jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
+        // jobjectArray objectArray = reinterpret_cast<jobjectArray>(objectArrayObject);
         // ByteBuffer room
-        jobject room = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
+        // jobject room = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 0));
         // MediaCodec.BufferInfo roomInfo
-        jobject roomInfo = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
-        uint8_t *data = (uint8_t *) env->GetDirectBufferAddress(room);
+        // jobject roomInfo = static_cast<jobject>(env->GetObjectArrayElement(objectArray, 1));
+        // uint8_t *data = (uint8_t *) env->GetDirectBufferAddress(room);
 
         switch (code) {
             case DO_SOMETHING_CODE_handleAudioOutputBuffer:
@@ -1177,7 +1194,7 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
                                                                        dts,
                                                                        pos,
                                                                        duration,
-                                                                       data);
+                                                                       nullptr);
                         break;
                     }
                     default:
@@ -1189,11 +1206,11 @@ static jint onTransact_handleOutputBuffer(JNIEnv *env, jobject thiz,
         }
 
         // release
-        env->DeleteLocalRef(room);
-        env->DeleteLocalRef(roomInfo);
+        // env->DeleteLocalRef(room);
+        // env->DeleteLocalRef(roomInfo);
+        // env->DeleteLocalRef(objectArrayObject);
         env->DeleteLocalRef(intArrayObject);
         env->DeleteLocalRef(longArrayObject);
-        env->DeleteLocalRef(objectArrayObject);
     }
 
     return handleRet;

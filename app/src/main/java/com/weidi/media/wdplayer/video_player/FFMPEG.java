@@ -237,8 +237,11 @@ public class FFMPEG implements WdPlayer {
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.dts = dts;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.pos = pos;
                         mFfmpegUseMediaCodecDecode.mVideoWrapper.duration = duration;
-                        return mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
-                                mFfmpegUseMediaCodecDecode.mVideoWrapper);
+                        boolean ret =
+                                mFfmpegUseMediaCodecDecode.feedInputBufferAndDrainOutputBuffer(
+                                        mFfmpegUseMediaCodecDecode.mVideoWrapper);
+                        mFfmpegUseMediaCodecDecode.mVideoWrapper.data = null;
+                        return ret;
                     }
                     break;
                 default:

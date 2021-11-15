@@ -133,7 +133,7 @@
             android:layout_margin="0dp"
             android:contentDescription="Play"
             android:src="@drawable/media_ic_play"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <ImageButton
             android:id="@+id/volume_normal"
@@ -150,7 +150,7 @@
             android:layout_toRightOf="@id/button_play"
             android:contentDescription="volume_mute"
             android:src="@drawable/volume_mute"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <ImageButton
             android:id="@+id/button_shuffle_off"
@@ -165,7 +165,7 @@
             android:layout_alignParentEnd="true"
             android:contentDescription="Shuffle_On"
             android:src="@drawable/media_ic_option_shuffle_on"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <ImageButton
             android:id="@+id/button_repeat_off"
@@ -182,7 +182,7 @@
             android:layout_toLeftOf="@id/button_shuffle_off"
             android:contentDescription="Repeat_All"
             android:src="@drawable/media_ic_option_repeat_all"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <ImageButton
             android:id="@+id/button_repeat_one"
@@ -191,7 +191,7 @@
             android:layout_toLeftOf="@id/button_shuffle_off"
             android:contentDescription="Repeat_One"
             android:src="@drawable/media_ic_option_repeat_one"
-            android:visibility="gone" />
+            android:visibility="invisible" />
 
         <TextView
             android:id="@+id/download_tv"

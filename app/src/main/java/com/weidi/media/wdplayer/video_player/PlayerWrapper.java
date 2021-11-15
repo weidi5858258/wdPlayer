@@ -2728,17 +2728,17 @@ public class PlayerWrapper {
         switch (mRepeat) {
             case Repeat_Off:
                 mRepeatOff.setVisibility(View.VISIBLE);
-                mRepeatAll.setVisibility(View.GONE);
-                mRepeatOne.setVisibility(View.GONE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
                 break;
             case Repeat_All:
-                mRepeatOff.setVisibility(View.GONE);
+                mRepeatOff.setVisibility(View.INVISIBLE);
                 mRepeatAll.setVisibility(View.VISIBLE);
-                mRepeatOne.setVisibility(View.GONE);
+                mRepeatOne.setVisibility(View.INVISIBLE);
                 break;
             case Repeat_One:
-                mRepeatOff.setVisibility(View.GONE);
-                mRepeatAll.setVisibility(View.GONE);
+                mRepeatOff.setVisibility(View.INVISIBLE);
+                mRepeatAll.setVisibility(View.INVISIBLE);
                 mRepeatOne.setVisibility(View.VISIBLE);
                 break;
             default:
@@ -2750,10 +2750,10 @@ public class PlayerWrapper {
         switch (mShuffle) {
             case Shuffle_Off:
                 mShuffleOff.setVisibility(View.VISIBLE);
-                mShuffleOn.setVisibility(View.GONE);
+                mShuffleOn.setVisibility(View.INVISIBLE);
                 break;
             case Shuffle_On:
-                mShuffleOff.setVisibility(View.GONE);
+                mShuffleOff.setVisibility(View.INVISIBLE);
                 mShuffleOn.setVisibility(View.VISIBLE);
                 break;
             default:
@@ -3268,14 +3268,19 @@ public class PlayerWrapper {
     }
 
     private int getPauseRlHeight2() {
+        Log.i(TAG, "getPauseRlHeight2()");
         if (mPlayerService == null && mRemotePlayerService == null) {
             return 0;
         }
 
+        // region
         // 按钮的Layout,不包括SeekBar
         RelativeLayout controlLaout = mRootView.findViewById(R.id.button_control_layout);
         int controlLayoutWidth = controlLaout.getWidth();
         int controlLayoutHeight = controlLaout.getHeight();
+        if (controlLayoutWidth == 0 || controlLayoutHeight == 0) {
+            return 0;
+        }
         SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
         // 显示时间的Layout
         RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
@@ -3284,6 +3289,7 @@ public class PlayerWrapper {
         ImageButton button_pause = mRootView.findViewById(R.id.button_pause);
         ImageButton button_exit = mRootView.findViewById(R.id.button_exit);
         ImageButton button_volume = mRootView.findViewById(R.id.volume_normal);
+        ImageButton volume_mute = mRootView.findViewById(R.id.volume_normal);
         // 快退快进
         ImageButton button_fr = mRootView.findViewById(R.id.button_fr);
         ImageButton button_ff = mRootView.findViewById(R.id.button_ff);
@@ -3297,28 +3303,37 @@ public class PlayerWrapper {
         // 顺序/乱序
         ImageButton button_shuffle_off = mRootView.findViewById(R.id.button_shuffle_off);
         ImageButton button_shuffle_on = mRootView.findViewById(R.id.button_shuffle_on);
+        // endregion
 
+        // region
         if (mIsLive && !mIsH264) {
             progress_bar.setVisibility(View.GONE);
             show_time_rl.setVisibility(View.GONE);
             if (!IS_WATCH) {
-                button_fr.setVisibility(View.GONE);
-                button_ff.setVisibility(View.GONE);
+                button_fr.setVisibility(View.INVISIBLE);
+                button_ff.setVisibility(View.INVISIBLE);
             }
-
-            return controlLayoutHeight;
+            button_prev.setVisibility(View.INVISIBLE);
+            button_next.setVisibility(View.INVISIBLE);
+            button_repeat_off.setVisibility(View.INVISIBLE);
+            button_repeat_all.setVisibility(View.INVISIBLE);
+            button_repeat_one.setVisibility(View.INVISIBLE);
+            button_shuffle_off.setVisibility(View.INVISIBLE);
+            button_shuffle_on.setVisibility(View.INVISIBLE);
+        } else {
+            progress_bar.setVisibility(View.VISIBLE);
+            show_time_rl.setVisibility(View.VISIBLE);
+            if (!IS_WATCH) {
+                button_fr.setVisibility(View.VISIBLE);
+                button_ff.setVisibility(View.VISIBLE);
+            }
+            button_prev.setVisibility(View.VISIBLE);
+            button_next.setVisibility(View.VISIBLE);
+            setRepeatView();
+            setShuffleView();
         }
+        // endregion
 
-        progress_bar.setVisibility(View.VISIBLE);
-        show_time_rl.setVisibility(View.VISIBLE);
-        if (!IS_WATCH) {
-            button_fr.setVisibility(View.VISIBLE);
-            button_ff.setVisibility(View.VISIBLE);
-        }
-        setRepeatView();
-        setShuffleView();
-
-        Log.i(TAG, "getPauseRlHeight2()");
         // 播放/暂停按钮的宽高
         int maxButtonWantedWidth = 0;
         int maxButtonWantedHeight = 0;
@@ -3332,73 +3347,141 @@ public class PlayerWrapper {
             maxButtonWantedHeight = 48;
             minButtonWantedWidth = 32;
             minButtonWantedHeight = 32;
-            Log.i(TAG, "getPauseRlHeight2()");
-            if (controlLayoutWidth > 0) {
-                if (mIsLive && !mIsH264) {
-                    space = 16;
-                    while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
-                        minButtonWantedWidth -= 2;
-                        minButtonWantedHeight = minButtonWantedWidth;
-                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                        maxButtonWantedHeight = maxButtonWantedWidth;
-                    }
-                } else {
-                    space = 0;
-                    while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
-                        minButtonWantedWidth -= 2;
-                        minButtonWantedHeight = minButtonWantedWidth;
-                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                        maxButtonWantedHeight = maxButtonWantedWidth;
-                    }
+            if (mIsLive && !mIsH264) {
+                space = 16;
+                // region
+                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
                 }
+                // endregion
+            } else {
+                space = 0;
+                // region
+                while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
+                }
+                // endregion
             }
-            Log.i(TAG, "getPauseRlHeight2()");
         } else {
             maxButtonWantedWidth = 72;
             maxButtonWantedHeight = 72;
             minButtonWantedWidth = 48;
             minButtonWantedHeight = 48;
-            if (controlLayoutWidth > 0) {
-                if (mIsLive && !mIsH264) {
-                    space = 32;
-                    while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
-                        minButtonWantedWidth -= 2;
-                        minButtonWantedHeight = minButtonWantedWidth;
-                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                        maxButtonWantedHeight = maxButtonWantedWidth;
-                    }
-                } else {
-                    space = 16;
-                    while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
-                        minButtonWantedWidth -= 2;
-                        minButtonWantedHeight = minButtonWantedWidth;
-                        maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
-                        maxButtonWantedHeight = maxButtonWantedWidth;
-                    }
+            if (mIsLive && !mIsH264) {
+                space = 32;
+                // region
+                while (maxButtonWantedWidth + minButtonWantedWidth * 2 + space * 2 > controlLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
                 }
+                // endregion
+            } else {
+                space = 16;
+                // region
+                while (maxButtonWantedWidth + minButtonWantedWidth * 8 + space * 8 > controlLayoutWidth) {
+                    minButtonWantedWidth -= 2;
+                    minButtonWantedHeight = minButtonWantedWidth;
+                    maxButtonWantedWidth = (minButtonWantedWidth * 3) / 2;
+                    maxButtonWantedHeight = maxButtonWantedWidth;
+                }
+                // endregion
             }
         }
 
         RelativeLayout.LayoutParams params = null;
-        if (mWindow == Window.Min_Screen) {
-            if (mIsLive && !mIsH264) {
-                params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
-                params.setMarginStart(0);
-                params.width = minButtonWantedWidth;
-                params.height = minButtonWantedHeight;
-                button_exit.setLayoutParams(params);
+        if (mIsLive && !mIsH264) {
+            // region 3个按钮
+            params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            int start =
+                    (controlLayoutWidth - minButtonWantedWidth * 2 - space * 2 - maxButtonWantedWidth) / 2;
+            params.setMarginStart(start);
+            button_exit.setLayoutParams(params);
 
-                params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
-            } else {
+            params = (RelativeLayout.LayoutParams) button_play.getLayoutParams();
+            params.width = maxButtonWantedWidth;
+            params.height = maxButtonWantedHeight;
+            params.setMarginStart(start + space);
+            button_play.setLayoutParams(params);
+            button_pause.setLayoutParams(params);
 
-            }
-
+            params = (RelativeLayout.LayoutParams) button_volume.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            params.setMarginStart(start + space * 2 + maxButtonWantedWidth);
+            button_volume.setLayoutParams(params);
+            volume_mute.setLayoutParams(params);
+            // endregion
         } else {
-            if (mIsLive && !mIsH264) {
+            // region 9个按钮
+            params = (RelativeLayout.LayoutParams) button_fr.getLayoutParams();
+            params.setMarginStart(0);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            button_fr.setLayoutParams(params);
 
-            } else {
+            params = (RelativeLayout.LayoutParams) button_ff.getLayoutParams();
+            params.setMarginStart(minButtonWantedWidth + space);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            button_ff.setLayoutParams(params);
 
-            }
+            params = (RelativeLayout.LayoutParams) button_prev.getLayoutParams();
+            params.setMarginStart(minButtonWantedWidth * 2 + space * 2);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            button_prev.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_next.getLayoutParams();
+            params.setMarginStart(minButtonWantedWidth * 3 + space * 3);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            button_next.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_exit.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            params.setMarginStart(minButtonWantedWidth * 4 + space * 4);
+            button_exit.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_play.getLayoutParams();
+            params.width = maxButtonWantedWidth;
+            params.height = maxButtonWantedHeight;
+            params.setMarginStart(minButtonWantedWidth * 5 + space * 5);
+            button_play.setLayoutParams(params);
+            button_pause.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_volume.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            params.setMarginStart(minButtonWantedWidth * 5 + maxButtonWantedWidth + space * 6);
+            button_volume.setLayoutParams(params);
+            volume_mute.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_repeat_off.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            params.setMarginStart(minButtonWantedWidth * 8 + maxButtonWantedWidth + space * 9);
+            button_repeat_off.setLayoutParams(params);
+            button_repeat_all.setLayoutParams(params);
+            button_repeat_one.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) button_shuffle_off.getLayoutParams();
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            params.setMarginStart(minButtonWantedWidth * 9 + maxButtonWantedWidth + space * 10);
+            button_shuffle_off.setLayoutParams(params);
+            button_shuffle_on.setLayoutParams(params);
+            // endregion
         }
 
         return controlLayoutHeight;
