@@ -3485,8 +3485,7 @@ public class PlayerWrapper {
             // endregion
         }
 
-        // return controlLayoutHeight;
-        return maxButtonWantedHeight;
+        return controlLayoutHeight;
     }
 
     private SurfaceHolder.Callback mSurfaceCallback = new SurfaceHolder.Callback() {
