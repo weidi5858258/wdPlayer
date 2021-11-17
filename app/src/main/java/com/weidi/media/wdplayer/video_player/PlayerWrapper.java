@@ -246,6 +246,7 @@ public class PlayerWrapper {
     // 声音
     private ImageButton mVolumeNormal;
     private ImageButton mVolumeMute;
+    private ImageButton mScreenMax;
     private ImageButton mRepeatOff;
     private ImageButton mRepeatAll;
     private ImageButton mRepeatOne;
@@ -466,6 +467,7 @@ public class PlayerWrapper {
         mExitIB = mRootView.findViewById(R.id.button_exit);
         mVolumeNormal = mRootView.findViewById(R.id.volume_normal);
         mVolumeMute = mRootView.findViewById(R.id.volume_mute);
+        mScreenMax = mRootView.findViewById(R.id.screen_max);
         mRepeatOff = mRootView.findViewById(R.id.button_repeat_off);
         mRepeatAll = mRootView.findViewById(R.id.button_repeat_all);
         mRepeatOne = mRootView.findViewById(R.id.button_repeat_one);
@@ -496,6 +498,7 @@ public class PlayerWrapper {
         mDownloadTV.setOnClickListener(mOnClickListener);
         mVolumeNormal.setOnClickListener(mOnClickListener);
         mVolumeMute.setOnClickListener(mOnClickListener);
+        mScreenMax.setOnClickListener(mOnClickListener);
         mRepeatOff.setOnClickListener(mOnClickListener);
         mRepeatAll.setOnClickListener(mOnClickListener);
         mRepeatOne.setOnClickListener(mOnClickListener);
@@ -516,6 +519,20 @@ public class PlayerWrapper {
             @Override
             public boolean onLongClick(View v) {
                 buttonLongClickForVolumeMute();
+                return true;
+            }
+        });
+
+        mScreenMax.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if (mWindow == Window.Full_Screen) {
+                    return true;
+                }
+                Intent intent = new Intent();
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setClass(mContext, FullScreenActivity.class);
+                mContext.startActivity(intent);
                 return true;
             }
         });
@@ -1669,6 +1686,21 @@ public class PlayerWrapper {
             case R.id.volume_mute:
                 buttonClickForVolume();
                 break;
+            case R.id.screen_max: {
+                switch (mWindow) {
+                    case Max_Screen: {
+                        handlePortraitScreenWithTV();
+                        break;
+                    }
+                    case Min_Screen: {
+                        handlePortraitScreen();
+                        break;
+                    }
+                    default:
+                        break;
+                }
+                break;
+            }
             case R.id.button_repeat_off:
                 buttonClickForRepeatOff();
                 break;
@@ -3307,6 +3339,7 @@ public class PlayerWrapper {
         ImageButton button_exit = mRootView.findViewById(R.id.button_exit);
         ImageButton button_volume = mRootView.findViewById(R.id.volume_normal);
         ImageButton volume_mute = mRootView.findViewById(R.id.volume_mute);
+        ImageButton screen_max = mRootView.findViewById(R.id.screen_max);
         // 快退快进
         ImageButton button_fr = mRootView.findViewById(R.id.button_fr);
         ImageButton button_ff = mRootView.findViewById(R.id.button_ff);
@@ -3421,6 +3454,12 @@ public class PlayerWrapper {
             params.height = minButtonWantedHeight;
             button_volume.setLayoutParams(params);
             volume_mute.setLayoutParams(params);
+
+            params = (RelativeLayout.LayoutParams) screen_max.getLayoutParams();
+            params.setMarginStart(space);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            screen_max.setLayoutParams(params);
             // endregion
         } else {
             // region 9个按钮
@@ -3468,8 +3507,14 @@ public class PlayerWrapper {
             button_volume.setLayoutParams(params);
             volume_mute.setLayoutParams(params);
 
+            params = (RelativeLayout.LayoutParams) screen_max.getLayoutParams();
+            params.setMarginStart(space);
+            params.width = minButtonWantedWidth;
+            params.height = minButtonWantedHeight;
+            screen_max.setLayoutParams(params);
+
             params = (RelativeLayout.LayoutParams) button_repeat_off.getLayoutParams();
-            params.setMarginStart(minButtonWantedWidth * 2 + space * 3);
+            params.setMarginStart(minButtonWantedWidth + space * 2);
             params.width = minButtonWantedWidth;
             params.height = minButtonWantedHeight;
             button_repeat_off.setLayoutParams(params);

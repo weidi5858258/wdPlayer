@@ -153,6 +153,14 @@
             android:visibility="invisible" />
 
         <ImageButton
+            android:id="@+id/screen_max"
+            style="@style/StyleImageButton"
+            android:layout_marginLeft="@dimen/dimen_8_dp"
+            android:layout_toRightOf="@id/volume_normal"
+            android:contentDescription="screen_max"
+            android:src="@drawable/fullscreen_icon_bg_hdpi" />
+
+        <ImageButton
             android:id="@+id/button_shuffle_off"
             style="@style/StyleImageButton"
             android:layout_alignParentEnd="true"
