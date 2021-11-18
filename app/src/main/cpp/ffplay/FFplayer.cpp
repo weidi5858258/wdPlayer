@@ -2040,6 +2040,8 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 goto display2;
             }
 
+            // 当time > frame_timer_delay时,说明视频慢了,所以不要延时,使劲赶上音频
+            *remaining_time = 0.0;
             is->frame_timer += delay;
             if (delay > 0 && time - is->frame_timer > AV_SYNC_THRESHOLD_MAX) {
                 is->frame_timer = time;
@@ -2070,7 +2072,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     frame_queue_next(&is->pictq);
                     // alexander add
                     // sleep(0);
-                    *remaining_time = 0.0;
+                    // *remaining_time = 0.0;
                     goto retry2;
                 }
             }
@@ -2613,7 +2615,7 @@ static int configure_filtergraph(AVFilterGraph *graph, const char *filtergraph,
 
     /* Reorder the filters to ensure that inputs of the custom filters are merged first */
     for (i = 0; i < graph->nb_filters - nb_filters; i++)
-        FFSWAP(AVFilterContext * , graph->filters[i], graph->filters[i + nb_filters]);
+        FFSWAP(AVFilterContext *, graph->filters[i], graph->filters[i + nb_filters]);
 
     ret = avfilter_graph_config(graph, nullptr);
     fail:
@@ -2787,7 +2789,7 @@ configure_audio_filters(VideoState *is, const char *afilters, int force_output_f
     if (is->audio_filter_src.channel_layout)
         snprintf(asrc_args + ret, sizeof(asrc_args) - ret,
                  ":channel_layout=0x%"
-    PRIx64, is->audio_filter_src.channel_layout);
+                 PRIx64, is->audio_filter_src.channel_layout);
 
     ret = avfilter_graph_create_filter(&filt_asrc,
                                        avfilter_get_by_name("abuffer"), "ffplay_abuffer",
@@ -3900,7 +3902,7 @@ static void *read_thread(void *arg) {
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
     if (timeStamp >= 0/* && !is->useMediaCodec*/) {
         stream_seek(
-                is, (int64_t)(timeStamp * AV_TIME_BASE), (int64_t)(10.000000 * AV_TIME_BASE), 0);
+                is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
     }
     timeStamp = -1;
 
@@ -4778,7 +4780,7 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
-            av_usleep((int64_t)(remaining_time * 1000000.0));
+            av_usleep((int64_t) (remaining_time * 1000000.0));
         } else if (is->paused) {
             av_usleep(10000);
         }
@@ -5399,7 +5401,7 @@ int initPlayer() {
     //signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t * ) & flush_pkt;
+    flush_pkt.data = (uint8_t *) &flush_pkt;
 
     LOGI("initPlayer()     screen_width = %d\n", screen_width);
     LOGI("initPlayer()    screen_height = %d\n", screen_height);
@@ -5561,8 +5563,8 @@ int seekTo(int64_t timestamp) {
 
     has_seeked = true;
     stream_seek(video_state,
-                (int64_t)(timestamp * AV_TIME_BASE),
-                (int64_t)(10.000000 * AV_TIME_BASE), 0);
+                (int64_t) (timestamp * AV_TIME_BASE),
+                (int64_t) (10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 
@@ -5606,7 +5608,7 @@ static void do_seek(double incr) {
             pos = is->ic->start_time / (double) AV_TIME_BASE;
         }
         LOGI("do_seek() 4 pos = %lf incr = %lf seek_by_bytes = %d\n", pos, incr, seek_by_bytes);
-        stream_seek(is, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
+        stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
     }
 }
 
