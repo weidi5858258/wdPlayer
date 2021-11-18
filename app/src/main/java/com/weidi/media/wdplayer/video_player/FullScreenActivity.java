@@ -5,15 +5,12 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 
 import com.weidi.eventbus.Phone;
-
-import androidx.annotation.NonNull;
+import com.weidi.media.wdplayer.Constants;
 
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FF;
 import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_FR;
@@ -239,6 +236,7 @@ public class FullScreenActivity extends Activity {
     public static boolean SCREEN_ORIENTATION_LANDSCAPE = true;
 
     private void internalCreate() {
+        Phone.register(this);
         if (PlayerWrapper.IS_TV) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         } else {
@@ -256,14 +254,14 @@ public class FullScreenActivity extends Activity {
 
     private void internalResume() {
         JniPlayerActivity.isAliveJniPlayerActivity = true;
-        mUiHandler.removeMessages(1);
-        mUiHandler.sendEmptyMessageDelayed(1, 1000);
+        Phone.removeUiMessages(1);
+        Phone.callUiDelayed(FullScreenActivity.class.getName(), 1, 1000, null);
     }
 
     private void internalPause() {
         JniPlayerActivity.isAliveJniPlayerActivity = false;
-        mUiHandler.removeMessages(2);
-        mUiHandler.sendEmptyMessageDelayed(2, 1000);
+        Phone.removeUiMessages(2);
+        Phone.callUiDelayed(FullScreenActivity.class.getName(), 2, 1000, null);
     }
 
     private void internalStop() {
@@ -271,53 +269,60 @@ public class FullScreenActivity extends Activity {
     }
 
     private void internalDestroy() {
-        mUiHandler.removeMessages(2);
-        mUiHandler.removeMessages(3);
-        mUiHandler.sendEmptyMessage(3);
+        Phone.removeUiMessages(1);
+        Phone.removeUiMessages(2);
+        Phone.removeUiMessages(3);
+        Phone.call(FullScreenActivity.class.getName(), 3, null);
+        Phone.unregister(this);
     }
 
-    private Handler mUiHandler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            //super.handleMessage(msg);
-            switch (msg.what) {
-                case 1:
-                    Phone.call(
-                            PlayerService.class.getName(),
-                            PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
-                            new Object[]{0});
-                    break;
-                case 2:
-                    Phone.call(
-                            PlayerService.class.getName(),
-                            PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
-                            new Object[]{2});
-                    break;
-                case 3:
-                    if (PlayerWrapper.IS_PHONE) {
-                        int orientation = getResources().getConfiguration().orientation;
-                        if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-                            Phone.call(
-                                    PlayerService.class.getName(),
-                                    PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
-                                    new Object[]{1000});
-                        } else {
-                            Phone.call(
-                                    PlayerService.class.getName(),
-                                    PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
-                                    new Object[]{2});
-                        }
+    private Object onEvent(int what, Object[] objArray) {
+        Object result = null;
+        switch (what) {
+            case 1: {
+                Phone.call(
+                        PlayerService.class.getName(),
+                        PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                        new Object[]{0});
+                break;
+            }
+            case 2: {
+                Phone.call(
+                        PlayerService.class.getName(),
+                        PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                        new Object[]{2});
+                break;
+            }
+            case 3: {
+                if (PlayerWrapper.IS_PHONE) {
+                    int orientation = getResources().getConfiguration().orientation;
+                    if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                        Phone.call(
+                                PlayerService.class.getName(),
+                                PlayerService.COMMAND_HANDLE_PORTRAIT_SCREEN,
+                                new Object[]{1000});
                     } else {
                         Phone.call(
                                 PlayerService.class.getName(),
                                 PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                                 new Object[]{2});
                     }
-                    break;
-                default:
-                    break;
+                } else {
+                    Phone.call(
+                            PlayerService.class.getName(),
+                            PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
+                            new Object[]{2});
+                }
+                break;
             }
+            case Constants.FINISH_FULL_SCREEN_ACTIVITY: {
+                finish();
+                break;
+            }
+            default:
+                break;
         }
-    };
+        return result;
+    }
 
 }

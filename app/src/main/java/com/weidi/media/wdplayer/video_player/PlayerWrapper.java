@@ -59,6 +59,7 @@ import android.widget.TextView;
 
 import com.sonyericsson.dlna.dmr.player.IDmrPlayerAppCallback;
 import com.weidi.eventbus.Phone;
+import com.weidi.media.wdplayer.Constants;
 import com.weidi.media.wdplayer.R;
 import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.JniObject;
@@ -1687,6 +1688,11 @@ public class PlayerWrapper {
                 buttonClickForVolume();
                 break;
             case R.id.screen_max: {
+                if (mWindow == Window.Full_Screen) {
+                    Phone.call(FullScreenActivity.class.getName(),
+                            Constants.FINISH_FULL_SCREEN_ACTIVITY, null);
+                    break;
+                }
                 switch (mWindow) {
                     case Max_Screen: {
                         handlePortraitScreenWithTV();
