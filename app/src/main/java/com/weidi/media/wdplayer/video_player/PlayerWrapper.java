@@ -508,6 +508,20 @@ public class PlayerWrapper {
         mVolumeMin.setOnClickListener(mOnClickListener);
         mVolumeMax.setOnClickListener(mOnClickListener);
 
+        mExitIB.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                buttonClickForExit();
+                Phone.callThreadDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        setDataSource(mCurPath);
+                    }
+                }, 3000);
+                return true;
+            }
+        });
+
         mVolumeNormal.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {

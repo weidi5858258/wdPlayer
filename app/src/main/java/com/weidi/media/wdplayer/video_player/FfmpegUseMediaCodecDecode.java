@@ -2084,7 +2084,8 @@ public class FfmpegUseMediaCodecDecode {
                         avPacket = mVideoInputDatasQueue.take();
                     }
                     //Log.i(TAG, "onInputBufferAvailable() 2");
-                } catch (InterruptedException e) {
+                } catch (Exception e) {
+                    Log.e(TAG, "onInputBufferAvailable() 1 " + e.toString());
                     avPacket = null;
                 }
             }
@@ -2093,6 +2094,7 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
                 } catch (Exception e) {
+                    Log.e(TAG, "onInputBufferAvailable() 2 " + e.toString());
                 }
                 return;
             }
@@ -2103,6 +2105,7 @@ public class FfmpegUseMediaCodecDecode {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0,
                             MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                 } catch (Exception e) {
+                    Log.e(TAG, "onInputBufferAvailable() 3 " + e.toString());
                 }
                 return;
             }
@@ -2116,6 +2119,7 @@ public class FfmpegUseMediaCodecDecode {
                     room = codec.getInputBuffers()[roomIndex];
                 }
             } catch (Exception e) {
+                Log.e(TAG, "onInputBufferAvailable() 4 " + e.toString());
                 room = null;
             }
             if (room == null) {
@@ -2124,6 +2128,7 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     codec.queueInputBuffer(roomIndex, 0, 0, 0, 0);
                 } catch (Exception e) {
+                    Log.e(TAG, "onInputBufferAvailable() 5 " + e.toString());
                 }
                 return;
             }
@@ -2177,6 +2182,7 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     codec.releaseOutputBuffer(roomIndex, true);
                 } catch (Exception e) {
+                    Log.e(TAG, "onOutputBufferAvailable() 1 " + e.toString());
                 }
                 return;
             }
@@ -2190,6 +2196,7 @@ public class FfmpegUseMediaCodecDecode {
                     room = codec.getOutputBuffers()[roomIndex];
                 }
             } catch (Exception e) {
+                Log.e(TAG, "onOutputBufferAvailable() 2 " + e.toString());
                 room = null;
             }
 
@@ -2198,6 +2205,7 @@ public class FfmpegUseMediaCodecDecode {
                 try {
                     codec.releaseOutputBuffer(roomIndex, true);
                 } catch (Exception e) {
+                    Log.e(TAG, "onOutputBufferAvailable() 3 " + e.toString());
                 }
                 return;
             }
@@ -2221,6 +2229,7 @@ public class FfmpegUseMediaCodecDecode {
                 } catch (IllegalStateException
                         | NullPointerException
                         | MediaCodec.CryptoException e) {
+                    Log.e(TAG, "onOutputBufferAvailable() 4 " + e.toString());
                     e.printStackTrace();
                 }
             }

@@ -21,7 +21,12 @@ B帧 B是双向搜索，解码这种类型的帧是最复杂，不但需要参�
 
 通常来说只有在流中含有B帧的时候，PTS和DTS才会不同。
 
+read_thread(void *arg) ---> audio_thread(void *arg)    ---> audio_play(void *arg)
+read_thread(void *arg) ---> video_thread(void *arg)    ---> video_play(void *arg)
+read_thread(void *arg) ---> video_thread_mc(void *arg) ---> video_play(void *arg)
 
+audio:
+    audio_thread(...)
 
 
 

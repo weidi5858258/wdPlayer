@@ -1949,12 +1949,13 @@ static void video_refresh(void *opaque, double *remaining_time) {
             // region
 
             double last_duration, delay;
+            // 如果vp表示当前帧,那么lastvp表示上一帧
             Frame *lastvp = nullptr, *vp = nullptr;
-
             lastvp = frame_queue_peek_last(&is->pictq);
             vp = frame_queue_peek(&is->pictq);
 
             if (vp->serial != is->videoq.serial) {
+                // 当前帧跟视频队列里的serial值不一样,说明已经seek过了.所以需要把seek之前的帧给移除掉.
                 frame_queue_next(&is->pictq);
                 goto retry2;
             }
@@ -1993,6 +1994,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 last_duration = test_last_duration;
             }
             if (last_duration > 0.0) {
+                // 在线节目中,last_duration值有时在播放过程会变化的,变化后的值会引起不好的现象.因此先保存刚开始取得的值.
                 test_last_duration = last_duration;
             }
             delay = compute_target_delay(last_duration, is);
@@ -2003,10 +2005,13 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     // 只执行一次,就是记录last_duration的有效值.因为有时它可能是0,还可能不断变化
                     test_delay_one_time = true;
                     test_delay = last_duration;
-                    LOGW("video_refresh() test_delay = %lf\n", test_delay);
+                    LOGW("video_refresh() test_delay = %lf delay = %lf\n", test_delay, delay);
                 }
             }
+
+            // 当前帧需要播放的时间点
             double frame_timer_delay = is->frame_timer + delay;
+            // 当前时间点
             time = av_gettime_relative() / 1000000.0;
             if (video_refresh_log) {
                 //LOGI("video_refresh()               is->pictq.size = %d\n", is->pictq.size);
@@ -2035,6 +2040,12 @@ static void video_refresh(void *opaque, double *remaining_time) {
             LOGD("video_refresh() video pts: %lf\n", is->vidclk.pts);
             LOGW("video_refresh()       pts: %lf\n", (is->vidclk.pts - is->audclk.pts));*/
 
+            /*
+             比如:
+             time假设为9:00:00这个时间点
+             frame_timer_delay假设为9:00:05这个时间点要播放当前帧
+             因为9:00:00小于9:00:05,表示的意思是播放当前帧的时间还早,需要5s再播放当前帧.
+             */
             if (time < frame_timer_delay) {
                 *remaining_time = FFMIN(frame_timer_delay - time, *remaining_time);
                 goto display2;
@@ -2866,6 +2877,7 @@ static void *audio_thread(void *arg) {
             LOGE("audio_thread() decoder_decode_frame failed\n");
             goto the_end;
         }
+
         if (got_frame) {
             // 创建一个AVRational结构体数据
             tb = (AVRational) {1, frame->sample_rate};
@@ -4638,6 +4650,7 @@ static void *audio_play(void *arg) {
     if (is->audio_tgt.bytes_per_sec <= 0) {
         is->audio_tgt.bytes_per_sec = 192000;
     }
+    LOGI("audio_play() is->audio_tgt.bytes_per_sec = %d\n", is->audio_tgt.bytes_per_sec);
 
     LOGI("audio_play() start\n");
     while (1) {
