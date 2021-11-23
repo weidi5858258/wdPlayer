@@ -5652,6 +5652,7 @@ void clearQueue() {
         return;
     }
 
+    LOGI("FFplayer clearQueue() start\n");
     // audio
     pthread_mutex_lock(&video_state->sampq.pmutex);
     for (int i = 0; i < video_state->sampq.max_size; i++) {
@@ -5674,6 +5675,7 @@ void clearQueue() {
     video_state->pictq.windex = 0;
     pthread_cond_signal(&video_state->pictq.pcond);
     pthread_mutex_unlock(&video_state->pictq.pmutex);
+    LOGI("FFplayer clearQueue() end\n");
 }
 
 void onEvent(int what) {
