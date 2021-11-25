@@ -118,7 +118,7 @@ extern "C" {
 
 #define OS_ANDROID 1
 #define MAX_AUDIO_FRAME_SIZE 19200
-#define MAX_RELATIVE_TIME    15000000
+#define MAX_RELATIVE_TIME    30000000 // 30秒
 
 // 保存解码帧的个数
 #define VIDEO_PICTURE_QUEUE_SIZE 3
@@ -453,6 +453,9 @@ static int audio_packets = 0;
 static int subtitle_packets = 0;
 static bool isStarted = false;
 static bool isFinished = false;
+// 下面两个变量一起组合使用
+static bool isExited = false;
+static bool jump_avformat_open_input = false;
 //static bool read_thread_finish = false;
 //static bool audio_thread_finish = false;
 //static bool video_thread_finish = false;
@@ -3812,7 +3815,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
 }
 
 static int decode_interrupt_cb(void *ctx) {
-    if (!isStarted && ((av_gettime_relative() - startTime) > MAX_RELATIVE_TIME)) {
+    if ((!isStarted && ((av_gettime_relative() - startTime) > MAX_RELATIVE_TIME))
+        || (!jump_avformat_open_input && isExited)) {
+        LOGE("decode_interrupt_cb() return 1\n");
         return 1;
     }
 
@@ -4171,11 +4176,13 @@ static int create_avformat_context(void *arg) {
     LOGI("create_avformat_context() avformat_open_input\n");
     // 网络不好时,这个函数
     startTime = av_gettime_relative();
+    jump_avformat_open_input = false;
     ret = avformat_open_input(&avFormatContext, is->filename, is->iformat, &format_opts);
+    jump_avformat_open_input = true;
     endTime = av_gettime_relative();
     LOGD("create_avformat_context() avformat_open_input: %lld ms\n",
          (long long) ((endTime - startTime) / 1000));// 单位: ms
-    if (ret < 0) {
+    if (ret < 0 || isExited) {
         char buf[1024];
         av_strerror(ret, buf, 1024);
         // 这里就是某些视频初始化失败的地方
@@ -5377,6 +5384,7 @@ int initPlayer() {
     runOneTime = true;
     isStarted = false;
     isFinished = false;
+    isExited = false;
     media_duration = -1;
     curProgress = 0;
     preProgress = 0;
@@ -5531,6 +5539,12 @@ int play_pause() {
 }
 
 int stop() {
+    if (!jump_avformat_open_input) {
+        LOGI("stop() isExited is true\n");
+        isExited = true;
+        return 0;
+    }
+
     pthread_mutex_lock(&readLockMutex);
     if (video_state) {
         do_exit(video_state);

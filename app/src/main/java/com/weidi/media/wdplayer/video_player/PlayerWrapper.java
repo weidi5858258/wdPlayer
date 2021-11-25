@@ -616,7 +616,7 @@ public class PlayerWrapper {
 
         mUiHandler.removeMessages(MSG_ADD_VIEW);
         mUiHandler.sendEmptyMessageDelayed(MSG_ADD_VIEW, 888);
-        mThreadHandler.removeMessages(MSG_RELEASE);
+        mUiHandler.removeMessages(MSG_RELEASE);
     }
 
     public void setType(String type) {
@@ -884,9 +884,10 @@ public class PlayerWrapper {
     }
 
     private void onRelease() {
+        Log.i(TAG, "onRelease() whatPlayer: " + whatPlayer);
         if (TextUtils.equals(whatPlayer, PLAYER_FFPLAY)) {
-            mThreadHandler.removeMessages(MSG_RELEASE);
-            mThreadHandler.sendEmptyMessage(MSG_RELEASE);
+            mUiHandler.removeMessages(MSG_RELEASE);
+            mUiHandler.sendEmptyMessage(MSG_RELEASE);
         } else {
             if (mWdPlayer != null/* && mWdPlayer.isRunning()*/) {
                 Log.i(TAG, "onRelease()");
@@ -1500,6 +1501,13 @@ public class PlayerWrapper {
             case MSG_SCREEN_BRIGHT_WAKE_LOCK:
                 wakeUpAndUnlock();
                 break;
+            case MSG_RELEASE: {
+                if (mWdPlayer != null) {
+                    Log.i(TAG, "onRelease()");
+                    mWdPlayer.release();
+                }
+                break;
+            }
             default:
                 break;
         }
@@ -1651,12 +1659,13 @@ public class PlayerWrapper {
                     loadContents();
                 }
                 break;
-            case MSG_RELEASE:
+            /*case MSG_RELEASE: {
+                Log.i(TAG, "onRelease()");
                 if (mWdPlayer != null) {
-                    Log.i(TAG, "onRelease()");
                     mWdPlayer.release();
                 }
                 break;
+            }*/
             case MSG_TEST_SIGNAL: {
                 testSignal();
                 break;
@@ -3187,8 +3196,7 @@ public class PlayerWrapper {
             case Callback.ERROR_FFMPEG_INIT:
                 // 音视频初始化失败(不会调到onFinished())
                 Log.e(TAG, "PlayerWrapper Callback.ERROR_FFMPEG_INIT errorInfo: " + errorInfo);
-                mHasError = true;
-                if (mIsVideo) {
+                /*if (mIsVideo) {
                     if (mCouldPlaybackPathList.contains(mCurPath)
                             && !mCurPath.startsWith("http://cache.m.iqiyi.com/")) {
                         //startForGetMediaFormat();
@@ -3205,9 +3213,12 @@ public class PlayerWrapper {
                             break;
                         }
                     }
-                }
+                }*/
 
-                removeView(true);
+                if (!needToPlaybackOtherVideo()) {
+                    mHasError = true;
+                    removeView(true);
+                }
                 break;
             default:
                 break;
@@ -3260,11 +3271,11 @@ public class PlayerWrapper {
                     if (mPathTimeMap.containsKey(md5Path)) {
                         mPathTimeMap.remove(md5Path);
                     }
-                    mThreadHandler.removeMessages(MSG_RELEASE);
+                    mUiHandler.removeMessages(MSG_RELEASE);
                     if (mVideoWidth >= 3840 && mVideoHeight >= 2160) {
-                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 7000);
+                        mUiHandler.sendEmptyMessageDelayed(MSG_RELEASE, 7000);
                     } else {
-                        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
+                        mUiHandler.sendEmptyMessageDelayed(MSG_RELEASE, 5000);
                     }
                 }
             }
@@ -4696,8 +4707,8 @@ public class PlayerWrapper {
 
         stopTest();
 
-        mThreadHandler.removeMessages(MSG_RELEASE);
-        mThreadHandler.sendEmptyMessageDelayed(MSG_RELEASE, 60000);
+        mUiHandler.removeMessages(MSG_RELEASE);
+        mUiHandler.sendEmptyMessageDelayed(MSG_RELEASE, 60000);
     }
 
     private void stopTest() {
