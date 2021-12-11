@@ -2083,7 +2083,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     &&
                     time > is->frame_timer + next_delay) {
                     is->frame_drops_late++;
-                    frame_queue_next(&is->pictq);
+                    // frame_queue_next(&is->pictq);
                     LOGI("video_refresh() is->frame_drops_late: %d\n", is->frame_drops_late);
                     // alexander add
                     // sleep(0);
