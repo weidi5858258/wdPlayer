@@ -12,7 +12,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.OrientationEventListener;
@@ -22,6 +24,9 @@ import android.view.WindowManager;
 import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.R;
 import com.weidi.utils.PermissionsUtils;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import static com.weidi.media.wdplayer.MainActivity.PLAYERSERVICE;
 
@@ -101,6 +106,15 @@ public class JniPlayerActivity extends Activity {
                     " requestCode: " + requestCode +
                     " resultCode: " + resultCode +
                     " data: " + data);
+        if (requestCode == REQUEST_CODE
+                && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (Environment.isExternalStorageManager()) {
+                doSomething();
+                finish();
+            } else {
+                Log.e(TAG, "onActivityResult() 没有得到外部读写的存储权限");
+            }
+        }
     }
 
     @Override
@@ -290,11 +304,15 @@ public class JniPlayerActivity extends Activity {
              uri : file:///storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
              path = uri.getPath();
              path:        /storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
+             5.
+             uri : content://com.speedsoftware.rootexplorer.fileprovider/external_storage_root/Movies/jlbhd5.mp4
+             path = uri.getPath();
+             path:        /storage/emulated/0/Movies/jlbhd5.mp4
 
              // 加密文件
              content://cn.oneplus.filemanager.Safebox/file/2
              content://com.huawei.hidisk.fileprovider
-                /root/storage/1532-48AD/.File_SafeBox/.../temp/***.mp4
+             /root/storage/1532-48AD/.File_SafeBox/.../temp/***.mp4
              */
             Uri uri = intent.getData();
             if (uri != null) {
@@ -326,19 +344,31 @@ public class JniPlayerActivity extends Activity {
                     if (mPath.startsWith("/root/")) {
                         // /root/storage/1532-48AD/download/***.mp4
                         // --->
-                        //      /storage/1532-48AD/download/***.mp4
+                        // /storage/1532-48AD/download/***.mp4
                         mPath = mPath.substring(5);
                     } else if (mPath.startsWith("/document/")) {
-                        // /document/37C8-3904:myfiles/video/***.mp4
-                        // --->
-                        //  /storage/37C8-3904/myfiles/video/***.mp4
-                        mPath = mPath.replace("/document/", "/storage/");
+                        if (mPath.startsWith("/document/primary:")) {
+                            // /document/primary:Movies/Camera/少年包青天.mp4
+                            // --->
+                            // /storage/emulated/0/Movies/Camera/少年包青天.mp4
+                            mPath = mPath.replace("/document/primary", "/storage/emulated/0");
+                        } else {
+                            // /document/37C8-3904:myfiles/video/***.mp4
+                            // --->
+                            // /storage/37C8-3904/myfiles/video/***.mp4
+                            mPath = mPath.replace("/document/", "/storage/");
+                        }
                         mPath = mPath.replace(":", "/");
                     } else if (mPath.startsWith("/external/")) {
-                        //           /external/Pictures/WeiXin/wx_camera_1610676456161.mp4
-                        //           --->
+                        // /external/Pictures/WeiXin/wx_camera_1610676456161.mp4
+                        // --->
                         // /storage/emulated/0/Pictures/WeiXin/wx_camera_1610676456161.mp4
                         mPath = mPath.replace("/external/", "/storage/emulated/0/");
+                    } else if (mPath.startsWith("/external_storage_root/")) {
+                        // /external_storage_root/Movies/jlbhd5.mp4
+                        // --->
+                        // /storage/emulated/0/Movies/jlbhd5.mp4
+                        mPath = mPath.replace("/external_storage_root/", "/storage/emulated/0/");
                     }
                     Log.d(TAG, "internalCreate() mPath3: " + mPath);
                 }
@@ -360,7 +390,19 @@ public class JniPlayerActivity extends Activity {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (mPath.startsWith("/storage/")) {
+                // 先判断有没有权限
+                if (Environment.isExternalStorageManager()) {
+                } else {
+                    Intent intent_ =
+                            new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                    intent_.setData(Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(intent_, REQUEST_CODE);
+                    return;
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (mPath.startsWith("/storage/")) {
                 // 申请存储权限
                 PermissionsUtils.checkAndRequestPermission(
@@ -459,6 +501,30 @@ public class JniPlayerActivity extends Activity {
                     PlayerService.class.getName(),
                     PlayerService.COMMAND_SHOW_WINDOW,
                     new Object[]{mPath, mType});
+        }
+    }
+
+    private static final int REQUEST_CODE = 100;
+    private void requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // 先判断有没有权限
+            if (Environment.isExternalStorageManager()) {
+            } else {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, REQUEST_CODE);
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            // 先判断有没有权限
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            } else {
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        REQUEST_CODE);
+            }
+        } else {
         }
     }
 

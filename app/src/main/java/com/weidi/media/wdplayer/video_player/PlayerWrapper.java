@@ -1523,7 +1523,7 @@ public class PlayerWrapper {
                 if (IS_WATCH) {
                     whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_IJKPLAYER);
                 } else {
-                    whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFMPEG_MEDIACODEC);
+                    whatPlayer = mSP.getString(PLAYBACK_USE_PLAYER, PLAYER_FFPLAY);
                 }
                 /*if (TextUtils.equals(whatPlayer, PLAYER_FFMPEG_MEDIACODEC)
                         && !mPath.endsWith(".m4s")

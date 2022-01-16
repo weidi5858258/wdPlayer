@@ -2047,7 +2047,7 @@ static void video_refresh(void *opaque, double *remaining_time) {
              比如:
              time假设为9:00:00这个时间点
              frame_timer_delay假设为9:00:05这个时间点要播放当前帧
-             因为9:00:00小于9:00:05,表示的意思是播放当前帧的时间还早,需要5s再播放当前帧.
+             因为9:00:00小于9:00:05,表示的意思是播放当前帧的时间还早,需要先等待5s再播放当前帧.
              */
             if (time < frame_timer_delay) {
                 *remaining_time = FFMIN(frame_timer_delay - time, *remaining_time);
@@ -2076,19 +2076,17 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     LOGI("video_refresh() is->frame_timer + next_delay = %lf\n",
                          (is->frame_timer + next_delay));
                 }
-                if (!is->step
-                    &&
-                    ((framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER) ||
-                     framedrop > 0)
-                    &&
-                    time > is->frame_timer + next_delay) {
+                bool flag1 = (framedrop && get_master_sync_type(is) != AV_SYNC_VIDEO_MASTER)
+                             || framedrop > 0;
+                bool flag2 = time > is->frame_timer + next_delay;
+                if (!is->step && flag1 && flag2) {
                     is->frame_drops_late++;
-                    // frame_queue_next(&is->pictq);
+                    frame_queue_next(&is->pictq);
                     LOGI("video_refresh() is->frame_drops_late: %d\n", is->frame_drops_late);
                     // alexander add
                     // sleep(0);
                     // *remaining_time = 0.0;
-                    // goto retry2;
+                    goto retry2;
                 }
             }
 
@@ -2804,7 +2802,7 @@ configure_audio_filters(VideoState *is, const char *afilters, int force_output_f
     if (is->audio_filter_src.channel_layout)
         snprintf(asrc_args + ret, sizeof(asrc_args) - ret,
                  ":channel_layout=0x%"
-                 PRIx64, is->audio_filter_src.channel_layout);
+    PRIx64, is->audio_filter_src.channel_layout);
 
     ret = avfilter_graph_create_filter(&filt_asrc,
                                        avfilter_get_by_name("abuffer"), "ffplay_abuffer",
@@ -3682,6 +3680,9 @@ static int stream_component_open(VideoState *is, int stream_index) {
                 need_reset_frame_rate = true;
             }
 
+            // alexander test
+            need_reset_frame_rate = false;
+
             initVideoMediaCodec(is);
 
             break;
@@ -3920,7 +3921,7 @@ static void *read_thread(void *arg) {
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
     if (timeStamp >= 0/* && !is->useMediaCodec*/) {
         stream_seek(
-                is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
+                is, (int64_t)(timeStamp * AV_TIME_BASE), (int64_t)(10.000000 * AV_TIME_BASE), 0);
     }
     timeStamp = -1;
 
@@ -4801,7 +4802,7 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
-            av_usleep((int64_t) (remaining_time * 1000000.0));
+            av_usleep((int64_t)(remaining_time * 1000000.0));
         } else if (is->paused) {
             av_usleep(10000);
         }
@@ -5423,7 +5424,7 @@ int initPlayer() {
     //signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t *) &flush_pkt;
+    flush_pkt.data = (uint8_t * ) & flush_pkt;
 
     LOGI("initPlayer()     screen_width = %d\n", screen_width);
     LOGI("initPlayer()    screen_height = %d\n", screen_height);
@@ -5591,8 +5592,8 @@ int seekTo(int64_t timestamp) {
 
     has_seeked = true;
     stream_seek(video_state,
-                (int64_t) (timestamp * AV_TIME_BASE),
-                (int64_t) (10.000000 * AV_TIME_BASE), 0);
+                (int64_t)(timestamp * AV_TIME_BASE),
+                (int64_t)(10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 
@@ -5636,7 +5637,7 @@ static void do_seek(double incr) {
             pos = is->ic->start_time / (double) AV_TIME_BASE;
         }
         LOGI("do_seek() 4 pos = %lf incr = %lf seek_by_bytes = %d\n", pos, incr, seek_by_bytes);
-        stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
+        stream_seek(is, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
     }
 }
 
