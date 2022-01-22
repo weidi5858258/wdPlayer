@@ -132,6 +132,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
 import static com.weidi.media.wdplayer.Constants.PLAYER_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_allow_exit;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_download;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrame;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_frameByFrameForFinish;
@@ -606,6 +607,11 @@ public class PlayerWrapper {
         }
         if (TextUtils.equals(path, mCurPath) && mPrePath != null && mIsAddedView) {
             Log.i(TAG, "setDataSource() path:\n" + path + "\n正在播放中......");
+            return;
+        }
+        if (!allowExit()) {
+            Log.i(TAG, "setDataSource() 稍等片刻");
+            MyToast.show("稍候再试");
             return;
         }
 
@@ -1335,6 +1341,18 @@ public class PlayerWrapper {
         /*Log.i(TAG, "needToPlaybackOtherVideo() return false");
         // 不需要播放另一个视频
         return false;*/
+    }
+
+    private boolean allowExit() {
+        if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
+        } else if (TextUtils.equals(whatPlayer, PLAYER_MEDIACODEC)) {
+        } else {
+            String allowExitStr = sendEmptyMessage(DO_SOMETHING_CODE_allow_exit);
+            if (!TextUtils.isEmpty(allowExitStr) && !Boolean.parseBoolean(allowExitStr)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void uiHandleMessage(Message msg) {
@@ -2678,9 +2696,15 @@ public class PlayerWrapper {
     }
 
     private void buttonClickForExit() {
+        if (!allowExit()) {
+            Log.i(TAG, "buttonClickForExit() 稍等片刻");
+            MyToast.show("稍候再试");
+            return;
+        }
         mDownloadClickCounts = 0;
         mIsDownloading = false;
         isFrameByFrameMode = false;
+        Log.i(TAG, "buttonClickForExit()");
         // 表示用户主动关闭,不需要再继续播放
         removeView(false);
     }

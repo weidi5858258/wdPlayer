@@ -456,6 +456,13 @@ static bool isFinished = false;
 // 下面两个变量一起组合使用
 static bool isExited = false;
 static bool jump_avformat_open_input = false;
+/*
+ 增加这个变量主要是为了防止app crash.
+ 什么情况下会比较容易的产生crash呢?
+ 就是在jump_avformat_open_input变量为true后,但是create_avformat_context()方法还没有走完,然后就想要退出app了,
+ 这个时候就很容易产生crash.
+ */
+static bool allow_exit = false;
 //static bool read_thread_finish = false;
 //static bool audio_thread_finish = false;
 //static bool video_thread_finish = false;
@@ -2802,7 +2809,7 @@ configure_audio_filters(VideoState *is, const char *afilters, int force_output_f
     if (is->audio_filter_src.channel_layout)
         snprintf(asrc_args + ret, sizeof(asrc_args) - ret,
                  ":channel_layout=0x%"
-    PRIx64, is->audio_filter_src.channel_layout);
+                 PRIx64, is->audio_filter_src.channel_layout);
 
     ret = avfilter_graph_create_filter(&filt_asrc,
                                        avfilter_get_by_name("abuffer"), "ffplay_abuffer",
@@ -3921,7 +3928,7 @@ static void *read_thread(void *arg) {
     LOGI("read_thread()    timeStamp = %lld\n", (long long int) timeStamp);
     if (timeStamp >= 0/* && !is->useMediaCodec*/) {
         stream_seek(
-                is, (int64_t)(timeStamp * AV_TIME_BASE), (int64_t)(10.000000 * AV_TIME_BASE), 0);
+                is, (int64_t) (timeStamp * AV_TIME_BASE), (int64_t) (10.000000 * AV_TIME_BASE), 0);
     }
     timeStamp = -1;
 
@@ -4802,7 +4809,7 @@ static void *video_play(void *arg) {
         }
 
         if (remaining_time > 0.0) {
-            av_usleep((int64_t)(remaining_time * 1000000.0));
+            av_usleep((int64_t) (remaining_time * 1000000.0));
         } else if (is->paused) {
             av_usleep(10000);
         }
@@ -5407,6 +5414,8 @@ int initPlayer() {
     test_delay_one_time = false;
     need_first_key_frame = true;
     has_seeked = false;
+    jump_avformat_open_input = false;
+    allow_exit = false;
 
     init_dynload();
     av_log_set_flags(AV_LOG_SKIP_REPEATED);
@@ -5424,7 +5433,7 @@ int initPlayer() {
     //signal(SIGTERM, sigterm_handler); /* Termination (ANSI).  */
 
     av_init_packet(&flush_pkt);
-    flush_pkt.data = (uint8_t * ) & flush_pkt;
+    flush_pkt.data = (uint8_t *) &flush_pkt;
 
     LOGI("initPlayer()     screen_width = %d\n", screen_width);
     LOGI("initPlayer()    screen_height = %d\n", screen_height);
@@ -5435,6 +5444,7 @@ int initPlayer() {
         need_first_key_frame = false;
     }
 
+    allow_exit = true;
     LOGI("initPlayer() ret = %d\n", ret); // 为"0"表示初始化成功
     LOGI("initPlayer() end\n");
     return ret;
@@ -5592,8 +5602,8 @@ int seekTo(int64_t timestamp) {
 
     has_seeked = true;
     stream_seek(video_state,
-                (int64_t)(timestamp * AV_TIME_BASE),
-                (int64_t)(10.000000 * AV_TIME_BASE), 0);
+                (int64_t) (timestamp * AV_TIME_BASE),
+                (int64_t) (10.000000 * AV_TIME_BASE), 0);
     return 0;
 }
 
@@ -5637,7 +5647,7 @@ static void do_seek(double incr) {
             pos = is->ic->start_time / (double) AV_TIME_BASE;
         }
         LOGI("do_seek() 4 pos = %lf incr = %lf seek_by_bytes = %d\n", pos, incr, seek_by_bytes);
-        stream_seek(is, (int64_t)(pos * AV_TIME_BASE), (int64_t)(incr * AV_TIME_BASE), 0);
+        stream_seek(is, (int64_t) (pos * AV_TIME_BASE), (int64_t) (incr * AV_TIME_BASE), 0);
     }
 }
 
@@ -5692,6 +5702,15 @@ void clearQueue() {
     pthread_cond_signal(&video_state->pictq.pcond);
     pthread_mutex_unlock(&video_state->pictq.pmutex);
     LOGI("FFplayer clearQueue() end\n");
+}
+
+bool allowExit() {
+    if (video_state != nullptr) {
+        if (jump_avformat_open_input && !allow_exit) {
+            return false;
+        }
+    }
+    return true;
 }
 
 void onEvent(int what) {

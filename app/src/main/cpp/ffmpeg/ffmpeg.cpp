@@ -1979,6 +1979,10 @@ Java_com_weidi_media_wdplayer_video_1player_FFMPEG_onTransact(JNIEnv *env, jobje
             onEvent(env->GetIntField(jniObject, valueInt_jfieldID));
             return env->NewStringUTF(ret);
         }
+        case DO_SOMETHING_CODE_allow_exit: {
+            return (allowExit()
+                    ? env->NewStringUTF("true") : env->NewStringUTF("false"));
+        }
 
         default:
             break;

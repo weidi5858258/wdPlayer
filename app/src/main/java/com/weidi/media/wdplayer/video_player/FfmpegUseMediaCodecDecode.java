@@ -309,90 +309,95 @@ public class FfmpegUseMediaCodecDecode {
 
     public void clearQueue() {
         Log.i(TAG, "clearQueue() start");
-        try {
-            //
-            if (mVideoInputDatasQueue != null) {
-                final ReentrantLock lock = mVideoInputDatasQueue.lock;
+        //
+        if (mVideoInputDatasQueue != null) {
+            final ReentrantLock lock = mVideoInputDatasQueue.lock;
+            try {
                 lock.lockInterruptibly();
-                try {
-                    int size = mVideoInputDatasQueue.size();
-                    for (int i = 0; i < size; i++) {
-                        AVPacket avPacket = mVideoInputDatasQueue.poll();
-                        avPacket = null;
-                    }
-                    mVideoInputDatasQueue.clear();
-                } finally {
-                    lock.unlock();
-                }
-            }
-            //
-            if (mAudioInputDatasQueue != null) {
-                final ReentrantLock lock = mAudioInputDatasQueue.lock;
-                lock.lockInterruptibly();
-                try {
-                    int size = mAudioInputDatasQueue.size();
-                    for (int i = 0; i < size; i++) {
-                        AVPacket avPacket = mAudioInputDatasQueue.poll();
-                        avPacket = null;
-                    }
-                    mAudioInputDatasQueue.clear();
-                } finally {
-                    lock.unlock();
-                }
-            }
-            //
-            if (mVideoDatasIndexQueue != null
-                    && mVideoWrapper != null
-                    && mVideoWrapper.decoderMediaCodec != null) {
-                final ReentrantLock lock = mVideoDatasIndexQueue.lock;
-                lock.lockInterruptibly();
-                try {
-                    int size = mVideoDatasIndexQueue.size();
-                    for (int i = 0; i < size; i++) {
-                        try {
-                            Object object = mVideoDatasIndexQueue.poll();
-                            int roomIndex = -1;
-                            if (object != null && object instanceof Integer) {
-                                roomIndex = (int) object;
-                                Log.i(TAG, "clearQueue() roomIndex: " + roomIndex);
-                                mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(
-                                        roomIndex, true);
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    mVideoDatasIndexQueue.clear();
-                } finally {
-                    lock.unlock();
-                }
-            }
-            //
-            mVideoLock.lock();
-            if (!mVideoDatasIndexMap.isEmpty()) {
-                int size = mVideoDatasIndexMap.size();
+                int size = mVideoInputDatasQueue.size();
                 for (int i = 0; i < size; i++) {
-                    int roomIndex = mVideoDatasIndexMap.get(mVideoDatasIndexMap.keyAt(i));
-                    if (roomIndex >= 0) {
-                        mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(
-                                roomIndex, true);
+                    AVPacket avPacket = mVideoInputDatasQueue.poll();
+                    avPacket = null;
+                }
+                mVideoInputDatasQueue.clear();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+        }
+        //
+        if (mAudioInputDatasQueue != null) {
+            final ReentrantLock lock = mAudioInputDatasQueue.lock;
+            try {
+                lock.lockInterruptibly();
+                int size = mAudioInputDatasQueue.size();
+                for (int i = 0; i < size; i++) {
+                    AVPacket avPacket = mAudioInputDatasQueue.poll();
+                    avPacket = null;
+                }
+                mAudioInputDatasQueue.clear();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
+            }
+        }
+        //
+        if (mVideoDatasIndexQueue != null
+                && mVideoWrapper != null
+                && mVideoWrapper.decoderMediaCodec != null) {
+            final ReentrantLock lock = mVideoDatasIndexQueue.lock;
+            try {
+                lock.lockInterruptibly();
+                int size = mVideoDatasIndexQueue.size();
+                for (int i = 0; i < size; i++) {
+                    try {
+                        Object object = mVideoDatasIndexQueue.poll();
+                        int roomIndex = -1;
+                        if (object != null && object instanceof Integer) {
+                            roomIndex = (int) object;
+                            Log.i(TAG, "clearQueue() roomIndex: " + roomIndex);
+                            mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(
+                                    roomIndex, true);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
-                mVideoDatasIndexMap.clear();
+                mVideoDatasIndexQueue.clear();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                lock.unlock();
             }
-            if (mVideoList != null) {
-                Iterator<AVPacket> iter = mVideoList.iterator();
-                while (iter.hasNext()) {
-                    AVPacket avPacket = iter.next();
-                    avPacket = null;
-                    iter.remove();
-                }
-                mVideoList.clear();
-            }
-            mVideoLock.unlock();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        //
+        mVideoLock.lock();
+        if (!mVideoDatasIndexMap.isEmpty()) {
+            int size = mVideoDatasIndexMap.size();
+            for (int i = 0; i < size; i++) {
+                int roomIndex = mVideoDatasIndexMap.get(mVideoDatasIndexMap.keyAt(i));
+                if (roomIndex >= 0) {
+                    try {
+                        mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            mVideoDatasIndexMap.clear();
+        }
+        if (mVideoList != null) {
+            Iterator<AVPacket> iter = mVideoList.iterator();
+            while (iter.hasNext()) {
+                AVPacket avPacket = iter.next();
+                avPacket = null;
+                iter.remove();
+            }
+            mVideoList.clear();
+        }
+        mVideoLock.unlock();
         Log.i(TAG, "clearQueue() end");
     }
 
@@ -402,8 +407,8 @@ public class FfmpegUseMediaCodecDecode {
                     && mVideoWrapper != null
                     && mVideoWrapper.decoderMediaCodec != null) {
                 final ReentrantLock lock = mVideoDatasIndexQueue.lock;
-                lock.lockInterruptibly();
                 try {
+                    lock.lockInterruptibly();
                     int size = mVideoDatasIndexQueue.size();
                     for (int i = 0; i < size; i++) {
                         Object object = mVideoDatasIndexQueue.poll();
@@ -1517,11 +1522,16 @@ public class FfmpegUseMediaCodecDecode {
                                 && videoSerial > 2
                                 && ((mVideoWrapper.width >= 3840 && mVideoWrapper.height >= 2160) || mVideoWrapper.frameRate >= 45)) {
                             Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 1");
-                            mVideoLock.lock();
-                            afterHasSeekedCount = 0;
-                            mVideoWrapper.decoderMediaCodec.flush();
-                            mVideoWrapper.decoderMediaCodec.start();
-                            mVideoLock.unlock();
+                            try {
+                                mVideoLock.lock();
+                                afterHasSeekedCount = 0;
+                                mVideoWrapper.decoderMediaCodec.flush();
+                                mVideoWrapper.decoderMediaCodec.start();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            } finally {
+                                mVideoLock.unlock();
+                            }
                             Log.i(TAG, "feedInputBufferAndDrainOutputBuffer() flush 2");
                         }
                     }
@@ -1634,11 +1644,11 @@ public class FfmpegUseMediaCodecDecode {
                         && mVideoWrapper.decoderMediaCodec != null) {
                     roomIndex = (int) object;
                     if (roomIndex >= 0 && afterHasSeekedCount >= 2) {
-                        //Log.i(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
-                        mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
                         if (afterHasSeekedCount >= Integer.MAX_VALUE) {
                             afterHasSeekedCount = 2;
                         }
+                        //Log.i(TAG, "releaseOutputBuffer() 2 roomIndex: " + roomIndex);
+                        mVideoWrapper.decoderMediaCodec.releaseOutputBuffer(roomIndex, render);
                     }
                 }
             }
@@ -1655,10 +1665,11 @@ public class FfmpegUseMediaCodecDecode {
                     }
                 }
             }*/
-            mVideoLock.unlock();
         } catch (Exception e) {
             Log.e(TAG, "releaseOutputBuffer() " + e.toString());
             e.printStackTrace();
+        } finally {
+            mVideoLock.unlock();
         }
     }
 

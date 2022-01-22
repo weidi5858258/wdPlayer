@@ -51,6 +51,7 @@ enum DO_SOMETHING_CODE {
     DO_SOMETHING_CODE_setRemainingTime = 1130,
     DO_SOMETHING_CODE_clearQueue = 1131,
     DO_SOMETHING_CODE_postDelayed = 1132,
+    DO_SOMETHING_CODE_allow_exit = 1133,
 };
 
 enum {
