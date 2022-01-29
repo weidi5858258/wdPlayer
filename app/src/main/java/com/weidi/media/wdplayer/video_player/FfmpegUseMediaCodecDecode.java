@@ -1528,6 +1528,7 @@ public class FfmpegUseMediaCodecDecode {
                                 mVideoWrapper.decoderMediaCodec.flush();
                                 mVideoWrapper.decoderMediaCodec.start();
                             } catch (Exception e) {
+                                Log.e(TAG, "feedInputBufferAndDrainOutputBuffer() flush or start");
                                 e.printStackTrace();
                             } finally {
                                 mVideoLock.unlock();

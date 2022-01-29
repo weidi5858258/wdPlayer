@@ -43,6 +43,8 @@ void clearQueue();
 
 bool allowExit();
 
+bool allowReplay();
+
 int decoder_decode_frame_by_mediacodec(int roomIndex,
                                        int offset,
                                        int size,

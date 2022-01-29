@@ -52,6 +52,7 @@ enum DO_SOMETHING_CODE {
     DO_SOMETHING_CODE_clearQueue = 1131,
     DO_SOMETHING_CODE_postDelayed = 1132,
     DO_SOMETHING_CODE_allow_exit = 1133,
+    DO_SOMETHING_CODE_replay = 1134,
 };
 
 enum {

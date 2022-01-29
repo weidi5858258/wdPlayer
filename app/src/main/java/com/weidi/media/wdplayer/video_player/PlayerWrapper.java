@@ -112,6 +112,7 @@ import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_GET_SHUFFLE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_IS_RUNNING;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_MIN_SCREEN;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_REPLAY;
 import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_WIDTH_SCREEN;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION;
 import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
@@ -512,13 +513,7 @@ public class PlayerWrapper {
         mExitIB.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                buttonClickForExit();
-                Phone.callThreadDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        setDataSource(mCurPath);
-                    }
-                }, 3000);
+                Phone.call(PlayerWrapper.class.getName(), DO_SOMETHING_EVENT_REPLAY, null);
                 return true;
             }
         });
@@ -4283,6 +4278,18 @@ public class PlayerWrapper {
                 }
                 break;
             }
+
+            case DO_SOMETHING_EVENT_REPLAY: { // 在UI线程中调用
+                buttonClickForExit();
+                Phone.callThreadDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        setDataSource(mCurPath);
+                    }
+                }, 3000);
+                break;
+            }
+
             default:
                 break;
         }

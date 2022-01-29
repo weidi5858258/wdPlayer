@@ -212,6 +212,7 @@ typedef struct Frame {
 typedef struct FrameQueue {
     // 用于判断是video队列还是audio队列
     int stream_index;
+    bool isBlocked; // 防止视频播放被阻塞(还不清楚有没有达到效果)
     Frame queue[FRAME_QUEUE_SIZE];// 16
     int rindex;
     int windex;
@@ -1010,6 +1011,7 @@ static Frame *frame_queue_peek_writable(FrameQueue *f) {
 
 static Frame *frame_queue_peek_readable(FrameQueue *f) {
     /* wait until we have a readable a new frame */
+    f->isBlocked = true;
     pthread_mutex_lock(&f->pmutex);
     while (f->size - f->rindex_shown <= 0 && !f->pktq->abort_request) {
         /*if (f->max_size == VIDEO_PICTURE_QUEUE_SIZE) {
@@ -1025,6 +1027,7 @@ static Frame *frame_queue_peek_readable(FrameQueue *f) {
         }*/
     }
     pthread_mutex_unlock(&f->pmutex);
+    f->isBlocked = false;
 
     if (f->pktq->abort_request) {
         return nullptr;
@@ -1619,6 +1622,7 @@ static void stream_close(VideoState *is) {
 
 static void do_exit(VideoState *is) {
     LOGI("do_exit() start\n");
+    postDelayed(DO_SOMETHING_CODE_replay, 0);
     if (is) {
         stream_close(is);
     }
@@ -2068,11 +2072,13 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 is->frame_timer = time;
             }
 
-            pthread_mutex_lock(&is->pictq.pmutex);
-            if (!isnan(vp->pts)) {
-                update_video_pts(is, vp->pts, vp->pos, vp->serial);
+            if (!is->pictq.isBlocked) {
+                pthread_mutex_lock(&is->pictq.pmutex);
+                if (!isnan(vp->pts)) {
+                    update_video_pts(is, vp->pts, vp->pos, vp->serial);
+                }
+                pthread_mutex_unlock(&is->pictq.pmutex);
             }
-            pthread_mutex_unlock(&is->pictq.pmutex);
 
             if (frame_queue_nb_remaining(&is->pictq) > 1) {
                 Frame *nextvp = frame_queue_peek_next(&is->pictq);
@@ -4816,7 +4822,15 @@ static void *video_play(void *arg) {
         remaining_time = test_remaining_time;
         //if((is->show_mode!=VideoState::SHOW_MODE_NONE)&&(!is->paused||is->force_refresh)){
         if (!is->paused || is->force_refresh) {
+            if (isLive) {
+                // 发送一个消息,如果在60s内没有把这个消息给remove掉,那么就有可能会重新播放
+                postDelayed(DO_SOMETHING_CODE_replay, 60000);
+            }
             video_refresh(is, &remaining_time);
+            if (isLive) {
+                // remove掉消息
+                postDelayed(DO_SOMETHING_CODE_replay, -1);
+            }
         }
     }
     LOGI("video_play() end\n");
@@ -5711,6 +5725,16 @@ bool allowExit() {
         }
     }
     return true;
+}
+
+bool allowReplay() {
+    if (video_state == nullptr) {
+        return false;
+    }
+    return isLive
+           && !video_state->paused
+        /*&& video_state->videoq.nb_packets < 10000
+        && video_state->audioq.nb_packets < 10000*/;
 }
 
 void onEvent(int what) {

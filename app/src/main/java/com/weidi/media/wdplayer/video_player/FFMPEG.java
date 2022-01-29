@@ -19,9 +19,12 @@ import com.weidi.media.wdplayer.util.Callback;
 import com.weidi.media.wdplayer.util.EDMediaCodec;
 import com.weidi.media.wdplayer.util.JniObject;
 import com.weidi.media.wdplayer.util.MediaUtils;
+import com.weidi.utils.MyToast;
 
 import java.io.File;
 
+import static com.weidi.media.wdplayer.Constants.BUTTON_CLICK_EXIT;
+import static com.weidi.media.wdplayer.Constants.DO_SOMETHING_EVENT_REPLAY;
 import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_IS_MUTE;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
@@ -153,6 +156,7 @@ public class FFMPEG implements WdPlayer {
     public static final int DO_SOMETHING_CODE_clearQueue = 1131;
     public static final int DO_SOMETHING_CODE_postDelayed = 1132;
     public static final int DO_SOMETHING_CODE_allow_exit = 1133;
+    public static final int DO_SOMETHING_CODE_replay = 1134;
 
     private byte[] eof = new byte[]{-1, -1, -1, -1, -1};
 
@@ -382,11 +386,54 @@ public class FFMPEG implements WdPlayer {
         } else {
             Phone.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
         }
+        if (what == DO_SOMETHING_CODE_replay && delayMillis < 0) {
+            return;
+        }
         Phone.callDelayed(
                 FFMPEG.class.getName(),
                 DO_SOMETHING_CODE_postDelayed,
                 delayMillis,
                 new Object[]{what});
+    }
+
+    private Object onEvent(int what, Object[] objArray) {
+        Object result = null;
+        switch (what) {
+            case DO_SOMETHING_CODE_postDelayed: {
+                if (objArray != null && objArray.length > 0) {
+                    int native_what = (int) objArray[0];
+                    if (native_what != DO_SOMETHING_CODE_replay) {
+                        JniObject jniObject = JniObject.obtain();
+                        jniObject.valueInt = native_what;
+                        onTransact(DO_SOMETHING_CODE_postDelayed, jniObject);
+                        objArray = null;
+                        objArray[0] = null;
+                        jniObject = null;
+                        break;
+                    }
+
+                    // replay
+                    Log.w(TAG, "onEvent() 网络是不是不好啊!");
+                    String allowReplay = onTransact(DO_SOMETHING_CODE_replay, null);
+                    if (!TextUtils.isEmpty(allowReplay) && Boolean.parseBoolean(allowReplay)) {
+                        Log.e(TAG, "onEvent() 重新播放!");
+                        Phone.callUi(new Runnable() {
+                            @Override
+                            public void run() {
+                                MyToast.show("网络差,重新播放!");
+                                Phone.call(PlayerWrapper.class.getName(),
+                                        DO_SOMETHING_EVENT_REPLAY,
+                                        null);
+                            }
+                        });
+                    }
+                }
+                break;
+            }
+            default:
+                break;
+        }
+        return result;
     }
 
     private Context mContext;
@@ -701,26 +748,6 @@ public class FFMPEG implements WdPlayer {
     @Override
     public long getDuration() {
         return Long.parseLong(onTransact(DO_SOMETHING_CODE_getDuration, null));
-    }
-
-    private Object onEvent(int what, Object[] objArray) {
-        Object result = null;
-        switch (what) {
-            case DO_SOMETHING_CODE_postDelayed: {
-                if (objArray != null && objArray.length > 0) {
-                    JniObject jniObject = JniObject.obtain();
-                    jniObject.valueInt = (int) objArray[0];
-                    onTransact(DO_SOMETHING_CODE_postDelayed, jniObject);
-                    objArray = null;
-                    objArray[0] = null;
-                    jniObject = null;
-                }
-                break;
-            }
-            default:
-                break;
-        }
-        return result;
     }
 
     // 供jni层调用(底层信息才是通过这个接口反映到java层的)
