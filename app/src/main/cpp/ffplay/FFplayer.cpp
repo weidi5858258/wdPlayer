@@ -2078,6 +2078,11 @@ static void video_refresh(void *opaque, double *remaining_time) {
                     update_video_pts(is, vp->pts, vp->pos, vp->serial);
                 }
                 pthread_mutex_unlock(&is->pictq.pmutex);
+            } else {
+                if (!isnan(vp->pts)) {
+                    LOGW("video_refresh() update_video_pts\n");
+                    update_video_pts(is, vp->pts, vp->pos, vp->serial);
+                }
             }
 
             if (frame_queue_nb_remaining(&is->pictq) > 1) {
