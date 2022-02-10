@@ -2965,6 +2965,9 @@ public class PlayerWrapper {
         if (TextUtils.equals(whatPlayer, PLAYER_IJKPLAYER)) {
             mIjkPlayer.mIsLive = mIsLive;
         }
+        if (mFfmpegUseMediaCodecDecode != null) {
+            mFfmpegUseMediaCodecDecode.mIsLive = mIsLive;
+        }
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW               mMediaDuration: " +
                 mMediaDuration);
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                   videoWidth: " +

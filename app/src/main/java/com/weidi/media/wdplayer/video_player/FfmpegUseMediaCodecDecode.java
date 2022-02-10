@@ -14,6 +14,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.view.Surface;
 
+import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.exo.ExoAudioTrack;
 import com.weidi.media.wdplayer.util.AVPacket;
 import com.weidi.media.wdplayer.util.ArrayBlockingQueue;
@@ -42,6 +43,8 @@ import static com.weidi.media.wdplayer.Constants.HARD_SOLUTION_AUDIO;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME;
 import static com.weidi.media.wdplayer.Constants.PREFERENCES_NAME_REMOTE;
 import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_clearQueue;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_postDelayed;
+import static com.weidi.media.wdplayer.video_player.FFMPEG.DO_SOMETHING_CODE_replay;
 
 /***
  Created by weidi on 2020/07/11.
@@ -67,6 +70,7 @@ public class FfmpegUseMediaCodecDecode {
     private Handler mVideoThreadHandler;
     private Handler mAudioThreadHandler;
 
+    public boolean mIsLive = false;
     public boolean mIsLocalPlayer = true;
     public boolean mUseMediaCodecForVideo = true;
     public boolean mUseMediaCodecForAudio = true;
@@ -272,6 +276,7 @@ public class FfmpegUseMediaCodecDecode {
         mVideoInputDatasQueue = null;
         mVideoDatasIndexQueue = null;
         mAudioInputDatasQueue = null;
+        mIsLive = false;
         Log.i(TAG, "releaseMediaCodec() end");
     }
 
@@ -304,6 +309,7 @@ public class FfmpegUseMediaCodecDecode {
         }
         clearQueue();
         signalQueue();
+        Phone.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
         Log.i(TAG, "destroy() end");
     }
 
@@ -1544,6 +1550,13 @@ public class FfmpegUseMediaCodecDecode {
                             " pkt_pos: " + avPacket.pos +
                             " pkt_duration: " + avPacket.duration +
                             " pkt_size: " + avPacket.size);*/
+
+                    if (mIsLive) {
+                        Phone.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
+                        Phone.callThreadDelayed(
+                                FFMPEG.class.getName(), DO_SOMETHING_CODE_postDelayed,
+                                60000, new Object[]{DO_SOMETHING_CODE_replay});
+                    }
 
                     try {
                         // 超出限制就会阻塞

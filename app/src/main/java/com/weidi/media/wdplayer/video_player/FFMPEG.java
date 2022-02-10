@@ -381,11 +381,7 @@ public class FFMPEG implements WdPlayer {
 
     // 供native层调用,主要是使用Handler的延时功能
     private void postDelayed(final int what, final long delayMillis) {
-        if (Looper.getMainLooper() == Looper.myLooper()) {
-            Phone.removeUiMessages(DO_SOMETHING_CODE_postDelayed);
-        } else {
-            Phone.removeThreadMessages(DO_SOMETHING_CODE_postDelayed);
-        }
+        Phone.removeMessages(DO_SOMETHING_CODE_postDelayed);
         if (what == DO_SOMETHING_CODE_replay && delayMillis < 0) {
             return;
         }
@@ -406,8 +402,8 @@ public class FFMPEG implements WdPlayer {
                         JniObject jniObject = JniObject.obtain();
                         jniObject.valueInt = native_what;
                         onTransact(DO_SOMETHING_CODE_postDelayed, jniObject);
-                        objArray = null;
                         objArray[0] = null;
+                        objArray = null;
                         jniObject = null;
                         break;
                     }
@@ -417,15 +413,10 @@ public class FFMPEG implements WdPlayer {
                     String allowReplay = onTransact(DO_SOMETHING_CODE_replay, null);
                     if (!TextUtils.isEmpty(allowReplay) && Boolean.parseBoolean(allowReplay)) {
                         Log.e(TAG, "onEvent() 重新播放!");
-                        Phone.callUi(new Runnable() {
-                            @Override
-                            public void run() {
-                                MyToast.show("网络差,重新播放!");
-                                Phone.call(PlayerWrapper.class.getName(),
-                                        DO_SOMETHING_EVENT_REPLAY,
-                                        null);
-                            }
-                        });
+                        MyToast.show("网络差,重新播放!");
+                        Phone.callUi(PlayerWrapper.class.getName(),
+                                DO_SOMETHING_EVENT_REPLAY,
+                                null);
                     }
                 }
                 break;
