@@ -9,6 +9,7 @@ import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaFormat;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
@@ -308,7 +309,13 @@ public class MainActivity extends AppCompatActivity {
                     case 1:
                         break;
                     case 2:
-                        startActivity(new Intent(MainActivity.this, LiveActivity.class));
+                        new AsyncTask<Void, Void, Void>() {
+                            @Override
+                            protected Void doInBackground(Void... params) {
+                                startActivity(new Intent(MainActivity.this, LiveActivity.class));
+                                return null;
+                            }
+                        }.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                         break;
                     case 3:
                         startActivity(new Intent(MainActivity.this, LiveActivityForIptv.class));
