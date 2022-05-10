@@ -3706,10 +3706,15 @@ public class PlayerWrapper {
     @SuppressLint("SourceLockedOrientationActivity")
     private void clickFour() {
         if (!IS_WATCH) {
-            Intent intent = new Intent();
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.setClass(mContext, FullScreenActivity.class);
-            mContext.startActivity(intent);
+            if (!JniPlayerActivity.isAliveJniPlayerActivity) {
+                Intent intent = new Intent();
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setClass(mContext, FullScreenActivity.class);
+                mContext.startActivity(intent);
+                return;
+            }
+
+            Phone.call(FullScreenActivity.class.getName(), 4, null);
         } else {
             clickTen();
         }

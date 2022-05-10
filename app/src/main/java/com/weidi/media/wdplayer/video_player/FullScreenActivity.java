@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
 
 import com.weidi.eventbus.Phone;
@@ -24,9 +27,11 @@ public class FullScreenActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        getWindow().setFlags(
+        // requestWindowFeature(Window.FEATURE_NO_TITLE);
+        /*getWindow().setFlags(
                 WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);*/
+
         super.onCreate(savedInstanceState);
         if (DEBUG)
             Log.d(TAG, "onCreate()"
@@ -165,6 +170,15 @@ public class FullScreenActivity extends Activity {
             Log.d(TAG, "onWindowFocusChanged()" +
                     " hasFocus: " + hasFocus);
 
+        if (hasFocus) {
+            hideBottomUIMenu();
+            /*getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);*/
+        }
+
         /*if (hasFocus) {
             if (getResources().getConfiguration().orientation ==
                     Configuration.ORIENTATION_LANDSCAPE) {
@@ -276,6 +290,21 @@ public class FullScreenActivity extends Activity {
         Phone.unregister(this);
     }
 
+    private void hideBottomUIMenu() {
+        // 隐藏虚拟按键，并且全屏
+        if (Build.VERSION.SDK_INT > 11 && Build.VERSION.SDK_INT < 19) { // lower api
+            View v = this.getWindow().getDecorView();
+            v.setSystemUiVisibility(View.GONE);
+        } else if (Build.VERSION.SDK_INT >= 19) {
+            //for new api versions.
+            View decorView = getWindow().getDecorView();
+            int uiOptions = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN;
+            decorView.setSystemUiVisibility(uiOptions);
+        }
+    }
+
     private Object onEvent(int what, Object[] objArray) {
         Object result = null;
         switch (what) {
@@ -312,6 +341,15 @@ public class FullScreenActivity extends Activity {
                             PlayerService.class.getName(),
                             PlayerService.COMMAND_HANDLE_LANDSCAPE_SCREEN,
                             new Object[]{2});
+                }
+                break;
+            }
+            case 4: {
+                SCREEN_ORIENTATION_LANDSCAPE = !SCREEN_ORIENTATION_LANDSCAPE;
+                if (SCREEN_ORIENTATION_LANDSCAPE) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                } else {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE);
                 }
                 break;
             }
