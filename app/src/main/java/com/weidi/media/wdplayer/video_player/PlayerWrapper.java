@@ -295,6 +295,11 @@ public class PlayerWrapper {
     private int bit_rate_total;
     private int bit_rate_video;
     private int frame_rate;
+    //  用于触摸滑动判断距离
+    private float mX;
+    private float mY;
+    private float moveX;
+    private float moveY;
 
     // 音视频的加载进度
     private LinearLayout mDataCacheLayout;
@@ -583,6 +588,32 @@ public class PlayerWrapper {
                     return true;
                 }
             });
+            /*mSurfaceView.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent motionEvent) {
+                    switch (motionEvent.getAction()) {
+                        case MotionEvent.ACTION_DOWN: {
+                            mX = motionEvent.getX();
+                            mY = motionEvent.getY();
+                            break;
+                        }
+                        case MotionEvent.ACTION_MOVE: {
+                            moveX = motionEvent.getX() - mX;
+                            moveY = motionEvent.getY() - mY;
+
+                            break;
+                        }
+                        case MotionEvent.ACTION_UP:
+                        case MotionEvent.ACTION_CANCEL: {
+                            Log.i(TAG, "onTouch() moveX: " + moveX + " moveY: " + moveY);
+                            break;
+                        }
+                        default:
+                            break;
+                    }
+                    return false;
+                }
+            });*/
         }
 
         onCreate();
@@ -3715,6 +3746,9 @@ public class PlayerWrapper {
             }
 
             Phone.call(FullScreenActivity.class.getName(), 4, null);
+            Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
+            Phone.callUiDelayed(PlayerWrapper.class.getName(),
+                    DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE, 1000, null);
         } else {
             clickTen();
         }
