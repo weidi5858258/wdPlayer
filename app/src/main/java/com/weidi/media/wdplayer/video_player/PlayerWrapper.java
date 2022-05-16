@@ -1074,10 +1074,11 @@ public class PlayerWrapper {
             return;
         }
 
+        int height = getStatusBarHeight() + getNavigationBarHeight();
         int orientation = mContext.getResources().getConfiguration().orientation;
         if ((orientation == Configuration.ORIENTATION_PORTRAIT
                 //&& mNeedVideoHeight <= (int) (mScreenHeight * 2 / 3))
-                && (mNeedVideoHeight + mControllerPanelLayoutHeight) <= (mScreenHeight - getStatusBarHeight()))
+                && (mNeedVideoHeight + mControllerPanelLayoutHeight) <= (mScreenHeight - height))
                 || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1 && !IS_TV)
                 || mIsAudio) {
             mControllerPanelLayout.setBackgroundColor(
@@ -1992,7 +1993,7 @@ public class PlayerWrapper {
             height = resources.getDimensionPixelSize(resourceId);
         }
         // getStatusBarHeight() height: 48 63 95
-        //Log.d(TAG, "getStatusBarHeight() height: " + height);
+        // Log.d(TAG, "getStatusBarHeight() height: " + height);
         return height;
     }
 
@@ -2007,7 +2008,7 @@ public class PlayerWrapper {
         if (resourceId > 0) {
             height = resources.getDimensionPixelSize(resourceId);
         }
-        Log.d(TAG, "getNavigationBarHeight() height: " + height);
+        // Log.d(TAG, "getNavigationBarHeight() height: " + height);
         return height;
     }
 
@@ -2261,6 +2262,8 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                 mScreenWidth: " +
                 mScreenWidth + " mScreenHeight: " + mScreenHeight);
 
+        int height = getStatusBarHeight() + getNavigationBarHeight();
+
         // 改变SurfaceView高度
         RelativeLayout.LayoutParams relativeParams =
                 (RelativeLayout.LayoutParams) mSurfaceView.getLayoutParams();
@@ -2268,9 +2271,12 @@ public class PlayerWrapper {
         if (mVideoWidth != 0 && mVideoHeight != 0) {
             mNeedVideoWidth = mScreenWidth;
             mNeedVideoHeight = (mScreenWidth * mVideoHeight) / mVideoWidth;
-            if (mNeedVideoHeight > mScreenHeight) {
-                mNeedVideoHeight = mScreenHeight;
+            if (mNeedVideoHeight > (mScreenHeight - height)) {
+                mNeedVideoHeight = mScreenHeight - height;
                 mNeedVideoWidth = (mNeedVideoHeight * mVideoWidth) / mVideoHeight;
+                /*if (mNeedVideoWidth < mScreenWidth) {
+                    relativeParams.setMargins((mScreenWidth - mNeedVideoWidth), 0, 0, 0);
+                }*/
             }
         } else {
             mNeedVideoWidth = mScreenWidth;
@@ -2290,10 +2296,11 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - height)) {
             frameParams.setMargins(
                     0,
-                    mScreenHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
+                    // mScreenHeight - mControllerPanelLayoutHeight - height,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight,
                     0, 0);
             mControllerPanelLayout.setBackgroundColor(
                     mContext.getResources().getColor(android.R.color.transparent));
@@ -2323,7 +2330,7 @@ public class PlayerWrapper {
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 //if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - height)) {
                     updateRootViewLayout(
                             mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
@@ -3738,13 +3745,14 @@ public class PlayerWrapper {
     private void clickFour() {
         if (!IS_WATCH) {
             if (!JniPlayerActivity.isAliveJniPlayerActivity) {
+                Log.i(TAG, "clickFour() startActivity");
                 Intent intent = new Intent();
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.setClass(mContext, FullScreenActivity.class);
                 mContext.startActivity(intent);
                 return;
             }
-
+            Log.i(TAG, "clickFour() DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE");
             Phone.call(FullScreenActivity.class.getName(), 4, null);
             Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
             Phone.callUiDelayed(PlayerWrapper.class.getName(),

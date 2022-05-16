@@ -250,6 +250,7 @@ public class FullScreenActivity extends Activity {
     public static boolean SCREEN_ORIENTATION_LANDSCAPE = true;
 
     private void internalCreate() {
+        JniPlayerActivity.isAliveJniPlayerActivity = true;
         Phone.register(this);
         if (PlayerWrapper.IS_TV) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
@@ -267,13 +268,11 @@ public class FullScreenActivity extends Activity {
     }
 
     private void internalResume() {
-        JniPlayerActivity.isAliveJniPlayerActivity = true;
         Phone.removeUiMessages(1);
         Phone.callUiDelayed(FullScreenActivity.class.getName(), 1, 1000, null);
     }
 
     private void internalPause() {
-        JniPlayerActivity.isAliveJniPlayerActivity = false;
         Phone.removeUiMessages(2);
         Phone.callUiDelayed(FullScreenActivity.class.getName(), 2, 1000, null);
     }
@@ -283,6 +282,7 @@ public class FullScreenActivity extends Activity {
     }
 
     private void internalDestroy() {
+        JniPlayerActivity.isAliveJniPlayerActivity = false;
         Phone.removeUiMessages(1);
         Phone.removeUiMessages(2);
         Phone.removeUiMessages(3);
