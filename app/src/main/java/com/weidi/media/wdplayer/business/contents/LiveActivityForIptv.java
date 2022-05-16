@@ -36,6 +36,7 @@ import static com.weidi.media.wdplayer.Constants.MEDIACODEC_TIME_OUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_ADDRESS;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_EXOPLAYER_OR_FFMPEG;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_WIDTH_PROPORTION;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFPLAY;
 import static com.weidi.media.wdplayer.Constants.PLAYER_IJKPLAYER;
@@ -308,11 +309,24 @@ public class LiveActivityForIptv extends Activity {
 
         switch (msg.what) {
             case MSG_ON_CLICK_PLAYBACK_BUTTOM:
-                if (mClickCount > 3) {
-                    mClickCount = 3;
+                if (mClickCount > 4) {
+                    mClickCount = 4;
                 }
 
                 String videoPlaybackPath = mAddressET.getText().toString().trim();
+
+                if (mClickCount == 3) {
+                    // videoPlaybackPath: 1/11 ~ 11/11
+                    if (videoPlaybackPath.endsWith("/11")) {
+                        MLog.i(TAG,
+                                "onClick() videoPlaybackPath: " + videoPlaybackPath);
+                        mPreferences.edit().putString(
+                                PLAYBACK_WIDTH_PROPORTION, videoPlaybackPath).commit();
+                    }
+                    mClickCount = 0;
+                    return;
+                }
+
                 if (TextUtils.isEmpty(videoPlaybackPath)) {
                     videoPlaybackPath = mPreferences.getString(PLAYBACK_ADDRESS, null);
                 }
@@ -349,6 +363,8 @@ public class LiveActivityForIptv extends Activity {
                                 maybeJumpToPosition(String.valueOf(index));
                                 break;
                             case 3:
+                                break;
+                            case 4:
                                 finish();
                                 break;
                             default:

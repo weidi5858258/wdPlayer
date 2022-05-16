@@ -6,6 +6,8 @@ public interface Constants {
     String PREFERENCES_NAME_REMOTE = "alexander_preferences_remote";
 
     String PLAYBACK_ADDRESS = "playback_address";
+    // 播放窗口宽度的比例（7/11）
+    String PLAYBACK_WIDTH_PROPORTION = "playback_width_proportion";
     String PLAYBACK_POSITION = "playback_position";
     String PLAYBACK_ISLIVE = "playback_islive";
     // 是否正常结束,true表示正常结束

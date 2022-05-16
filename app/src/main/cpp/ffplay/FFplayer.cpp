@@ -1978,13 +1978,17 @@ static void video_refresh(void *opaque, double *remaining_time) {
                 goto display2;
             }
 
-            if (is->audio_stream < 0 && !isLive) {
+            if (is->audio_stream < 0/* && !isLive*/) {
                 curProgress = (long long) vp->pts;// 秒
                 if (curProgress > preProgress) {
-                    if (curProgress <= media_duration) {
-                        onProgressUpdated(curProgress);
+                    if (!isLive) {
+                        if (curProgress <= media_duration) {
+                            onProgressUpdated(curProgress);
+                        } else {
+                            onProgressUpdated(media_duration);
+                        }
                     } else {
-                        onProgressUpdated(media_duration);
+                        onProgressUpdated(curProgress);
                     }
                 }
                 preProgress = curProgress;
@@ -2098,7 +2102,6 @@ static void video_refresh(void *opaque, double *remaining_time) {
             }
 
             frame_queue_next(&is->pictq);
-            is->force_refresh = 1;
 
             if (is->step && !is->paused) {
                 stream_toggle_pause(is);
@@ -2118,13 +2121,11 @@ static void video_refresh(void *opaque, double *remaining_time) {
             onPlayed();
         }
 
-        if (!is->paused/* && !is->force_refresh*/) {
+        if (!is->paused) {
             // alexander add
             // frame_queue_next(&is->pictq);
             sleep(0);
         }
-
-        is->force_refresh = 0;
 
         return;
     }
@@ -4693,17 +4694,21 @@ static void *audio_play(void *arg) {
             LOGI("audio_play()    master_clock_count: %lld\n", test_get_master_clock_count);
             LOGI("audio_play()                   pts: %lf\n", pts);*/
 
-            if (!isLive) {
-                curProgress = (long long) pts;// 秒
-                if (curProgress > preProgress) {
+            /*if (!isLive) {
+            }*/
+            curProgress = (long long) pts; // 秒
+            if (curProgress > preProgress) {
+                if (!isLive) {
                     if (curProgress <= media_duration) {
                         onProgressUpdated(curProgress);
                     } else {
                         onProgressUpdated(media_duration);
                     }
+                } else {
+                    onProgressUpdated(curProgress);
                 }
-                preProgress = curProgress;
             }
+            preProgress = curProgress;
 
             if (audio_play_log) {
                 LOGD("audio_play()-------------------------------------------------------\n");

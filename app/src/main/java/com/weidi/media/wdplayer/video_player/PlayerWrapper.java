@@ -125,6 +125,7 @@ import static com.weidi.media.wdplayer.Constants.PLAYBACK_MEDIA_TYPE;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_NORMAL_FINISH;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_SHOW_CONTROLLERPANELLAYOUT;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_USE_PLAYER;
+import static com.weidi.media.wdplayer.Constants.PLAYBACK_WIDTH_PROPORTION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION;
 import static com.weidi.media.wdplayer.Constants.PLAYBACK_WINDOW_POSITION_TAG;
 import static com.weidi.media.wdplayer.Constants.PLAYER_FFMPEG_MEDIACODEC;
@@ -243,6 +244,7 @@ public class PlayerWrapper {
     private ImageButton mPrevIB;
     // 歌曲下一首
     private ImageButton mNextIB;
+    // 播放暂停
     private ImageButton mPlayIB;
     private ImageButton mPauseIB;
     private ImageButton mExitIB;
@@ -722,6 +724,7 @@ public class PlayerWrapper {
                 }
                 mNeedToSyncProgressBar = false;
                 mSeekTimeTV.setVisibility(View.VISIBLE);
+                mFileNameTV.setVisibility(View.GONE);
             }
 
             @Override
@@ -750,6 +753,8 @@ public class PlayerWrapper {
                 }
                 mNeedToSyncProgressBar = true;
                 mSeekTimeTV.setVisibility(View.GONE);
+                mFileNameTV.setVisibility(View.VISIBLE);
+                mFileNameTV.requestFocus();
                 if (mIsH264) {
                     Log.d(TAG, "onStopTrackingTouch mProgress: " + mProgress);
                 } else {
@@ -1040,14 +1045,15 @@ public class PlayerWrapper {
     };
 
     private void setControllerPanelBackgroundColor() {
-        //Log.i(TAG, "setControllerPanelBackgroundColor()");
+        // Log.i(TAG, "setControllerPanelBackgroundColor()");
         if (!mIsAddedView) {
             Log.i(TAG, "setControllerPanelBackgroundColor() return");
             return;
         }
 
-        if (mColorsHasUsedList == null)
+        if (mColorsHasUsedList == null) {
             mColorsHasUsedList = new ArrayList<>();
+        }
 
         int length = COLORS.length;
         int targetColor = -1;
@@ -1077,7 +1083,6 @@ public class PlayerWrapper {
         int height = getStatusBarHeight() + getNavigationBarHeight();
         int orientation = mContext.getResources().getConfiguration().orientation;
         if ((orientation == Configuration.ORIENTATION_PORTRAIT
-                //&& mNeedVideoHeight <= (int) (mScreenHeight * 2 / 3))
                 && (mNeedVideoHeight + mControllerPanelLayoutHeight) <= (mScreenHeight - height))
                 || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1 && !IS_TV)
                 || mIsAudio) {
@@ -1090,28 +1095,33 @@ public class PlayerWrapper {
         if (mIsVideo) {
             textInfoTV.setTextColor(
                     ContextCompat.getColor(mContext, targetColor));
-            StringBuilder sb = new StringBuilder();
-            if (!TextUtils.isEmpty(textInfo)) {
-                sb.append(textInfo);
-                sb.append("\n");
-            } else {
-                if (IS_WATCH && orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    sb.append("    ");
-                }
-            }
-
-            if (!IS_WATCH) {
-                if (mIsLocalPlayer) {
-                    sb.append("[A] ");
-                } else {
-                    sb.append("[B] ");
-                }
-            }
-
-            sb.append("[");
-            sb.append(mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY));
-            sb.append("]");
             if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
+                StringBuilder sb = new StringBuilder();
+                if (!TextUtils.isEmpty(textInfo)) {
+                    sb.append(textInfo);
+                    sb.append("\n");
+                } else {
+                    if (IS_WATCH && orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                        sb.append("    ");
+                    }
+                }
+
+                if (!IS_WATCH) {
+                    if (mIsLocalPlayer) {
+                        sb.append("[1] "); // 第1个播放窗口
+                    } else {
+                        sb.append("[2] "); // 第2个播放窗口
+                    }
+                }
+
+                sb.append("[");
+                sb.append(mBatteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY));
+                sb.append("]");
+                if (mIsLive) {
+                    sb.append(" [");
+                    sb.append(DateUtils.formatElapsedTime(mPresentationTime));
+                    sb.append("]");
+                }
                 textInfoTV.setText(sb.toString());
             } else {
                 textInfoTV.setText("");
@@ -1119,16 +1129,18 @@ public class PlayerWrapper {
         }
         if (!IS_WATCH) {
             ObjectAnimator controllerPanelAnimator =
-                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0.0f, 1.0f);
+                    ObjectAnimator.ofFloat(mControllerPanelLayout, "alpha", 0.5f, 1.0f);
             ObjectAnimator textInfoAnimator =
-                    ObjectAnimator.ofFloat(textInfoTV, "alpha", 0.0f, 1.0f);
-            if (mIsLocal) {
+                    ObjectAnimator.ofFloat(textInfoTV, "alpha", 0.5f, 1.0f);
+            /*if (mIsLocal) {
                 controllerPanelAnimator.setDuration(5000);
                 textInfoAnimator.setDuration(5000);
             } else {
                 controllerPanelAnimator.setDuration(8000);
                 textInfoAnimator.setDuration(8000);
-            }
+            }*/
+            controllerPanelAnimator.setDuration(1000);
+            textInfoAnimator.setDuration(1000);
             controllerPanelAnimator.start();
             textInfoAnimator.start();
         }
@@ -2148,6 +2160,7 @@ public class PlayerWrapper {
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
         if (needShowCacheProgress) {
+            mDataCacheLayout.setVisibility(View.VISIBLE);
             // 生产,消耗进度条高度
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
             Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
@@ -2163,6 +2176,8 @@ public class PlayerWrapper {
                 relativeParams.height = mDataCacheLayoutHeight;
                 mDataCacheLayout.setLayoutParams(relativeParams);
             }
+        } else {
+            mDataCacheLayout.setVisibility(View.GONE);
         }
 
         // 改变SurfaceView宽高度
@@ -2214,7 +2229,7 @@ public class PlayerWrapper {
         }
 
         mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 1000);
 
         Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
         Phone.callUiDelayed(PlayerWrapper.class.getName(),
@@ -2314,6 +2329,7 @@ public class PlayerWrapper {
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
         if (needShowCacheProgress) {
+            mDataCacheLayout.setVisibility(View.VISIBLE);
             // 生产,消耗进度条高度
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
             Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
@@ -2325,6 +2341,8 @@ public class PlayerWrapper {
                 relativeParams.height = mDataCacheLayoutHeight;
                 mDataCacheLayout.setLayoutParams(relativeParams);
             }
+        } else {
+            mDataCacheLayout.setVisibility(View.GONE);
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -2363,7 +2381,7 @@ public class PlayerWrapper {
         }
 
         mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 1000);
 
         Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
         Phone.callUiDelayed(PlayerWrapper.class.getName(),
@@ -2405,7 +2423,21 @@ public class PlayerWrapper {
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW                 mScreenWidth: " +
                 mScreenWidth + " mScreenHeight: " + mScreenHeight);
 
-        mScreenWidth = mScreenWidth / 3 + 180;
+        // 宽度比例
+        String widthProportion = mSP.getString(PLAYBACK_WIDTH_PROPORTION, null);
+        Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW              widthProportion: " +
+                widthProportion);
+        if (!TextUtils.isEmpty(widthProportion) && widthProportion.endsWith("/11")) {
+            int proportion = 6; // 理想值
+            try {
+                proportion = Integer.parseInt(widthProportion.split("/")[0]);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            mScreenWidth = (mScreenWidth * proportion) / 11;
+        } else {
+            mScreenWidth = mScreenWidth / 3 + 180;
+        }
 
         // 控制面板高度
         mControllerPanelLayoutHeight = mControllerPanelLayout.getHeight();
@@ -2458,6 +2490,7 @@ public class PlayerWrapper {
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
         if (needShowCacheProgress) {
+            mDataCacheLayout.setVisibility(View.VISIBLE);
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
             Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
                     mDataCacheLayoutHeight);
@@ -2469,6 +2502,8 @@ public class PlayerWrapper {
                 relativeParams.height = mDataCacheLayoutHeight;
                 mDataCacheLayout.setLayoutParams(relativeParams);
             }
+        } else {
+            mDataCacheLayout.setVisibility(View.GONE);
         }
 
         if (mPlayerService != null || mRemotePlayerService != null) {
@@ -2490,8 +2525,9 @@ public class PlayerWrapper {
             }
         }
 
+        mFileNameTV.requestFocus();
         mUiHandler.removeMessages(MSG_CHANGE_COLOR);
-        mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
+        mUiHandler.sendEmptyMessageDelayed(MSG_CHANGE_COLOR, 1000);
 
         Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
         Phone.callUiDelayed(PlayerWrapper.class.getName(),
@@ -3298,8 +3334,14 @@ public class PlayerWrapper {
             return;
         }*/
 
+        if (mIsLive) {
+            mPresentationTime++;
+            return;
+        }
+
         // 秒
         mPresentationTime = (Long) msg.obj;
+
         if (!mIsH264) {
             mPositionTimeTV.setText(DateUtils.formatElapsedTime(mPresentationTime));
         } else {
@@ -3311,6 +3353,7 @@ public class PlayerWrapper {
             float pos = (float) currentPosition / mMediaDuration;
             int target = Math.round(pos * mPositionSeekBar.getMax());
             mPositionSeekBar.setProgress(target);
+            mPositionSeekBar.invalidate();
             mControllerPanelLayout.requestLayout();
             mControllerPanelLayout.invalidate();
         }
@@ -3363,7 +3406,7 @@ public class PlayerWrapper {
             RelativeLayout pause_rl = mRootView.findViewById(R.id.button_control_layout);
             pauseRlHeight = pause_rl.getHeight();
             SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
-            RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
+            LinearLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
             ImageButton button_fr = mRootView.findViewById(R.id.button_fr);
             ImageButton button_ff = mRootView.findViewById(R.id.button_ff);
             ImageButton button_prev = mRootView.findViewById(R.id.button_prev);
@@ -3423,7 +3466,7 @@ public class PlayerWrapper {
         }
         SeekBar progress_bar = mRootView.findViewById(R.id.progress_bar);
         // 显示时间的Layout
-        RelativeLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
+        LinearLayout show_time_rl = mRootView.findViewById(R.id.show_time_rl);
         // 播放/暂停,退出,音量
         ImageButton button_play = mRootView.findViewById(R.id.button_play);
         ImageButton button_pause = mRootView.findViewById(R.id.button_pause);
@@ -3485,16 +3528,17 @@ public class PlayerWrapper {
         int space = 16;
         if (mWindow == Window.Min_Screen) {
             if (mIsLive && !mIsH264) {
-                space = 16;
+                // space = 16;
             } else {
                 space = 0;
             }
         } else {
-            if (mIsLive && !mIsH264) {
+            /*if (mIsLive && !mIsH264) {
                 space = 48;
             } else {
                 space = 32;
-            }
+            }*/
+            space = 48;
         }
         if (mIsLive && !mIsH264) {
             // region
