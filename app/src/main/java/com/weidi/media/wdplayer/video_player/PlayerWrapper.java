@@ -545,8 +545,13 @@ public class PlayerWrapper {
             @Override
             public boolean onLongClick(View v) {
                 if (mWindow == Window.Full_Screen) {
+                    Phone.call(FullScreenActivity.class.getName(), 4, null);
+                    Phone.removeUiMessages(DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE);
+                    Phone.callUiDelayed(PlayerWrapper.class.getName(),
+                            DO_SOMETHING_EVENT_HANDLE_BUTTON_SIZE, 1000, null);
                     return true;
                 }
+
                 Intent intent = new Intent();
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.setClass(mContext, FullScreenActivity.class);
@@ -3519,26 +3524,33 @@ public class PlayerWrapper {
         // endregion
 
         // 播放/暂停按钮的宽高
-        int maxButtonWantedWidth = 72;
-        int maxButtonWantedHeight = 72;
+        int maxButtonWantedWidth = 88; // 72
+        int maxButtonWantedHeight = 88;
         // 其他按钮的宽高
-        int minButtonWantedWidth = 48;
-        int minButtonWantedHeight = 48;
+        int minButtonWantedWidth = 72; // 48
+        int minButtonWantedHeight = 72;
         // 间隙
         int space = 16;
-        if (mWindow == Window.Min_Screen) {
+        if (mWindow == Window.Full_Screen) {
+            maxButtonWantedWidth = 104;
+            maxButtonWantedHeight = 104;
+            minButtonWantedWidth = 88;
+            minButtonWantedHeight = 88;
+            space = 32;
+        } else if (mWindow == Window.Max_Screen) {
+            maxButtonWantedWidth = 100;
+            maxButtonWantedHeight = 100;
+            minButtonWantedWidth = 80;
+            minButtonWantedHeight = 80;
             if (mIsLive && !mIsH264) {
-                // space = 16;
+            } else {
+                space = 8;
+            }
+        } else if (mWindow == Window.Min_Screen) {
+            if (mIsLive && !mIsH264) {
             } else {
                 space = 0;
             }
-        } else {
-            /*if (mIsLive && !mIsH264) {
-                space = 48;
-            } else {
-                space = 32;
-            }*/
-            space = 48;
         }
         if (mIsLive && !mIsH264) {
             // region
