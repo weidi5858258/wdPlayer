@@ -1098,9 +1098,9 @@ public class PlayerWrapper {
                     ContextCompat.getColor(mContext, android.R.color.transparent));
         }
         if (mIsVideo) {
-            textInfoTV.setTextColor(
-                    ContextCompat.getColor(mContext, targetColor));
-            if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
+            if (textInfoTV.getVisibility() == View.VISIBLE) {
+                textInfoTV.setTextColor(
+                        ContextCompat.getColor(mContext, targetColor));
                 StringBuilder sb = new StringBuilder();
                 if (!TextUtils.isEmpty(textInfo)) {
                     sb.append(textInfo);
@@ -1128,8 +1128,6 @@ public class PlayerWrapper {
                     sb.append("]");
                 }
                 textInfoTV.setText(sb.toString());
-            } else {
-                textInfoTV.setText("");
             }
         }
         if (!IS_WATCH) {
@@ -2164,7 +2162,7 @@ public class PlayerWrapper {
                 mControllerPanelLayoutHeight);
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
-        if (needShowCacheProgress) {
+        if (needShowCacheProgress && !mIsLocal) {
             mDataCacheLayout.setVisibility(View.VISIBLE);
             // 生产,消耗进度条高度
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
@@ -2184,6 +2182,9 @@ public class PlayerWrapper {
         } else {
             mDataCacheLayout.setVisibility(View.GONE);
         }
+
+        boolean needShowInfo = mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false);
+        textInfoTV.setVisibility(needShowInfo ? View.VISIBLE : View.GONE);
 
         // 改变SurfaceView宽高度
         RelativeLayout.LayoutParams relativeParams =
@@ -2333,7 +2334,7 @@ public class PlayerWrapper {
         mControllerPanelLayout.setLayoutParams(frameParams);
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
-        if (needShowCacheProgress) {
+        if (needShowCacheProgress && !mIsLocal) {
             mDataCacheLayout.setVisibility(View.VISIBLE);
             // 生产,消耗进度条高度
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
@@ -2349,6 +2350,9 @@ public class PlayerWrapper {
         } else {
             mDataCacheLayout.setVisibility(View.GONE);
         }
+
+        boolean needShowInfo = mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false);
+        textInfoTV.setVisibility(needShowInfo ? View.VISIBLE : View.GONE);
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
@@ -2494,7 +2498,7 @@ public class PlayerWrapper {
         mControllerPanelLayout.setLayoutParams(frameParams);
 
         boolean needShowCacheProgress = mSP.getBoolean(NEED_SHOW_CACHE_PROGRESS, true);
-        if (needShowCacheProgress) {
+        if (needShowCacheProgress && !mIsLocal) {
             mDataCacheLayout.setVisibility(View.VISIBLE);
             mDataCacheLayoutHeight = mDataCacheLayout.getHeight();
             Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW     mProgressBarLayoutHeight: " +
@@ -2510,6 +2514,9 @@ public class PlayerWrapper {
         } else {
             mDataCacheLayout.setVisibility(View.GONE);
         }
+
+        boolean needShowInfo = mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false);
+        textInfoTV.setVisibility(needShowInfo ? View.VISIBLE : View.GONE);
 
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
@@ -3249,11 +3256,7 @@ public class PlayerWrapper {
                     getSomeInfo(textInfo);
                 } catch (Exception e) {
                 }
-                if (mSP.getBoolean(NEED_SHOW_MEDIA_INFO, false)) {
-                    textInfoTV.setText(toastInfo);
-                } else {
-                    textInfoTV.setText("");
-                }
+                textInfoTV.setText(toastInfo);
                 mUiHandler.removeMessages(MSG_CHANGE_COLOR);
                 mUiHandler.sendEmptyMessage(MSG_CHANGE_COLOR);
             } else if (toastInfo.contains("AVERROR_EOF")) {
@@ -3530,13 +3533,13 @@ public class PlayerWrapper {
         int minButtonWantedWidth = 72; // 48
         int minButtonWantedHeight = 72;
         // 间隙
-        int space = 16;
+        int space = 40;
         if (mWindow == Window.Full_Screen) {
             maxButtonWantedWidth = 104;
             maxButtonWantedHeight = 104;
             minButtonWantedWidth = 88;
             minButtonWantedHeight = 88;
-            space = 32;
+            space = 48;
         } else if (mWindow == Window.Max_Screen) {
             maxButtonWantedWidth = 100;
             maxButtonWantedHeight = 100;
