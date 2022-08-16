@@ -456,8 +456,6 @@ public class PlayerWrapper {
         mLayoutParams.x = 0;
         mLayoutParams.y = 0;
 
-        mRootView.setOnTouchListener(new PlayerOnTouchListener());
-
         mMediaPlayerRootLayout = mRootView.findViewById(R.id.mediaplayer_root_layout);
         mSurfaceView = mRootView.findViewById(R.id.surfaceView);
         mControllerPanelLayout = mRootView.findViewById(R.id.controller_panel_layout);
@@ -496,6 +494,9 @@ public class PlayerWrapper {
 
         textInfoScrollView = mRootView.findViewById(R.id.text_scrollview);
         textInfoTV = mRootView.findViewById(R.id.text_info_tv);
+
+        // mRootView.setOnTouchListener(new PlayerOnTouchListener());
+        mControllerPanelLayout.setOnTouchListener(new PlayerOnTouchListener());
 
         mSurfaceView.setOnClickListener(mOnClickListener);
         mFrIB.setOnClickListener(mOnClickListener);
@@ -1085,18 +1086,19 @@ public class PlayerWrapper {
             return;
         }
 
-        int height = getStatusBarHeight() + getNavigationBarHeight();
         int orientation = mContext.getResources().getConfiguration().orientation;
+        /*int height = getStatusBarHeight() + getNavigationBarHeight();
         if ((orientation == Configuration.ORIENTATION_PORTRAIT
                 && (mNeedVideoHeight + mControllerPanelLayoutHeight) <= (mScreenHeight - height))
-                || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1 && !IS_TV)
+                || (orientation == Configuration.ORIENTATION_LANDSCAPE && handleScreenFlag == 1
+                && !IS_TV)
                 || mIsAudio) {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, targetColor));
         } else {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, android.R.color.transparent));
-        }
+        }*/
         if (mIsVideo) {
             if (textInfoTV.getVisibility() == View.VISIBLE) {
                 textInfoTV.setTextColor(
@@ -2114,7 +2116,7 @@ public class PlayerWrapper {
         mRootView.setBackgroundColor(
                 mContext.getResources().getColor(R.color.black));
         mControllerPanelLayout.setBackgroundColor(
-                mContext.getResources().getColor(android.R.color.transparent));
+                ContextCompat.getColor(mContext, android.R.color.transparent));
 
         // 暂停按钮高度
         getPauseRlHeight2();
@@ -2317,7 +2319,7 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - height)) {
+        /*if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - height)) {
             frameParams.setMargins(
                     0,
                     // mScreenHeight - mControllerPanelLayoutHeight - height,
@@ -2328,7 +2330,20 @@ public class PlayerWrapper {
         } else {
             frameParams.setMargins(
                     0, mNeedVideoHeight, 0, 0);
+        }*/
+        if (mIsLive) {
+            frameParams.setMargins(
+                    0,
+                    mNeedVideoHeight - pauseRlHeight,
+                    0, 0);
+        } else {
+            frameParams.setMargins(
+                    0,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight,
+                    0, 0);
         }
+        mControllerPanelLayout.setBackgroundColor(
+                ContextCompat.getColor(mContext, android.R.color.transparent));
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
@@ -2357,7 +2372,8 @@ public class PlayerWrapper {
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 //if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - height)) {
+                /*if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight -
+                height)) {
                     updateRootViewLayout(
                             mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
@@ -2371,7 +2387,8 @@ public class PlayerWrapper {
                                 mNeedVideoWidth,
                                 mNeedVideoHeight + mControllerPanelLayoutHeight, x, y);
                     }
-                }
+                }*/
+                updateRootViewLayout(mNeedVideoWidth, mNeedVideoHeight, x, y);
             } else {
                 if (mIsVideo) {
                     if (mIsLive) {
@@ -2482,7 +2499,8 @@ public class PlayerWrapper {
         // 改变ControllerPanelLayout高度
         FrameLayout.LayoutParams frameParams =
                 (FrameLayout.LayoutParams) mControllerPanelLayout.getLayoutParams();
-        if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+        /*if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight -
+        getStatusBarHeight())) {
             frameParams.setMargins(
                     0,
                     mScreenHeight - mControllerPanelLayoutHeight - getStatusBarHeight(),
@@ -2492,7 +2510,20 @@ public class PlayerWrapper {
         } else {
             frameParams.setMargins(
                     0, mNeedVideoHeight, 0, 0);
+        }*/
+        if (mIsLive) {
+            frameParams.setMargins(
+                    0,
+                    mNeedVideoHeight - pauseRlHeight,
+                    0, 0);
+        } else {
+            frameParams.setMargins(
+                    0,
+                    mNeedVideoHeight - mControllerPanelLayoutHeight,
+                    0, 0);
         }
+        mControllerPanelLayout.setBackgroundColor(
+                ContextCompat.getColor(mContext, android.R.color.transparent));
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
@@ -2521,7 +2552,8 @@ public class PlayerWrapper {
         if (mPlayerService != null || mRemotePlayerService != null) {
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 //if (mNeedVideoHeight > (int) (mScreenHeight * 2 / 3)) {
-                if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight - getStatusBarHeight())) {
+                /*if ((mNeedVideoHeight + mControllerPanelLayoutHeight) > (mScreenHeight -
+                getStatusBarHeight())) {
                     updateRootViewLayout(mNeedVideoWidth, mNeedVideoHeight, x, y);
                 } else {
                     if (mIsLive) {
@@ -2531,7 +2563,8 @@ public class PlayerWrapper {
                         updateRootViewLayout(mNeedVideoWidth,
                                 mNeedVideoHeight + mControllerPanelLayoutHeight, x, y);
                     }
-                }
+                }*/
+                updateRootViewLayout(mNeedVideoWidth, mNeedVideoHeight, x, y);
             } else {
                 updateRootViewLayout(mNeedVideoWidth, mControllerPanelLayoutHeight + 1, x, y);
             }
@@ -4505,7 +4538,8 @@ public class PlayerWrapper {
                     tempY = mLayoutParams.y;
 
                     // 更新悬浮窗控件布局
-                    mWindowManager.updateViewLayout(view, mLayoutParams);
+                    // mWindowManager.updateViewLayout(view, mLayoutParams);
+                    mWindowManager.updateViewLayout(mRootView, mLayoutParams);
                     break;
                 case MotionEvent.ACTION_UP:
                     sb.delete(0, sb.length());
