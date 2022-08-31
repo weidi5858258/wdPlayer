@@ -11,7 +11,7 @@ import android.os.Parcelable;
 public class AVPacket implements Parcelable {
 
     public int serial;
-    public int flags;// 判断是否是关键帧
+    public int flags; // 判断是否是关键帧
     public byte[] data;
     public int size;
     public long pts;

@@ -3237,7 +3237,10 @@ public class PlayerWrapper {
                 e.printStackTrace();
             }
         }
-        mFfmpegUseMediaCodecDecode.releaseMediaCodec();
+        if (mFfmpegUseMediaCodecDecode.VIDEO_NEED_TO_ASYNC) {
+            mFfmpegUseMediaCodecDecode.releaseMediaCodec();
+        }
+        // mFfmpegUseMediaCodecDecode.releaseMediaCodec();
         mFFMPEGPlayer.releaseAudioTrack();
 
         abandonAudioFocusRequest();

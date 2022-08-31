@@ -50,18 +50,18 @@ android {
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
         release {
             keyAlias 'weidi'
             keyPassword 'android'
             storePassword 'android'
 //            storeFile file('C:\\mydev\\github\\myfiles\\android\\weidi_keystore\\debug.keystore')
-            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+//            storeFile file('/root/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
 //            storeFile file('/Users/alexander/mydev/workspace_github/myfiles/android/weidi_keystore/debug.keystore')
-//            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
+            storeFile file('/Users/v_wangliwei/mydev/github/myfiles/android/weidi_keystore/debug.keystore')
         }
     }
     buildTypes {
