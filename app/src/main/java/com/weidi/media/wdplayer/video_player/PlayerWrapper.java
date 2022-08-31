@@ -1099,6 +1099,10 @@ public class PlayerWrapper {
             mControllerPanelLayout.setBackgroundColor(
                     ContextCompat.getColor(mContext, android.R.color.transparent));
         }*/
+        if (mIsAudio) {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, targetColor));
+        }
         if (mIsVideo) {
             if (textInfoTV.getVisibility() == View.VISIBLE) {
                 textInfoTV.setTextColor(
@@ -1144,6 +1148,10 @@ public class PlayerWrapper {
                 controllerPanelAnimator.setDuration(8000);
                 textInfoAnimator.setDuration(8000);
             }*/
+            if (mIsAudio) {
+                controllerPanelAnimator.setDuration(5000);
+                textInfoAnimator.setDuration(5000);
+            }
             controllerPanelAnimator.setDuration(1000);
             textInfoAnimator.setDuration(1000);
             controllerPanelAnimator.start();
@@ -2303,7 +2311,8 @@ public class PlayerWrapper {
             }
         } else {
             mNeedVideoWidth = mScreenWidth;
-            mNeedVideoHeight = 1;
+            mNeedVideoHeight = mControllerPanelLayoutHeight;
+            // mNeedVideoHeight = 1;
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
@@ -2342,8 +2351,13 @@ public class PlayerWrapper {
                     mNeedVideoHeight - mControllerPanelLayoutHeight,
                     0, 0);
         }
-        mControllerPanelLayout.setBackgroundColor(
-                ContextCompat.getColor(mContext, android.R.color.transparent));
+        if (mIsVideo) {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.transparent));
+        } else {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.holo_purple));
+        }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
@@ -2483,7 +2497,8 @@ public class PlayerWrapper {
             }
         } else {
             mNeedVideoWidth = mScreenWidth;
-            mNeedVideoHeight = 1;
+            mNeedVideoHeight = mControllerPanelLayoutHeight;
+            // mNeedVideoHeight = 1;
         }
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
@@ -2522,8 +2537,13 @@ public class PlayerWrapper {
                     mNeedVideoHeight - mControllerPanelLayoutHeight,
                     0, 0);
         }
-        mControllerPanelLayout.setBackgroundColor(
-                ContextCompat.getColor(mContext, android.R.color.transparent));
+        if (mIsVideo) {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.transparent));
+        } else {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.holo_purple));
+        }
         frameParams.width = mNeedVideoWidth;
         frameParams.height = mControllerPanelLayoutHeight;
         mControllerPanelLayout.setLayoutParams(frameParams);
@@ -2604,8 +2624,13 @@ public class PlayerWrapper {
         mControllerPanelLayoutHeight = mControllerPanelLayout.getHeight();
         Log.d(TAG, "Callback.MSG_ON_CHANGE_WINDOW mControllerPanelLayoutHeight: " +
                 mControllerPanelLayoutHeight);
-        mControllerPanelLayout.setBackgroundColor(
-                mContext.getResources().getColor(android.R.color.transparent));
+        if (mIsVideo) {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.transparent));
+        } else {
+            mControllerPanelLayout.setBackgroundColor(
+                    ContextCompat.getColor(mContext, android.R.color.holo_purple));
+        }
 
         // 改变SurfaceView高度
         RelativeLayout.LayoutParams relativeParams =
