@@ -440,15 +440,19 @@ public class MainActivity extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 申请浮窗权限
-            if (!isRunService(this, PLAYERSERVICE)) {
-                if (!Settings.canDrawOverlays(this)) {
-                    Intent intent = new Intent(
-                            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                            Uri.parse("package:" + getPackageName()));
-                    startActivityForResult(intent, 0);
-                } else {
-                    startService(new Intent(this, PlayerService.class));
+            try {
+                if (!isRunService(this, PLAYERSERVICE)) {
+                    if (!Settings.canDrawOverlays(this)) {
+                        Intent intent = new Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:" + getPackageName()));
+                        startActivityForResult(intent, 0);
+                    } else {
+                        startService(new Intent(this, PlayerService.class));
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             test2();

@@ -385,11 +385,11 @@ public class FFMPEG implements WdPlayer {
         if (what == DO_SOMETHING_CODE_replay && delayMillis < 0) {
             return;
         }
-        Phone.callDelayed(
+        /*Phone.callDelayed(
                 FFMPEG.class.getName(),
                 DO_SOMETHING_CODE_postDelayed,
                 delayMillis,
-                new Object[]{what});
+                new Object[]{what});*/
     }
 
     private Object onEvent(int what, Object[] objArray) {
