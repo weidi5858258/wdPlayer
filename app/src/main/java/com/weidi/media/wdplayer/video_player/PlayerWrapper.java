@@ -1167,11 +1167,11 @@ public class PlayerWrapper {
         String newPath = mCurPath.toLowerCase();
         if (newPath.startsWith("/storage/")) {
             mIsLocal = true;
-            if (mCurPath.startsWith(mLocalVideoPath)) {
+            if (!TextUtils.isEmpty(mLocalVideoPath) && mCurPath.startsWith(mLocalVideoPath)) {
                 if (!mLocalContentsHasPlayedVideoPathList.contains(mCurPath)) {
                     mLocalContentsHasPlayedVideoPathList.add(mCurPath);
                 }
-            } else if (mCurPath.startsWith(mLocalAudioPath)) {
+            } else if (!TextUtils.isEmpty(mLocalAudioPath) && mCurPath.startsWith(mLocalAudioPath)) {
                 if (!mLocalContentsHasPlayedAudioPathList.contains(mCurPath)) {
                     mLocalContentsHasPlayedAudioPathList.add(mCurPath);
                 }
