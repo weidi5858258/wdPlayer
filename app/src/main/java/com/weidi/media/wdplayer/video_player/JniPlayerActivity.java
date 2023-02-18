@@ -23,6 +23,7 @@ import android.view.WindowManager;
 
 import com.weidi.eventbus.Phone;
 import com.weidi.media.wdplayer.R;
+import com.weidi.media.wdplayer.util.FileUtils;
 import com.weidi.utils.PermissionsUtils;
 
 import androidx.core.app.ActivityCompat;
@@ -305,9 +306,12 @@ public class JniPlayerActivity extends Activity {
              path = uri.getPath();
              path:        /storage/1532-48AD/Movies/Movies/AQUAMAN_Trailer_3840_2160_4K.webm
              5.
-             uri : content://com.speedsoftware.rootexplorer.fileprovider/external_storage_root/Movies/jlbhd5.mp4
+             uri : content://com.speedsoftware.rootexplorer
+             .fileprovider/external_storage_root/Movies/jlbhd5.mp4
              path = uri.getPath();
              path:        /storage/emulated/0/Movies/jlbhd5.mp4
+             6.
+             uri : content://com.android.providers.media.documents/document/video%3A746
 
              // 加密文件
              content://cn.oneplus.filemanager.Safebox/file/2
@@ -341,6 +345,15 @@ public class JniPlayerActivity extends Activity {
                         }
                     }
                     Log.d(TAG, "internalCreate() mPath2: " + mPath);
+                    if (TextUtils.isEmpty(mPath)) {
+                        // 获取文件绝对路径
+                        mPath = FileUtils.getPath(this, uri);
+                        Log.d(TAG, "internalCreate() mPath3: " + mPath);
+                    }
+                    if (TextUtils.isEmpty(mPath)) {
+                        finish();
+                        return;
+                    }
                     if (mPath.startsWith("/root/")) {
                         // /root/storage/1532-48AD/download/***.mp4
                         // --->
@@ -369,8 +382,14 @@ public class JniPlayerActivity extends Activity {
                         // --->
                         // /storage/emulated/0/Movies/jlbhd5.mp4
                         mPath = mPath.replace("/external_storage_root/", "/storage/emulated/0/");
+                    } else if (mPath.startsWith("/HI_FILE/")) {
+                        // 如流视频
+                        // /HI_FILE/storage/emulated/0/Pictures/WeiXin/wx_camera_1676623653942.mp4
+                        // --->
+                        // /storage/emulated/0/Pictures/WeiXin/wx_camera_1676623653942.mp4
+                        mPath = mPath.replace("/HI_FILE/", "/");
                     }
-                    Log.d(TAG, "internalCreate() mPath3: " + mPath);
+                    Log.d(TAG, "internalCreate() mPath4: " + mPath);
                 }
             }
             if (TextUtils.isEmpty(mPath)) {
@@ -505,6 +524,7 @@ public class JniPlayerActivity extends Activity {
     }
 
     private static final int REQUEST_CODE = 100;
+
     private void requestPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // 先判断有没有权限
@@ -516,12 +536,15 @@ public class JniPlayerActivity extends Activity {
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // 先判断有没有权限
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
             } else {
                 ActivityCompat.requestPermissions(
                         this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         REQUEST_CODE);
             }
         } else {

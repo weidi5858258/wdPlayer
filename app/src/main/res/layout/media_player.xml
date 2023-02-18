@@ -67,4 +67,11 @@
             android:textSize="10sp" />
     </ScrollView>
 
+    <View
+        android:id="@+id/used_to_move_view"
+        android:layout_width="@dimen/dimen_50_dp"
+        android:layout_height="@dimen/dimen_50_dp"
+        android:background="@android:color/transparent"
+        android:layout_alignParentRight="true"/>
+
 </RelativeLayout>

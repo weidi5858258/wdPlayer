@@ -495,8 +495,11 @@ public class PlayerWrapper {
         textInfoScrollView = mRootView.findViewById(R.id.text_scrollview);
         textInfoTV = mRootView.findViewById(R.id.text_info_tv);
 
+        View usedToMoveView = mRootView.findViewById(R.id.used_to_move_view);
+        PlayerOnTouchListener playerOnTouchListener = new PlayerOnTouchListener();
+        usedToMoveView.setOnTouchListener(playerOnTouchListener);
+        mControllerPanelLayout.setOnTouchListener(playerOnTouchListener);
         // mRootView.setOnTouchListener(new PlayerOnTouchListener());
-        mControllerPanelLayout.setOnTouchListener(new PlayerOnTouchListener());
 
         mSurfaceView.setOnClickListener(mOnClickListener);
         mFrIB.setOnClickListener(mOnClickListener);
@@ -1167,14 +1170,18 @@ public class PlayerWrapper {
         String newPath = mCurPath.toLowerCase();
         if (newPath.startsWith("/storage/")) {
             mIsLocal = true;
-            if (!TextUtils.isEmpty(mLocalVideoPath) && mCurPath.startsWith(mLocalVideoPath)) {
-                if (!mLocalContentsHasPlayedVideoPathList.contains(mCurPath)) {
-                    mLocalContentsHasPlayedVideoPathList.add(mCurPath);
+            try {
+                if (!TextUtils.isEmpty(mLocalVideoPath) && mCurPath.startsWith(mLocalVideoPath)) {
+                    if (!mLocalContentsHasPlayedVideoPathList.contains(mCurPath)) {
+                        mLocalContentsHasPlayedVideoPathList.add(mCurPath);
+                    }
+                } else if (!TextUtils.isEmpty(mLocalAudioPath) && mCurPath.startsWith(mLocalAudioPath)) {
+                    if (!mLocalContentsHasPlayedAudioPathList.contains(mCurPath)) {
+                        mLocalContentsHasPlayedAudioPathList.add(mCurPath);
+                    }
                 }
-            } else if (!TextUtils.isEmpty(mLocalAudioPath) && mCurPath.startsWith(mLocalAudioPath)) {
-                if (!mLocalContentsHasPlayedAudioPathList.contains(mCurPath)) {
-                    mLocalContentsHasPlayedAudioPathList.add(mCurPath);
-                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         } else {
             mIsLocal = false;
