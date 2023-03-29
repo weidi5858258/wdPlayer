@@ -2305,7 +2305,6 @@ public class PlayerWrapper {
         // 改变SurfaceView高度
         RelativeLayout.LayoutParams relativeParams =
                 (RelativeLayout.LayoutParams) mSurfaceView.getLayoutParams();
-        relativeParams.setMargins(0, 0, 0, 0);
         if (mVideoWidth != 0 && mVideoHeight != 0) {
             mNeedVideoWidth = mScreenWidth;
             mNeedVideoHeight = (mScreenWidth * mVideoHeight) / mVideoWidth;
@@ -2321,6 +2320,7 @@ public class PlayerWrapper {
             mNeedVideoHeight = mControllerPanelLayoutHeight;
             // mNeedVideoHeight = 1;
         }
+        relativeParams.setMargins(0, 0, 0, 0);
         relativeParams.width = mNeedVideoWidth;
         relativeParams.height = mNeedVideoHeight;
         mSurfaceView.setLayoutParams(relativeParams);
