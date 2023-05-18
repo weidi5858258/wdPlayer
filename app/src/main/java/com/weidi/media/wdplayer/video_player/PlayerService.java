@@ -412,6 +412,37 @@ public class PlayerService extends Service {
                 if (mPlayerWrapper != null)
                     mPlayerWrapper.onEvent(KeyEvent.KEYCODE_MEDIA_PAUSE, null);
                 break;
+            case 1000: {
+                // 测试
+                Intent intent = new Intent("com.weidi.media.wdplayer.video_player.Test");
+                intent.setClassName(
+                        "com.weidi.media.wdplayer",
+                        "com.weidi.media.wdplayer.video_player.TestService");
+                startService(intent);
+                break;
+            }
+            case 1001: {
+                // 测试
+                Intent intent = new Intent("com.ecarx.ai.val.test.Test");
+                ComponentName cn = new ComponentName("com.ecarx.ai.val.test",
+                        "com.ecarx.ai.val.test.TestService");
+                intent.setComponent(cn);
+                // startService(intent);
+                bindService(intent, new ServiceConnection() {
+                    @Override
+                    public void onServiceConnected(ComponentName name, IBinder service) {
+                        if (name != null)
+                            Log.i(TAG, "onServiceConnected() name: " + name.toString());
+                    }
+
+                    @Override
+                    public void onServiceDisconnected(ComponentName name) {
+                        if (name != null)
+                            Log.i(TAG, "onServiceDisconnected() name: " + name.toString());
+                    }
+                }, Context.BIND_AUTO_CREATE);
+                break;
+            }
             default:
                 break;
         }

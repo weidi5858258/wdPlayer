@@ -2,6 +2,7 @@ package com.weidi.media.wdplayer;
 
 import android.app.Activity;
 import android.app.UiModeManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -40,6 +41,7 @@ import com.weidi.media.wdplayer.util.MediaUtils;
 import com.weidi.media.wdplayer.video_player.FullScreenActivity;
 import com.weidi.media.wdplayer.video_player.PlayerService;
 import com.weidi.media.wdplayer.video_player.PlayerWrapper;
+import com.weidi.media.wdplayer.video_player.TestService;
 import com.weidi.utils.MyToast;
 
 import java.io.File;
@@ -764,18 +766,84 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
             case R.id.min_screen_btn: {
+                // 通知关闭自身Service
+                Phone.callThread(TestService.class.getName(), 100, null);
+                if (true) break;
+                PlayerService.mUseLocalPlayer = false;
                 Phone.call(
                         PlayerWrapper.class.getName(),
                         DO_SOMETHING_EVENT_MIN_SCREEN,
                         null);
                 break;
             }
-            case R.id.use_local_player_btn:
+            case R.id.use_local_player_btn: {
+                // 自身Activity开启自身Service
+                Phone.callThread(() -> {
+                    /*Intent intent = new Intent("com.weidi.media.wdplayer.video_player.Test");
+                    intent.setClassName(
+                            "com.weidi.media.wdplayer",
+                            "com.weidi.media.wdplayer.video_player.TestService");
+                    startService(intent);*/
+                    Intent intent = new Intent(Intent.ACTION_DEFAULT);
+                    ComponentName cn = new ComponentName(
+                            "com.ecarx.ai.val.test",
+                            "com.ecarx.ai.val.test.MainActivity");
+                    intent.setComponent(cn);
+                    startActivity(intent);
+                });
+                if (true) break;
                 PlayerService.mUseLocalPlayer = true;
                 break;
-            case R.id.use_remote_player_btn:
+            }
+            case R.id.use_remote_player_btn: {
+                // 自身Service开启自身Service
+                // Phone.callThread(PlayerService.class.getName(), 1000, null);
+                Phone.callThreadDelayed(() -> {
+                    Intent intent = new Intent(Intent.ACTION_DEFAULT);
+                    ComponentName cn = new ComponentName(
+                            "com.ecarx.ai.val.test",
+                            "com.ecarx.ai.val.test.MainActivity");
+                    intent.setComponent(cn);
+                    startActivity(intent);
+                }, 5000);
+                if (true) break;
                 PlayerService.mUseLocalPlayer = false;
                 break;
+            }
+            case R.id.test_start_btn: {
+                // 自身Activity开启其他App的Service
+                // 2023-03-29 10:01:27.317 1357-4427/system_process W/ActivityManager: Unable to
+                // start service Intent { act=com.ecarx.ai.val.test.Test cmp=com.ecarx.ai.val
+                // .test/.TestService } U=0: not found
+                Phone.callThread(() -> {
+                    Intent intent = new Intent("com.ecarx.ai.val.test.Test");
+                    /*ComponentName cn = new ComponentName("com.ecarx.ai.val.test",
+                            "com.ecarx.ai.val.test.MainActivity");
+                    intent.setComponent(cn);
+                    startActivity(intent);*/
+                    ComponentName cn = new ComponentName("com.ecarx.ai.val.test",
+                            "com.ecarx.ai.val.test.TestService");
+                    intent.setComponent(cn);
+                    startService(intent);
+                });
+                if (true) break;
+                Phone.call(
+                        PlayerWrapper.class.getName(),
+                        BUTTON_CLICK_TEST_START,
+                        null);
+                break;
+            }
+            case R.id.test_stop_btn: {
+                // 自身Service开启其他App的Service [结论: 不可以,不允许]
+                // 其他App的Service开启的情况下,自身Service能否绑定它
+                Phone.callThread(PlayerService.class.getName(), 1001, null);
+                if (true) break;
+                Phone.call(
+                        PlayerWrapper.class.getName(),
+                        BUTTON_CLICK_TEST_STOP,
+                        null);
+                break;
+            }
             case R.id.mc_switch:
                 SharedPreferences sp = getSharedPreferences(
                         PREFERENCES_NAME, Context.MODE_PRIVATE);
@@ -786,20 +854,6 @@ public class MainActivity extends AppCompatActivity {
                     sp.edit().putInt(HARD_SOLUTION, 0).commit();
                 }
                 break;
-            case R.id.test_start_btn: {
-                Phone.call(
-                        PlayerWrapper.class.getName(),
-                        BUTTON_CLICK_TEST_START,
-                        null);
-                break;
-            }
-            case R.id.test_stop_btn: {
-                Phone.call(
-                        PlayerWrapper.class.getName(),
-                        BUTTON_CLICK_TEST_STOP,
-                        null);
-                break;
-            }
             default:
                 break;
         }

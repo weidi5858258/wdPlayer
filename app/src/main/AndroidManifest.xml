@@ -152,6 +152,12 @@
             android:screenOrientation="sensor" />
 
         <service
+            android:name="com.weidi.media.wdplayer.video_player.TestService"
+            android:exported="true"
+            android:persistent="true"
+            android:priority="1000" />
+
+        <service
             android:name="com.weidi.media.wdplayer.video_player.PlayerService"
             android:exported="true"
             android:persistent="true"
